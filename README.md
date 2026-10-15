@@ -106,7 +106,7 @@ Documentacion/       Documento del Hito 3
 ## Generar el ejecutable
 
 1. Abrir el proyecto con Unity 6.
-2. En el menu superior elegir `Ralft Demoledor > Generar interfaz, escenas y ejecutable`.
+2. En el menu superior elegir `Demoledor Unifranz > Generar interfaz, escenas y ejecutable`.
 3. El ejecutable se genera en la carpeta `ejecutable` y las capturas de la
    interfaz en la carpeta `caps`.
 
