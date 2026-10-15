@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Prueba automatica del ejecutable. Cuando la aplicacion se inicia con

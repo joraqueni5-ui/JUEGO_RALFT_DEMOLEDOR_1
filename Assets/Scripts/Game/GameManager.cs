@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using RalftDemoledor.UI;
+using DemoledorUnifranz.UI;
 
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Controla las reglas del nivel: cuenta el puntaje, descuenta vidas,

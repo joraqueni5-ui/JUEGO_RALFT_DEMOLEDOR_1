@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace RalftDemoledor.UI
+namespace DemoledorUnifranz.UI
 {
     /// <summary>
     /// Interfaz que se muestra durante el nivel: puntaje, vidas

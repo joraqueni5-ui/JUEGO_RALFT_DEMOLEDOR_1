@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using RalftDemoledor.Game;
+using DemoledorUnifranz.Game;
 
-namespace RalftDemoledor.UI
+namespace DemoledorUnifranz.UI
 {
     /// <summary>
     /// Menu de pausa del nivel. Se abre y se cierra con la tecla Escape

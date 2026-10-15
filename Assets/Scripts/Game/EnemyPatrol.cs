@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Enemigo del nivel. Se desplaza de un punto a otro (patrulla)

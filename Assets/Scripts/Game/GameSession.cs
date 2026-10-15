@@ -1,4 +1,4 @@
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Datos de la partida en curso (puntaje, vidas y objetivos).

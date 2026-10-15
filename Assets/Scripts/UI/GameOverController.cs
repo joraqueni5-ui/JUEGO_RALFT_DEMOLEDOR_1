@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using RalftDemoledor.Game;
+using DemoledorUnifranz.Game;
 
-namespace RalftDemoledor.UI
+namespace DemoledorUnifranz.UI
 {
     /// <summary>
     /// Pantalla final del juego. Muestra "VICTORIA" o "GAME OVER"

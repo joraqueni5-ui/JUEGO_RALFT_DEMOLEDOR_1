@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using RalftDemoledor.Game;
+using DemoledorUnifranz.Game;
 
-namespace RalftDemoledor.UI
+namespace DemoledorUnifranz.UI
 {
     /// <summary>
     /// Menu principal del juego.

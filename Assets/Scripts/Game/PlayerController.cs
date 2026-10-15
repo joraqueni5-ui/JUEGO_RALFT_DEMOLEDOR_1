@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Movimiento del personaje principal (vista superior).

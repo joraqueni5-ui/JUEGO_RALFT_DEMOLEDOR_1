@@ -1,4 +1,4 @@
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Nombres de las escenas del juego.

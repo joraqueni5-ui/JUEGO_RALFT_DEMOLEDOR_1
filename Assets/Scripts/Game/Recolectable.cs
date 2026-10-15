@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace RalftDemoledor.Game
+namespace DemoledorUnifranz.Game
 {
     /// <summary>
     /// Ladrillo recolectable. Cuando el jugador lo toca suma puntos
