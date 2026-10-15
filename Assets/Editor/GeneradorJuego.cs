@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -24,6 +25,10 @@ public static class GeneradorJuego
     const string RutaMenu = DirEscenas + "/MenuPrincipal.unity";
     const string RutaNivel = DirEscenas + "/Nivel1.unity";
     const string RutaFin = DirEscenas + "/FinJuego.unity";
+    const string RutaEdificio = "Assets/Edificio/edificio.aseprite";
+    const string RutaVentanas = "Assets/Edificio/ventanas.aseprite";
+    const string RutaJugadorFrente = "Assets/personaje/Movimiento Abajo.aseprite";
+    const string RutaEnemigoCamina = "Assets/Animaciones/Enemigo/animacion_caminata_derecha.aseprite";
 
     static Font fuenteUi;
 
@@ -88,6 +93,8 @@ public static class GeneradorJuego
         CrearSprite("personaje", 64, 64, PixPersonaje, 64f, FilterMode.Point, Vector4.zero);
         CrearSprite("enemigo", 64, 64, PixEnemigo, 64f, FilterMode.Point, Vector4.zero);
         CrearSprite("ladrillo", 48, 48, PixLadrillo, 64f, FilterMode.Point, Vector4.zero);
+        CrearSprite("muro_h", 512, 64, PixMuroHorizontal, 64f, FilterMode.Point, Vector4.zero);
+        CrearSprite("muro_v", 64, 512, PixMuroVertical, 64f, FilterMode.Point, Vector4.zero);
     }
 
     static void CrearSprite(string nombre, int ancho, int alto, Func<int, int, Color> pixel,
@@ -319,6 +326,127 @@ public static class GeneradorJuego
         return new Color(0.78f, 0.34f, 0.20f);
     }
 
+    static Color PixMuroHorizontal(int x, int y)
+    {
+        int fila = y / 16;
+        int dentroX = (x + (fila % 2) * 16) % 32;
+        int dentroY = y % 16;
+
+        if (dentroY < 3) return new Color(0.30f, 0.17f, 0.14f);
+        if (dentroX < 3) return new Color(0.38f, 0.22f, 0.18f);
+        return new Color(0.58f, 0.29f, 0.22f) * (0.90f + ((fila + dentroX / 32) % 3) * 0.05f);
+    }
+
+    static Color PixMuroVertical(int x, int y)
+    {
+        return PixMuroHorizontal(y, x);
+    }
+
+    // ---------------- Recursos de Aseprite ----------------
+
+    static List<Sprite> SpritesDe(string ruta)
+    {
+        List<Sprite> lista = new List<Sprite>();
+        UnityEngine.Object[] recursos = AssetDatabase.LoadAllAssetsAtPath(ruta);
+
+        foreach (UnityEngine.Object recurso in recursos)
+        {
+            Sprite sprite = recurso as Sprite;
+
+            if (sprite != null) lista.Add(sprite);
+        }
+
+        lista.Sort(delegate (Sprite a, Sprite b) { return string.CompareOrdinal(a.name, b.name); });
+        return lista;
+    }
+
+    static Sprite SpriteAseprite(string ruta, int indice)
+    {
+        List<Sprite> lista = SpritesDe(ruta);
+
+        if (lista.Count == 0)
+        {
+            Debug.LogError("[ASEPRITE] sin sprites en " + ruta);
+            return null;
+        }
+
+        Sprite elegido = lista[Mathf.Clamp(indice, 0, lista.Count - 1)];
+        Debug.Log("[ASEPRITE] " + ruta + " -> " + elegido.name + " (" + lista.Count + " fotogramas)");
+        return elegido;
+    }
+
+    static AnimationClip ClipAseprite(string ruta)
+    {
+        UnityEngine.Object[] recursos = AssetDatabase.LoadAllAssetsAtPath(ruta);
+
+        foreach (UnityEngine.Object recurso in recursos)
+        {
+            AnimationClip clip = recurso as AnimationClip;
+
+            if (clip != null) return clip;
+        }
+
+        return null;
+    }
+
+    static RuntimeAnimatorController ControladorAseprite(string ruta)
+    {
+        UnityEngine.Object[] recursos = AssetDatabase.LoadAllAssetsAtPath(ruta);
+
+        foreach (UnityEngine.Object recurso in recursos)
+        {
+            RuntimeAnimatorController controlador = recurso as RuntimeAnimatorController;
+
+            if (controlador != null) return controlador;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Devuelve true si el clip anima la posicion o la escala del objeto, en
+    /// cuyo caso no conviene conectarlo porque pelea con el movimiento.
+    /// </summary>
+    static bool ClipMueveElObjeto(AnimationClip clip)
+    {
+        if (clip == null) return true;
+
+        foreach (EditorCurveBinding enlace in AnimationUtility.GetCurveBindings(clip))
+        {
+            if (enlace.propertyName.Contains("m_LocalPosition") ||
+                enlace.propertyName.Contains("m_LocalScale") ||
+                enlace.propertyName.Contains("m_AnchoredPosition"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static void AgregarAnimador(GameObject objeto, string ruta)
+    {
+        AnimationClip clip = ClipAseprite(ruta);
+        RuntimeAnimatorController controlador = ControladorAseprite(ruta);
+
+        if (clip == null || controlador == null)
+        {
+            Debug.Log("[ANIMACION] " + ruta + ": se usa un fotograma fijo");
+            return;
+        }
+
+        if (ClipMueveElObjeto(clip))
+        {
+            Debug.Log("[ANIMACION] " + ruta + ": el clip anima posicion o escala, se usa un fotograma fijo");
+            return;
+        }
+
+        Animator animador = objeto.AddComponent<Animator>();
+        animador.runtimeAnimatorController = controlador;
+        animador.applyRootMotion = false;
+        Debug.Log("[ANIMACION] " + ruta + ": animacion conectada");
+    }
+
     static Sprite CargarSprite(string nombre)
     {
         return AssetDatabase.LoadAssetAtPath<Sprite>(DirSprites + "/" + nombre + ".png");
@@ -458,14 +586,14 @@ public static class GeneradorJuego
         Canvas canvas = CrearCanvas("CanvasMenu", 0);
         GameObject controlador = new GameObject("MenuPrincipal", typeof(MainMenuController));
 
-        CrearImagen(canvas.transform, "Fondo", CargarSprite("fondo_menu"), new Vector2(1920f, 1080f), Vector2.zero, Color.white);
+        CrearImagen(canvas.transform, "Fondo", SpriteAseprite(RutaEdificio, 0), new Vector2(1920f, 1080f), Vector2.zero, new Color(0.40f, 0.38f, 0.52f, 1f));
         CrearImagen(canvas.transform, "BarraInferior", null, new Vector2(1920f, 90f), new Vector2(0f, -495f), new Color(0f, 0f, 0f, 0.55f));
 
-        Text titulo = CrearTexto(canvas.transform, "Titulo", "RALFT DEMOLEDOR", 132, new Vector2(0f, 310f),
+        Text titulo = CrearTexto(canvas.transform, "Titulo", "DEMOLEDOR UNIFRANZ", 132, new Vector2(0f, 310f),
                                  new Vector2(1700f, 170f), TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f), true);
         titulo.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.75f);
 
-        Text subtitulo = CrearTexto(canvas.transform, "Subtitulo", "Juego 2D - Hito 3: Implementacion de interfaz de usuario", 42,
+        Text subtitulo = CrearTexto(canvas.transform, "Subtitulo", "Juego 2D - Unifranz - Hito 3: Implementacion de interfaz de usuario", 42,
                                     new Vector2(0f, 205f), new Vector2(1600f, 70f), TextAnchor.MiddleCenter, new Color(0.88f, 0.90f, 1f), false);
         subtitulo.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
 
@@ -481,7 +609,7 @@ public static class GeneradorJuego
         RectTransform panel = CrearImagen(canvas.transform, "PanelControles", CargarSprite("panel"), new Vector2(920f, 620f), Vector2.zero, Color.white);
         CrearTexto(panel, "TituloControles", "CONTROLES", 62, new Vector2(0f, 230f), new Vector2(800f, 80f), TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f), true);
         CrearTexto(panel, "TextoControles",
-                   "W A S D o flechas : mover a Ralph\nEscape : abrir el menu de pausa\nObjetivo : recoger los 5 ladrillos\nCuidado : los demoledores quitan una vida",
+                   "W A S D o flechas : mover al demoledor\nEscape : abrir el menu de pausa\nObjetivo : recoger los 5 ladrillos\nCuidado : los demoledores quitan una vida",
                    36, new Vector2(0f, 20f), new Vector2(820f, 340f), TextAnchor.UpperCenter, Color.white, false);
         Button btnCerrar = CrearBoton(panel, "BotonCerrar", "CERRAR", new Vector2(0f, -220f), new Vector2(340f, 90f), false);
         Conectar(btnCerrar, menu.AlternarControles);
@@ -498,35 +626,55 @@ public static class GeneradorJuego
     static void CrearEscenaNivel()
     {
         NuevaEscena();
-        CrearCamara("Main Camera", new Color(0.05f, 0.05f, 0.07f, 1f), true, 5.4f);
+        CrearCamara("Main Camera", new Color(0.05f, 0.05f, 0.07f, 1f), true, 1.85f);
 
-        GameObject fondo = new GameObject("Fondo", typeof(SpriteRenderer));
-        fondo.GetComponent<SpriteRenderer>().sprite = CargarSprite("fondo_nivel");
+        // Fondo: el edificio dibujado por el equipo.
+        GameObject fondo = new GameObject("Edificio", typeof(SpriteRenderer));
+        fondo.GetComponent<SpriteRenderer>().sprite = SpriteAseprite(RutaEdificio, 0);
         fondo.GetComponent<SpriteRenderer>().sortingOrder = -20;
         fondo.transform.position = new Vector3(0f, 0f, 5f);
-        fondo.transform.localScale = new Vector3(1.8f, 1.7f, 1f);
+        fondo.transform.localScale = new Vector3(1.15f, 1.15f, 1f);
 
-        Sprite pared = CargarSprite("parede");
-        CrearMuro("MuroArriba", pared, new Vector2(0f, 5.3f), new Vector2(19f, 1f));
-        CrearMuro("MuroAbajo", pared, new Vector2(0f, -5.3f), new Vector2(19f, 1f));
-        CrearMuro("MuroIzquierda", pared, new Vector2(-8.9f, 0f), new Vector2(1f, 11f));
-        CrearMuro("MuroDerecha", pared, new Vector2(8.9f, 0f), new Vector2(1f, 11f));
+        // Ventanas del edificio como decoracion de la pared del fondo.
+        Sprite spriteVentana = SpriteAseprite(RutaVentanas, 0);
 
+        for (int i = 0; i < 2; i++)
+        {
+            GameObject ventana = new GameObject("Ventana" + (i + 1), typeof(SpriteRenderer));
+            ventana.GetComponent<SpriteRenderer>().sprite = spriteVentana;
+            ventana.GetComponent<SpriteRenderer>().sortingOrder = -15;
+            ventana.transform.position = new Vector3(i == 0 ? -1.55f : 1.55f, 0.95f, 3f);
+            ventana.transform.localScale = new Vector3(0.42f, 0.42f, 1f);
+        }
+
+        // Muros de la sala de demolicion.
+        CrearMuro("MuroArriba", CargarSprite("muro_h"), new Vector2(0f, 1.7f), new Vector2(6.6f, 0.5f));
+        CrearMuro("MuroAbajo", CargarSprite("muro_h"), new Vector2(0f, -1.7f), new Vector2(6.6f, 0.5f));
+        CrearMuro("MuroIzquierda", CargarSprite("muro_v"), new Vector2(-3.05f, 0f), new Vector2(0.5f, 3.4f));
+        CrearMuro("MuroDerecha", CargarSprite("muro_v"), new Vector2(3.05f, 0f), new Vector2(0.5f, 3.4f));
+
+        // Personaje principal con el sprite del equipo.
         GameObject jugador = new GameObject("Jugador", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(PlayerController));
-        jugador.GetComponent<SpriteRenderer>().sprite = CargarSprite("personaje");
+        jugador.GetComponent<SpriteRenderer>().sprite = SpriteAseprite(RutaJugadorFrente, 0);
         jugador.GetComponent<SpriteRenderer>().sortingOrder = 4;
-        jugador.transform.position = new Vector3(-6.8f, -3.6f, 0f);
-        jugador.transform.localScale = new Vector3(1.4f, 1.4f, 1f);
-        jugador.GetComponent<CircleCollider2D>().radius = 0.32f;
+        jugador.transform.position = new Vector3(-2.3f, -1.05f, 0f);
+        jugador.GetComponent<PlayerController>().velocidad = 2.6f;
+
+        CircleCollider2D colJugador = jugador.GetComponent<CircleCollider2D>();
+        colJugador.radius = 0.16f;
+        colJugador.offset = new Vector2(0f, -0.12f);
+
         Rigidbody2D rb = jugador.GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        AgregarAnimador(jugador, RutaJugadorFrente);
 
+        // Ladrillos recolectables.
         Vector2[] posiciones = new Vector2[]
         {
-            new Vector2(-3.2f, 2.6f), new Vector2(1.6f, 3.6f), new Vector2(5.6f, -0.6f),
-            new Vector2(-5.2f, 1.2f), new Vector2(0.6f, -2.4f)
+            new Vector2(-1.9f, 0.95f), new Vector2(0.2f, 1.15f), new Vector2(2.2f, 0.15f),
+            new Vector2(-1.6f, -0.25f), new Vector2(1.1f, -1.15f)
         };
 
         for (int i = 0; i < posiciones.Length; i++)
@@ -535,15 +683,17 @@ public static class GeneradorJuego
             ladrillo.GetComponent<SpriteRenderer>().sprite = CargarSprite("ladrillo");
             ladrillo.GetComponent<SpriteRenderer>().sortingOrder = 2;
             ladrillo.transform.position = posiciones[i];
-            ladrillo.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
-            ladrillo.GetComponent<CircleCollider2D>().radius = 0.34f;
+            ladrillo.transform.localScale = new Vector3(0.55f, 0.55f, 1f);
+            ladrillo.GetComponent<CircleCollider2D>().radius = 0.35f;
             ladrillo.GetComponent<CircleCollider2D>().isTrigger = true;
         }
 
-        CrearEnemigo("Demoledor1", new Vector2(-2.5f, -1.4f), new Vector2(6.2f, -1.4f));
-        CrearEnemigo("Demoledor2", new Vector2(-6.4f, 3.9f), new Vector2(4.2f, 3.9f));
-        CrearEnemigo("Demoledor3", new Vector2(7.2f, 2.2f), new Vector2(7.2f, -3.4f));
+        // Enemigos: el demoledor del equipo.
+        CrearEnemigo("Demoledor1", new Vector2(-1.2f, -0.95f), new Vector2(2.3f, -0.95f));
+        CrearEnemigo("Demoledor2", new Vector2(-2.4f, 0.85f), new Vector2(1.4f, 0.85f));
+        CrearEnemigo("Demoledor3", new Vector2(2.5f, 0.8f), new Vector2(2.5f, -1.1f));
 
+        // --- Interfaz del nivel -------------------------------------------
         Canvas hud = CrearCanvas("CanvasHUD", 5);
         CrearImagen(hud.transform, "BarraSuperior", null, new Vector2(1920f, 110f), new Vector2(0f, 485f), new Color(0f, 0f, 0f, 0.55f));
         Text textoPuntaje = CrearTexto(hud.transform, "TextoPuntaje", "PUNTAJE: 0", 46, new Vector2(-560f, 462f), new Vector2(600f, 70f), TextAnchor.MiddleLeft, Color.white, true);
@@ -562,6 +712,7 @@ public static class GeneradorJuego
         RectTransform caja = CrearImagen(raizPausa, "CajaPausa", CargarSprite("panel"), new Vector2(760f, 640f), Vector2.zero, Color.white);
         CrearTexto(caja, "TituloPausa", "PAUSA", 88, new Vector2(0f, 230f), new Vector2(600f, 110f), TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f), true);
         CrearTexto(caja, "DetallePausa", "El juego esta detenido", 36, new Vector2(0f, 150f), new Vector2(600f, 60f), TextAnchor.MiddleCenter, new Color(0.85f, 0.88f, 1f), false);
+
         PauseMenuController pausa = objetoPausa.GetComponent<PauseMenuController>();
         Button btnReanudar = CrearBoton(caja, "BotonReanudar", "REANUDAR", new Vector2(0f, 50f), new Vector2(460f, 96f), false);
         Button btnReiniciar = CrearBoton(caja, "BotonReiniciar", "REINICIAR NIVEL", new Vector2(0f, -70f), new Vector2(460f, 96f), false);
@@ -594,22 +745,24 @@ public static class GeneradorJuego
     static void CrearEnemigo(string nombre, Vector2 inicio, Vector2 fin)
     {
         GameObject enemigo = new GameObject(nombre, typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(EnemyPatrol));
-        enemigo.GetComponent<SpriteRenderer>().sprite = CargarSprite("enemigo");
+        enemigo.GetComponent<SpriteRenderer>().sprite = SpriteAseprite(RutaEnemigoCamina, 0);
         enemigo.GetComponent<SpriteRenderer>().sortingOrder = 3;
         enemigo.transform.position = inicio;
-        enemigo.transform.localScale = new Vector3(1.5f, 1.5f, 1f);
 
         Rigidbody2D rb = enemigo.GetComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0f;
 
         CircleCollider2D col = enemigo.GetComponent<CircleCollider2D>();
-        col.radius = 0.36f;
+        col.radius = 0.2f;
+        col.offset = new Vector2(0f, -0.1f);
         col.isTrigger = true;
 
         EnemyPatrol patrulla = enemigo.GetComponent<EnemyPatrol>();
         patrulla.puntoA = inicio;
         patrulla.puntoB = fin;
+        patrulla.velocidad = 1.1f;
+        AgregarAnimador(enemigo, RutaEnemigoCamina);
     }
 
     static void CrearEscenaFinJuego()
@@ -620,7 +773,7 @@ public static class GeneradorJuego
         Canvas canvas = CrearCanvas("CanvasFinJuego", 0);
         GameObject controlador = new GameObject("ControladorFinJuego", typeof(GameOverController));
 
-        CrearImagen(canvas.transform, "Fondo", CargarSprite("fondo_menu"), new Vector2(1920f, 1080f), Vector2.zero, new Color(0.72f, 0.70f, 0.78f, 1f));
+        CrearImagen(canvas.transform, "Fondo", SpriteAseprite(RutaEdificio, 0), new Vector2(1920f, 1080f), Vector2.zero, new Color(0.72f, 0.70f, 0.78f, 1f));
 
         RectTransform caja = CrearImagen(canvas.transform, "CajaResultado", CargarSprite("panel"), new Vector2(1000f, 700f), new Vector2(0f, 20f), Color.white);
         Text titulo = CrearTexto(caja, "TituloResultado", "GAME OVER", 110, new Vector2(0f, 230f), new Vector2(900f, 130f), TextAnchor.MiddleCenter, new Color(0.95f, 0.35f, 0.30f), true);
@@ -638,7 +791,7 @@ public static class GeneradorJuego
         script.textoPuntaje = puntaje;
         script.textoDetalle = detalle;
 
-        CrearTexto(canvas.transform, "PiePagina", "Hito 3 - Interfaz de usuario - Ralft Demoledor", 30,
+        CrearTexto(canvas.transform, "PiePagina", "Hito 3 - Interfaz de usuario - Demoledor Unifranz", 30,
                    new Vector2(0f, -495f), new Vector2(1400f, 50f), TextAnchor.MiddleCenter, new Color(0.90f, 0.92f, 1f), false);
 
         CrearEventSystem();
@@ -654,8 +807,8 @@ public static class GeneradorJuego
             new EditorBuildSettingsScene(RutaFin, true)
         };
 
-        PlayerSettings.companyName = "Ralft Demoledor Team";
-        PlayerSettings.productName = "RalftDemoledor";
+        PlayerSettings.companyName = "Demoledor Unifranz";
+        PlayerSettings.productName = "Demoledor Unifranz";
         PlayerSettings.defaultScreenWidth = 1280;
         PlayerSettings.defaultScreenHeight = 720;
         PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
@@ -671,7 +824,7 @@ public static class GeneradorJuego
         string carpeta = Path.GetFullPath(Path.Combine(raiz, "..", "ejecutable"));
         Directory.CreateDirectory(carpeta);
 
-        string salida = Path.Combine(carpeta, "RalftDemoledor.exe");
+        string salida = Path.Combine(carpeta, "DemoledorUnifranz.exe");
         BuildPlayerOptions opciones = new BuildPlayerOptions
         {
             scenes = new[] { RutaMenu, RutaNivel, RutaFin },
