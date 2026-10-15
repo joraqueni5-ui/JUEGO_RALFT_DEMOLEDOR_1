@@ -15,12 +15,14 @@ namespace RalftDemoledor.Game
         public float tiempoEntreDanios = 1.5f;
 
         private Rigidbody2D cuerpo;
+        private SpriteRenderer dibujo;
         private Vector2 destino;
         private float proximoDanio;
 
         private void Awake()
         {
             cuerpo = GetComponent<Rigidbody2D>();
+            dibujo = GetComponent<SpriteRenderer>();
             destino = puntoB;
         }
 
@@ -36,12 +38,10 @@ namespace RalftDemoledor.Game
             Vector2 siguiente = Vector2.MoveTowards(actual, destino, velocidad * Time.fixedDeltaTime);
             cuerpo.MovePosition(siguiente);
 
-            // Orienta el sprite hacia donde camina.
-            if (Mathf.Abs(siguiente.x - actual.x) > 0.001f)
+            // Se voltea el dibujo segun la direccion en la que camina.
+            if (dibujo != null && Mathf.Abs(siguiente.x - actual.x) > 0.001f)
             {
-                Vector3 escala = transform.localScale;
-                escala.x = Mathf.Abs(escala.x) * Mathf.Sign(siguiente.x - actual.x);
-                transform.localScale = escala;
+                dibujo.flipX = (siguiente.x - actual.x) < 0f;
             }
         }
 

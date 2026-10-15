@@ -22,6 +22,12 @@ namespace RalftDemoledor.UI
             {
                 panelControles.SetActive(false);
             }
+
+            if (Autoprueba.Activa)
+            {
+                Debug.Log("[AUTOPRUEBA] menu principal: se pulsa Jugar");
+                Autoprueba.Programar(this, 2f, Jugar);
+            }
         }
 
         /// <summary>Carga la escena del primer nivel.</summary>

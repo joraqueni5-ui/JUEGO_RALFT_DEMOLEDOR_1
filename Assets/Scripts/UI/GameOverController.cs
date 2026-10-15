@@ -39,8 +39,14 @@ namespace RalftDemoledor.UI
             if (textoDetalle != null)
             {
                 textoDetalle.text = gano
-                    ? "Ralph completo la demolicion: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos"
-                    : "Ralph se quedo sin vidas: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos";
+                    ? "El demoledor completo la demolicion: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos"
+                    : "El demoledor se quedo sin vidas: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos";
+            }
+
+            if (Autoprueba.Activa)
+            {
+                Debug.Log("[AUTOPRUEBA] pantalla final: " + (gano ? "VICTORIA" : "GAME OVER") + " puntaje=" + GameSession.Puntaje);
+                Autoprueba.Programar(this, 2.5f, Reintentar);
             }
         }
 

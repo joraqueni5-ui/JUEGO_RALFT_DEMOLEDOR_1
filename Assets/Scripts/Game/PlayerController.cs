@@ -13,12 +13,14 @@ namespace RalftDemoledor.Game
         public float velocidad = 6f;
 
         private Rigidbody2D cuerpo;
+        private SpriteRenderer dibujo;
         private Vector2 direccion;
         private Vector3 posicionInicial;
 
         private void Awake()
         {
             cuerpo = GetComponent<Rigidbody2D>();
+            dibujo = GetComponent<SpriteRenderer>();
             cuerpo.gravityScale = 0f;
             cuerpo.freezeRotation = true;
             posicionInicial = transform.position;
@@ -35,12 +37,10 @@ namespace RalftDemoledor.Game
                 direccion.Normalize();
             }
 
-            // Gira el sprite hacia el lado en el que se mueve.
-            if (Mathf.Abs(direccion.x) > 0.01f)
+            // Se voltea el dibujo segun la direccion del movimiento.
+            if (dibujo != null && Mathf.Abs(direccion.x) > 0.01f)
             {
-                Vector3 escala = transform.localScale;
-                escala.x = Mathf.Abs(escala.x) * Mathf.Sign(direccion.x);
-                transform.localScale = escala;
+                dibujo.flipX = direccion.x < 0f;
             }
         }
 
