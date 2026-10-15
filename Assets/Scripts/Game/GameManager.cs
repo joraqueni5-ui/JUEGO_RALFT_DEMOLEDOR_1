@@ -34,6 +34,46 @@ namespace RalftDemoledor.Game
         private void Start()
         {
             RefrescarHud();
+
+            if (Autoprueba.Activa)
+            {
+                int visita = Autoprueba.SiguienteVisita();
+
+                if (visita == 1)
+                {
+                    Debug.Log("[AUTOPRUEBA] nivel cargado: vidas=" + GameSession.Vidas + " ladrillos=" + GameSession.Ladrillos);
+                    Autoprueba.Programar(this, 3f, PruebaDelNivel);
+                }
+                else
+                {
+                    Debug.Log("[AUTOPRUEBA] nivel reiniciado: vidas=" + GameSession.Vidas + " ladrillos=" + GameSession.Ladrillos + " puntaje=" + GameSession.Puntaje);
+                    Autoprueba.Programar(this, 1.5f, TerminarPrueba);
+                }
+            }
+        }
+
+        private void PruebaDelNivel()
+        {
+            if (menuPausa != null)
+            {
+                menuPausa.Pausar();
+                Debug.Log("[AUTOPRUEBA] menu de pausa abierto, tiempo=" + Time.timeScale);
+                menuPausa.Reanudar();
+                Debug.Log("[AUTOPRUEBA] menu de pausa cerrado, tiempo=" + Time.timeScale);
+            }
+
+            for (int i = 0; i < metaLadrillos; i++)
+            {
+                RecolectarLadrillo();
+            }
+
+            Debug.Log("[AUTOPRUEBA] ladrillos recogidos=" + GameSession.Ladrillos + " puntaje=" + GameSession.Puntaje);
+        }
+
+        private void TerminarPrueba()
+        {
+            Debug.Log("[AUTOPRUEBA] fin de la prueba");
+            Application.Quit();
         }
 
         private void Update()
