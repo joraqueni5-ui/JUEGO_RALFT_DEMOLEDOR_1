@@ -10,8 +10,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Events;
-using RalftDemoledor.Game;
-using RalftDemoledor.UI;
+using DemoledorUnifranz.Game;
+using DemoledorUnifranz.UI;
 
 /// <summary>
 /// Herramienta de editor que genera los recursos de interfaz (sprites),
@@ -32,7 +32,7 @@ public static class GeneradorJuego
 
     static Font fuenteUi;
 
-    [MenuItem("Ralft Demoledor/Generar interfaz, escenas y ejecutable")]
+    [MenuItem("Demoledor Unifranz/Generar interfaz, escenas y ejecutable")]
     public static void ConstruirTodo()
     {
         int codigo = 0;
@@ -779,7 +779,7 @@ public static class GeneradorJuego
         Text titulo = CrearTexto(caja, "TituloResultado", "GAME OVER", 110, new Vector2(0f, 230f), new Vector2(900f, 130f), TextAnchor.MiddleCenter, new Color(0.95f, 0.35f, 0.30f), true);
         titulo.gameObject.AddComponent<Shadow>();
         Text puntaje = CrearTexto(caja, "TextoPuntajeFinal", "PUNTAJE FINAL: 0", 54, new Vector2(0f, 110f), new Vector2(880f, 70f), TextAnchor.MiddleCenter, Color.white, true);
-        Text detalle = CrearTexto(caja, "TextoDetalle", "Ralph se quedo sin vidas", 38, new Vector2(0f, 30f), new Vector2(880f, 70f), TextAnchor.MiddleCenter, new Color(0.86f, 0.88f, 1f), false);
+        Text detalle = CrearTexto(caja, "TextoDetalle", "El demoledor se quedo sin vidas", 38, new Vector2(0f, 30f), new Vector2(880f, 70f), TextAnchor.MiddleCenter, new Color(0.86f, 0.88f, 1f), false);
 
         GameOverController script = controlador.GetComponent<GameOverController>();
         Button btnReintentar = CrearBoton(caja, "BotonReintentar", "REINTENTAR", new Vector2(0f, -90f), new Vector2(460f, 96f), false);
@@ -921,8 +921,8 @@ public static class GeneradorJuego
         if (script.textoDetalle != null)
         {
             script.textoDetalle.text = victoria
-                ? "Ralph completo la demolicion: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos"
-                : "Ralph se quedo sin vidas: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos";
+                ? "Demolicion completada: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos"
+                : "El demoledor se quedo sin vidas: " + GameSession.Ladrillos + " / " + GameSession.MetaLadrillos + " ladrillos";
         }
     }
 

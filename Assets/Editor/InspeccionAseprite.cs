@@ -25,7 +25,7 @@ public static class InspeccionAseprite
         "Assets/Animaciones/Enemigo/animacion_salto.aseprite"
     };
 
-    [MenuItem("Ralft Demoledor/Inspeccionar recursos de Aseprite")]
+    [MenuItem("Demoledor Unifranz/Inspeccionar recursos de Aseprite")]
     public static void Ejecutar()
     {
         foreach (string ruta in Rutas)
