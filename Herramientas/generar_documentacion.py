@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Genera el documento PDF del Hito 3 (interfaz de usuario) del proyecto
-Ralft Demoledor. El PDF incluye la descripcion de las escenas, el detalle
+Demoledor Unifranz. El PDF incluye la descripcion de las escenas, el detalle
 de los scripts de interfaz y las capturas tomadas por la herramienta de
 editor (GeneradorJuego).
 
 Uso:  python Herramientas/generar_documentacion.py
-Salida: Documentacion/Hito3_Interfaz_Usuario_Ralft_Demoledor.pdf
+Salida: Documentacion/Hito3_Interfaz_Usuario_Demoledor_Unifranz.pdf
 """
 import os
 import struct
@@ -255,8 +255,8 @@ def main():
     ]
 
     pagina1 = Pagina()
-    encabezado(pagina1, "Ralft Demoledor - Hito 3: Interfaz de Usuario",
-               "Juego 2D en Unity - Documentacion de la implementacion de la UI")
+    encabezado(pagina1, "Demoledor Unifranz - Hito 3: Interfaz de Usuario",
+               "Juego 2D en Unity para Unifranz - Documentacion de la implementacion de la UI")
 
     y = ALTO - 118.0
     pagina1.texto(MARGEN, y, "Integrantes: Shaden, Jhonatan, Alejandro, Jorge", 9.5, True)
@@ -269,7 +269,7 @@ def main():
     y = titulo_seccion(pagina1, y, "1", "Estructura de escenas")
     escenas = [
         "MenuPrincipal (indice 0): pantalla inicial con el titulo del juego, el boton Jugar, el boton Controles y el boton Salir.",
-        "Nivel1 (indice 1): escena jugable. Contiene la sala de demolicion, el personaje, los ladrillos, los enemigos, el HUD y el panel de pausa.",
+        "Nivel1 (indice 1): escena jugable. Usa el edificio, las ventanas, el personaje y los demoledores dibujados por el equipo en Aseprite, junto con los ladrillos, el HUD y el panel de pausa.",
         "FinJuego (indice 2): pantalla de Game Over o de Victoria segun el resultado de la partida, con los botones Reintentar y Menu principal.",
     ]
 
@@ -280,7 +280,9 @@ def main():
     y -= 15.0
     pagina1.texto(MARGEN, y, "Carpetas del proyecto", 10.5, True, (0.25, 0.35, 0.65))
     y -= 14.0
-    y = pagina1.parrafo(MARGEN, y, "Assets/Scripts/UI (scripts de interfaz), Assets/Scripts/Game (logica del juego), Assets/UI/Sprites (sprites de botones, paneles, fondos y personajes), Assets/UI/Fonts y Assets/Scenes (escenas del juego).", 9.5, ANCHO - 2.0 * MARGEN, 12.0)
+    y = pagina1.parrafo(MARGEN, y, "Assets/Scripts/UI (scripts de interfaz), Assets/Scripts/Game (logica del juego), Assets/UI/Sprites (botones, paneles, muros y ladrillos), Assets/UI/Fonts, Assets/Edificio (edificio y ventanas en Aseprite), Assets/personaje y Assets/Animaciones (dibujos del personaje y del demoledor).", 9.5, ANCHO - 2.0 * MARGEN, 12.0)
+    y -= 4.0
+    y = pagina1.parrafo(MARGEN, y, "Los dibujos se hicieron en Aseprite y se importan con el paquete com.unity.2d.aseprite, que genera un sprite recortado por fotograma y los clips de animacion que usa el nivel.", 9.5, ANCHO - 2.0 * MARGEN, 12.0)
 
     y -= 20.0
     y = titulo_seccion(pagina1, y, "2", "Scripts de la interfaz")
@@ -289,9 +291,9 @@ def main():
         "PauseMenuController: abre y cierra el menu de pausa deteniendo el juego con Time.timeScale. Incluye los botones Reanudar, Reiniciar nivel y Menu principal.",
         "GameOverController: lee el resultado almacenado en GameSession y muestra el titulo Victoria o Game Over, el puntaje final y el detalle de la partida.",
         "HUDController: actualiza en pantalla el puntaje, las vidas y el contador de ladrillos recolectados.",
-        "GameManager: aplica las reglas del nivel, entrega los datos al HUD, recibe el dano del jugador y carga la pantalla final cuando se gana o se pierde.",
-        "GameSession y Escenas: clases auxiliares que guardan los datos de la partida y los nombres de las escenas para evitar errores de escritura.",
-        "GeneradorJuego (Assets/Editor): herramienta de editor que genera los sprites, construye las escenas, configura el Build Settings, compila el ejecutable y toma las capturas.",
+        "GameManager: aplica las reglas del nivel, entrega los datos al HUD, recibe el dano del jugador y carga la pantalla final cuando se gana o se pierde. Ademas abre el menu de pausa con la tecla Escape.",
+        "GameSession y Escenas: clases auxiliares que guardan los datos de la partida y los nombres de las escenas para evitar errores de escritura. Autoprueba recorre el menu, el nivel, la pausa y el final del juego cuando el ejecutable se inicia con el argumento -autoprueba.",
+        "GeneradorJuego (Assets/Editor): herramienta de editor que arma las escenas con los recursos de Aseprite, conecta el controlador de animacion al personaje y a los enemigos cuando el clip no mueve el objeto, configura el Build Settings, compila el ejecutable y toma las capturas. InspeccionAseprite lista los recursos que genera el importador.",
     ]
 
     for texto in scripts:
@@ -304,11 +306,11 @@ def main():
     dibujar_imagen(pagina1, "Im01", MARGEN, y - 138.0, 240.0, 135.0)
     dibujar_imagen(pagina1, "Im02", MARGEN + 260.0, y - 138.0, 240.0, 135.0)
     y -= 146.0
-    pagina1.texto(MARGEN, y, "Figura 1: menu principal (Jugar, Controles, Salir y titulo del juego).", 8.5)
-    pagina1.texto(MARGEN + 260.0, y, "Figura 2: nivel de juego con el HUD en ejecucion.", 8.5)
+    pagina1.texto(MARGEN, y, "Figura 1: menu principal de Demoledor Unifranz (Jugar, Controles y Salir).", 8.5)
+    pagina1.texto(MARGEN + 260.0, y, "Figura 2: nivel con el edificio del equipo y el HUD en ejecucion.", 8.5)
 
     pagina2 = Pagina()
-    encabezado(pagina2, "Ralft Demoledor - Hito 3: Interfaz de Usuario",
+    encabezado(pagina2, "Demoledor Unifranz - Hito 3: Interfaz de Usuario",
                "Navegacion entre escenas, pausa, fin de juego y control de versiones")
 
     y = ALTO - 118.0
@@ -339,9 +341,9 @@ def main():
         y -= 1.5
 
     y -= 14.0
-    y = pagina2.parrafo(MARGEN, y, "Entregables: repositorio Git con el proyecto actualizado, ejecutable de Windows en la carpeta 'ejecutable' (RalftDemoledor.exe) y capturas de pantalla en la carpeta 'caps'.", 9.5, ANCHO - 2.0 * MARGEN, 12.0)
+    y = pagina2.parrafo(MARGEN, y, "Entregables: repositorio Git con el proyecto actualizado, ejecutable de Windows en la carpeta 'ejecutable' (DemoledorUnifranz.exe, que acepta el argumento -autoprueba para verificar la navegacion) y capturas de pantalla en la carpeta 'caps'.", 9.5, ANCHO - 2.0 * MARGEN, 12.0)
 
-    salida = os.path.join(base, "Documentacion", "Hito3_Interfaz_Usuario_Ralft_Demoledor.pdf")
+    salida = os.path.join(base, "Documentacion", "Hito3_Interfaz_Usuario_Demoledor_Unifranz.pdf")
     construir_pdf([pagina1, pagina2], imagenes, salida)
     print("PDF generado: " + salida)
 
