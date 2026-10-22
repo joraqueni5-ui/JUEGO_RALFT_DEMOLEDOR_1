@@ -115,3 +115,6 @@ InitTestScene*.unity*
 
 # Artefactos de las herramientas (capturas y logs de verificacion)
 Tools/out/
+
+# El APK del juego se publica junto al proyecto
+!/[Ee]jecutable android/*.apk

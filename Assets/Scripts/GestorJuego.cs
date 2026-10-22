@@ -67,9 +67,10 @@ public class GestorJuego : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current == null) return;
+        bool reiniciarTactil = ControlesTactiles.ReiniciarPulsado();
+        bool reiniciarTecla = Keyboard.current != null && Keyboard.current[Key.R].wasPressedThisFrame;
 
-        if (Keyboard.current[Key.R].wasPressedThisFrame) ReiniciarPartida();
+        if (reiniciarTecla || reiniciarTactil) ReiniciarPartida();
     }
 
     private void AlReparar()
