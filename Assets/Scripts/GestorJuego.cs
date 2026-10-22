@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using DemoledorUnifranz.Game;
+using System.Collections;
 
 /// <summary>
-/// Marcador del juego: puntos por reparar, porcentaje destruido, aviso de derrumbe
-/// y reinicio con R. El HUD se construye desde código (sin prefabs ni fuentes externas).
+/// Marcador del juego: puntos por reparar, porcentaje destruido y aviso de derrumbe.
+/// Incluye sistema de pausa con Escape y cambio a FinJuego al perder.
 /// </summary>
 public class GestorJuego : MonoBehaviour
 {
@@ -14,12 +17,13 @@ public class GestorJuego : MonoBehaviour
     public float limiteDerrumbe = 0.7f;
     [Tooltip("Puntos que da reparar un bloque.")]
     public int puntosPorReparacion = 10;
+    [Tooltip("Segundos de espera antes de ir a la escena FinJuego")]
+    public float tiempoEsperaFin = 1.5f;
 
     [Header("Textos")]
     public string titulo = "¡AGÁRRALO! EL DEMOLEDOR NO SE DETIENE";
     public string ayudaControles =
-        "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar la fachada    ·    ↓  bajar    ·    ENTER  reparar\n" +
-        "R  reiniciar";
+        "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar    ·    ↓  bajar    ·    ENTER  reparar    ·    ESC  pausa";
 
     private Edificio edificio;
     private DemoledorAutomatico demoledor;
@@ -29,8 +33,12 @@ public class GestorJuego : MonoBehaviour
     private Text textoMensaje;
     private RectTransform rellenoBarra;
     private bool partidaTerminada;
+    private bool estaEnPausa;
     private int puntos;
     private int reparaciones;
+
+    // Elementos de la interfaz de Pausa
+    private GameObject panelPausa;
 
     private const float AnchoBarra = 640f;
 
@@ -44,6 +52,9 @@ public class GestorJuego : MonoBehaviour
 
     private void Start()
     {
+        // Aseguramos que el tiempo corra con normalidad al iniciar
+        Time.timeScale = 1f;
+
         edificio = Edificio.Instancia != null ? Edificio.Instancia : Object.FindFirstObjectByType<Edificio>();
 
         if (edificio != null)
@@ -58,6 +69,8 @@ public class GestorJuego : MonoBehaviour
 
     private void OnDestroy()
     {
+        Time.timeScale = 1f; // Restaurar el tiempo por si se destruye el objeto
+
         if (edificio != null)
         {
             edificio.Cambio -= Refrescar;
@@ -69,7 +82,24 @@ public class GestorJuego : MonoBehaviour
     {
         if (Keyboard.current == null) return;
 
-        if (Keyboard.current[Key.R].wasPressedThisFrame) ReiniciarPartida();
+        // Detectar tecla Escape para alternar pausa (solo si la partida no ha terminado)
+        if (Keyboard.current[Key.Escape].wasPressedThisFrame && !partidaTerminada)
+        {
+            AlternarPausa();
+        }
+    }
+
+    private void AlternarPausa()
+    {
+        estaEnPausa = !estaEnPausa;
+
+        if (panelPausa != null)
+        {
+            panelPausa.SetActive(estaEnPausa);
+        }
+
+        // Congela o reactiva la física y movimiento del juego
+        Time.timeScale = estaEnPausa ? 0f : 1f;
     }
 
     private void AlReparar()
@@ -111,7 +141,7 @@ public class GestorJuego : MonoBehaviour
 
         if (partidaTerminada)
         {
-            textoMensaje.text = "¡EL EDIFICIO SE CAYÓ!   (R para volver a empezar)";
+            textoMensaje.text = "¡EL EDIFICIO SE CAYÓ!";
         }
         else if (destruido > 0.0001f && edificio.Demolidos == 0 && edificio.Agrietados == 0)
         {
@@ -124,13 +154,13 @@ public class GestorJuego : MonoBehaviour
     }
 
     public bool PartidaTerminada { get { return partidaTerminada; } }
-
     public int Puntos { get { return puntos; } }
-
     public int Reparaciones { get { return reparaciones; } }
+    public bool EstaEnPausa { get { return estaEnPausa; } }
 
     private void TerminarPartida()
     {
+        if (partidaTerminada) return;
         partidaTerminada = true;
 
         if (demoledor != null) demoledor.Detener();
@@ -139,12 +169,30 @@ public class GestorJuego : MonoBehaviour
             muneco.Soltar();
             muneco.enabled = false;
         }
+
+        // Si estaba en pausa, restaurar escala de tiempo antes del cambio
+        Time.timeScale = 1f;
+
+        StartCoroutine(CargarFinJuego());
     }
 
-    /// <summary>Vuelve a empezar: edificio entero, demoledor desde arriba y puntos a cero.</summary>
+    private IEnumerator CargarFinJuego()
+    {
+        yield return new WaitForSeconds(tiempoEsperaFin);
+        SceneManager.LoadScene(Escenas.FinJuego);
+    }
+
+    /// <summary>
+    /// Vuelve a empezar: edificio entero, demoledor desde arriba y puntos a cero.
+    /// Mantiene compatibilidad con scripts de verificación y tests.
+    /// </summary>
     public void ReiniciarPartida()
     {
+        Time.timeScale = 1f;
         partidaTerminada = false;
+        estaEnPausa = false;
+        if (panelPausa != null) panelPausa.SetActive(false);
+
         puntos = 0;
         reparaciones = 0;
 
@@ -200,6 +248,37 @@ public class GestorJuego : MonoBehaviour
 
         CrearTexto(raiz, ayudaControles, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 22f),
             new Vector2(1700f, 90f), TextAnchor.LowerCenter, 24, new Color(1f, 1f, 1f, 0.88f), FontStyle.Normal);
+
+        // --- Crear Ventana/Capa de Pausa ---
+        CrearMenuPausa(raiz);
+    }
+
+    private void CrearMenuPausa(Transform raiz)
+    {
+        panelPausa = new GameObject("PanelPausa", typeof(RectTransform));
+        panelPausa.transform.SetParent(raiz, false);
+
+        RectTransform rtPanel = (RectTransform)panelPausa.transform;
+        rtPanel.anchorMin = Vector2.zero;
+        rtPanel.anchorMax = Vector2.one;
+        rtPanel.sizeDelta = Vector2.zero;
+
+        // Fondo oscuro semitransparente que cubre toda la pantalla
+        Image fondoOscuro = panelPausa.AddComponent<Image>();
+        fondoOscuro.color = new Color(0f, 0f, 0f, 0.7f);
+
+        // Texto principal de pausa
+        CrearTexto(panelPausa.transform, "JUEGO EN PAUSA", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 40f), new Vector2(1200f, 100f), TextAnchor.MiddleCenter, 64,
+            new Color(1f, 0.9f, 0.3f, 1f), FontStyle.Bold);
+
+        // Texto explicativo para reanudar
+        CrearTexto(panelPausa.transform, "Presiona  [ ESC ]  para continuar jugando", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, -40f), new Vector2(1000f, 60f), TextAnchor.MiddleCenter, 30,
+            Color.white, FontStyle.Normal);
+
+        // Inicia desactivado
+        panelPausa.SetActive(false);
     }
 
     private static Text CrearTexto(Transform padre, string contenido, Vector2 ancla, Vector2 pivote,
@@ -254,25 +333,13 @@ public class GestorJuego : MonoBehaviour
     private static Font FuentePredeterminada()
     {
         Font fuente = null;
-        try
-        {
-            fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
-        catch
-        {
-            fuente = null;
-        }
+        try { fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
+        catch { fuente = null; }
 
         if (fuente == null)
         {
-            try
-            {
-                fuente = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            }
-            catch
-            {
-                fuente = null;
-            }
+            try { fuente = Resources.GetBuiltinResource<Font>("Arial.ttf"); }
+            catch { fuente = null; }
         }
         return fuente;
     }
