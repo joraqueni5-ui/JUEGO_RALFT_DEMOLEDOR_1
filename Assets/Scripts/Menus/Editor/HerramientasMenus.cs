@@ -219,6 +219,11 @@ public static class HerramientasMenus
             new DefSprite("perilla", GeneradorSpritesArcade.Perilla, Vector4.zero),
             new DefSprite("casilla", GeneradorSpritesArcade.Casilla, KitSpritesArcade.BordeCasilla),
             new DefSprite("marca", GeneradorSpritesArcade.Marca, Vector4.zero),
+            // Menú principal.
+            new DefSprite("muro_ladrillo", GeneradorSpritesArcade.MuroLadrillo, Vector4.zero, true),
+            new DefSprite("cartel_obra", GeneradorSpritesArcade.Cartel, KitSpritesArcade.BordeCartel),
+            new DefSprite("hueco_muro", GeneradorSpritesArcade.Hueco, Vector4.zero),
+            new DefSprite("vineta", GeneradorSpritesArcade.Vineta, Vector4.zero),
         };
     }
 

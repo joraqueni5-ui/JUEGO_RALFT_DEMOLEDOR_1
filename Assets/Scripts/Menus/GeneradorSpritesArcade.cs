@@ -4,7 +4,7 @@ namespace DemoledorUnifranz.UI.Menus
 {
     /// <summary>
     /// Dibuja por código los gráficos de los menús (botones, paneles, ladrillo, franja
-    /// de peligro, slider y casilla). Son dibujos originales hechos con formas simples:
+    /// de peligro, slider, casilla, muro de ladrillo, cartel de obra y hueco roto). Son dibujos originales hechos con formas simples:
     /// no usan recursos de otros juegos.
     ///
     /// La herramienta del editor los guarda como PNG en Assets/Sprites/Menus
@@ -217,6 +217,134 @@ namespace DemoledorUnifranz.UI.Menus
             l.Rect(10, 8, 13, 10, new Color(0f, 0f, 0f, 0.25f));
             l.Rect(30, 6, 32, 8, new Color(0f, 0f, 0f, 0.25f));
             return l.ATextura("ladrillo_menu", false);
+        }
+
+        // ------------------------------------------------------------ menú principal
+        /// <summary>
+        /// Muro de ladrillo de 576×256 que se repite sin cortes (Image tipo Tiled).
+        /// Cada ladrillo tiene un tono distinto y un brillo en el canto superior.
+        /// </summary>
+        public static Texture2D MuroLadrillo()
+        {
+            const int W = 576, H = 256, BW = 72, BH = 32;
+            Lienzo l = new Lienzo(W, H);
+            Color junta = PaletaArcade.Hex(0x3C1C0E);
+            Color baseL = PaletaArcade.Hex(0xB2542C);
+
+            for (int y = 0; y < H; y++)
+            {
+                int fila = y / BH;
+                int ly = y % BH;
+                for (int x = 0; x < W; x++)
+                {
+                    int xx = (x + (fila % 2) * (BW / 2)) % W;
+                    int col = xx / BW;
+                    int lx = xx % BW;
+
+                    Color c;
+                    if (ly < 3 || lx < 3 || lx >= BW - 3 || ly >= BH - 3)
+                    {
+                        c = junta;
+                    }
+                    else
+                    {
+                        // Tono por ladrillo: el mismo a ambos lados del borde (se repite sin costura).
+                        int semilla = ((col * 73856093) ^ (fila * 19349663)) & 1023;
+                        float k = 0.86f + (semilla / 1023f) * 0.28f;
+                        c = new Color(baseL.r * k, baseL.g * k, baseL.b * k, 1f);
+                        if (ly >= BH - 7) c = Aclarar(c, 0.16f);      // canto superior con luz
+                        else if (ly < 6) c = Oscurecer(c, 0.18f);     // canto inferior en sombra
+                        // Pequeñas picaduras.
+                        int h = (x * 374761393 + y * 668265263) & 4095;
+                        if (h < 40) c = Oscurecer(c, 0.25f);
+                    }
+                    l.px[y * W + x] = c;
+                }
+            }
+            return l.ATextura("muro_ladrillo", true);
+        }
+
+        /// <summary>Cartel amarillo de obra (160×160, borde 9-slice 48) con contorno y tornillos.</summary>
+        public static Texture2D Cartel()
+        {
+            Lienzo l = new Lienzo(160, 160);
+            RectRedondeado(l, 4, 0, 160, 156, 30, new Color(0f, 0f, 0f, 0.45f), new Color(0f, 0f, 0f, 0.45f));
+            RectRedondeado(l, 0, 4, 156, 160, 30, PaletaArcade.Contorno, PaletaArcade.Contorno);
+            RectRedondeado(l, 10, 14, 146, 150, 21, PaletaArcade.Hex(0xF2A90F), PaletaArcade.Amarillo);
+            RectRedondeado(l, 18, 136, 138, 141, 2, new Color(1f, 1f, 1f, 0.35f), new Color(1f, 1f, 1f, 0.35f));
+
+            float[] xs = { 30f, 126f };
+            foreach (float x in xs)
+            {
+                Circulo(l, x, 128f, 8f, PaletaArcade.Contorno);
+                Circulo(l, x, 128f, 5f, PaletaArcade.Hex(0x59627A));
+                Linea(l, new Vector2(x - 3.5f, 124.5f), new Vector2(x + 3.5f, 131.5f), 1.6f, PaletaArcade.Contorno);
+            }
+            return l.ATextura("cartel_obra", false);
+        }
+
+        /// <summary>
+        /// Hueco roto en el muro (512×560): interior azul oscuro con borde irregular
+        /// de mortero, como si el demoledor hubiera atravesado la pared.
+        /// </summary>
+        public static Texture2D Hueco()
+        {
+            const int W = 512, H = 560;
+            Lienzo l = new Lienzo(W, H);
+            System.Random azar = new System.Random(5);
+
+            // Radio irregular según el ángulo (picos de ladrillo roto).
+            const int Puntos = 26;
+            float[] radios = new float[Puntos];
+            for (int i = 0; i < Puntos; i++) radios[i] = 0.80f + (float)azar.NextDouble() * 0.20f;
+
+            float cx = W * 0.5f, cy = H * 0.5f;
+            float rx = W * 0.5f - 6f, ry = H * 0.5f - 6f;
+
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    float dx = (x + 0.5f - cx) / rx, dy = (y + 0.5f - cy) / ry;
+                    float ang = Mathf.Atan2(dy, dx);
+                    float u = (ang / (2f * Mathf.PI) + 1f) % 1f * Puntos;
+                    int i0 = Mathf.FloorToInt(u) % Puntos, i1 = (i0 + 1) % Puntos;
+                    float t = u - Mathf.Floor(u);
+                    // Interpolación lineal: bordes en zigzag (rotos), no redondos.
+                    float limite = Mathf.Lerp(radios[i0], radios[i1], t);
+                    float r = Mathf.Sqrt(dx * dx + dy * dy);
+                    float d = (r - limite) * Mathf.Min(rx, ry);   // distancia aprox. en pixeles
+
+                    if (d > 0.5f) continue;
+                    if (d > -12f)
+                    {
+                        // Borde: mortero oscuro.
+                        l.Pintar(x, y, PaletaArcade.Hex(0x2A130A), Cobertura(d));
+                    }
+                    else
+                    {
+                        // Interior: degradado de azul (más claro arriba).
+                        float v = Mathf.Clamp01(y / (float)H);
+                        Color c = Color.Lerp(PaletaArcade.Hex(0x070B1E), PaletaArcade.Hex(0x18264F), v);
+                        float sombra = Mathf.Clamp01((-d - 12f) / 40f);
+                        l.Pintar(x, y, Color.Lerp(Oscurecer(c, 0.5f), c, sombra));
+                    }
+                }
+            return l.ATextura("hueco_muro", false);
+        }
+
+        /// <summary>Viñeta (256×256): transparente en el centro y oscura en los bordes.</summary>
+        public static Texture2D Vineta()
+        {
+            Lienzo l = new Lienzo(256, 256);
+            for (int y = 0; y < 256; y++)
+                for (int x = 0; x < 256; x++)
+                {
+                    float dx = (x + 0.5f) / 128f - 1f, dy = (y + 0.5f) / 128f - 1f;
+                    float r = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a = Mathf.Clamp01((r - 0.55f) / 0.85f);
+                    l.px[y * 256 + x] = new Color(0f, 0f, 0.03f, a * a * 0.85f);
+                }
+            return l.ATextura("vineta", false);
         }
 
         // ------------------------------------------------------------ controles de opciones
