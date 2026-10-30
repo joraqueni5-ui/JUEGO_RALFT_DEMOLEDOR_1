@@ -23,7 +23,7 @@ public class GestorJuego : MonoBehaviour
     [Header("Textos")]
     public string titulo = "¡AGÁRRALO! EL DEMOLEDOR NO SE DETIENE";
     public string ayudaControles =
-        "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar    ·    ↓  bajar    ·    ENTER  reparar    ·    ESC  pausa";
+        "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar    ·    ↓  bajar    ·    ENTER  reparar    ·    ESC  pausa    ·    R  reiniciar";
 
     private Edificio edificio;
     private DemoledorAutomatico demoledor;
@@ -39,6 +39,9 @@ public class GestorJuego : MonoBehaviour
 
     // Elementos de la interfaz de Pausa
     private GameObject panelPausa;
+
+    // Espera antes de cargar FinJuego (se cancela si se reinicia la partida).
+    private Coroutine rutinaFin;
 
     private const float AnchoBarra = 640f;
 
@@ -65,6 +68,13 @@ public class GestorJuego : MonoBehaviour
 
         CrearHud();
         Refrescar();
+
+        // ControlesTactiles se crea automáticamente solo en la primera escena que abre el juego.
+        // Ahora el juego arranca en MenuPrincipal, así que aquí se asegura que existan.
+        if (Object.FindAnyObjectByType<ControlesTactiles>() == null)
+        {
+            new GameObject("ControlesTactiles").AddComponent<ControlesTactiles>();
+        }
     }
 
     private void OnDestroy()
@@ -80,14 +90,21 @@ public class GestorJuego : MonoBehaviour
 
     private void Update()
     {
+        Keyboard teclado = Keyboard.current;
         bool reiniciarTactil = ControlesTactiles.ReiniciarPulsado();
-        bool reiniciarTecla = Keyboard.current != null && Keyboard.current[Key.R].wasPressedThisFrame;
+        bool reiniciarTecla = teclado != null && teclado[Key.R].wasPressedThisFrame;
 
-<<<<<<< HEAD
-        // Detectar tecla Escape para alternar pausa (solo si la partida no ha terminado)
-        if (Keyboard.current[Key.Escape].wasPressedThisFrame && !partidaTerminada)
+        // Pausa con Escape (solo si la partida no ha terminado).
+        // En Android sin teclado Keyboard.current es null: se revisa antes de usarlo.
+        if (teclado != null && teclado[Key.Escape].wasPressedThisFrame && !partidaTerminada)
         {
             AlternarPausa();
+        }
+
+        // Reinicio con R o con el botón táctil (no mientras el juego está en pausa).
+        if ((reiniciarTecla || reiniciarTactil) && !estaEnPausa)
+        {
+            ReiniciarPartida();
         }
     }
 
@@ -102,9 +119,6 @@ public class GestorJuego : MonoBehaviour
 
         // Congela o reactiva la física y movimiento del juego
         Time.timeScale = estaEnPausa ? 0f : 1f;
-=======
-        if (reiniciarTecla || reiniciarTactil) ReiniciarPartida();
->>>>>>> 3197ae9465970105061a1230aec5c1f35a894f5f
     }
 
     private void AlReparar()
@@ -178,7 +192,7 @@ public class GestorJuego : MonoBehaviour
         // Si estaba en pausa, restaurar escala de tiempo antes del cambio
         Time.timeScale = 1f;
 
-        StartCoroutine(CargarFinJuego());
+        rutinaFin = StartCoroutine(CargarFinJuego());
     }
 
     private IEnumerator CargarFinJuego()
@@ -193,6 +207,12 @@ public class GestorJuego : MonoBehaviour
     /// </summary>
     public void ReiniciarPartida()
     {
+        if (rutinaFin != null)
+        {
+            StopCoroutine(rutinaFin);
+            rutinaFin = null;
+        }
+
         Time.timeScale = 1f;
         partidaTerminada = false;
         estaEnPausa = false;
