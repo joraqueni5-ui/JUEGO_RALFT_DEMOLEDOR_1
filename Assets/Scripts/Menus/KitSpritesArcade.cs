@@ -21,11 +21,18 @@ namespace DemoledorUnifranz.UI.Menus
         public Sprite casilla;
         public Sprite marca;
 
+        // Menú principal.
+        public Sprite muro;
+        public Sprite cartel;
+        public Sprite hueco;
+        public Sprite vineta;
+
         // Bordes 9-slice (izquierda, abajo, derecha, arriba) en pixeles del sprite.
         public static readonly Vector4 BordeBoton = new Vector4(30f, 30f, 30f, 30f);
         public static readonly Vector4 BordePanel = new Vector4(40f, 40f, 40f, 40f);
         public static readonly Vector4 BordeBarra = new Vector4(14f, 13f, 14f, 13f);
         public static readonly Vector4 BordeCasilla = new Vector4(18f, 18f, 18f, 18f);
+        public static readonly Vector4 BordeCartel = new Vector4(48f, 48f, 48f, 48f);
 
         private static KitSpritesArcade enMemoria;
 
