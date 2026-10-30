@@ -97,8 +97,21 @@ public class ControlesTactiles : MonoBehaviour
         reiniciarPendiente = false;
     }
 
+    /// <summary>
+    /// Los botones solo se muestran en celular. En Windows y al dar Play en el editor
+    /// el objeto queda desactivado y todos sus valores en false, así que el teclado
+    /// funciona igual. (En el Device Simulator de Unity sí aparecen, para probarlos.)
+    /// </summary>
+    public static bool DebeMostrarse => Application.isMobilePlatform;
+
     private void Awake()
     {
+        if (!DebeMostrarse)
+        {
+            enabled = false;
+            return;
+        }
+
         CrearLienzo();
     }
 
