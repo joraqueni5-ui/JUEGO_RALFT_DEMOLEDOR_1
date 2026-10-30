@@ -80,8 +80,10 @@ public class GestorJuego : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current == null) return;
+        bool reiniciarTactil = ControlesTactiles.ReiniciarPulsado();
+        bool reiniciarTecla = Keyboard.current != null && Keyboard.current[Key.R].wasPressedThisFrame;
 
+<<<<<<< HEAD
         // Detectar tecla Escape para alternar pausa (solo si la partida no ha terminado)
         if (Keyboard.current[Key.Escape].wasPressedThisFrame && !partidaTerminada)
         {
@@ -100,6 +102,9 @@ public class GestorJuego : MonoBehaviour
 
         // Congela o reactiva la física y movimiento del juego
         Time.timeScale = estaEnPausa ? 0f : 1f;
+=======
+        if (reiniciarTecla || reiniciarTactil) ReiniciarPartida();
+>>>>>>> 3197ae9465970105061a1230aec5c1f35a894f5f
     }
 
     private void AlReparar()
