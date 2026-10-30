@@ -65,12 +65,13 @@ public class Muneco : PersonajeBase
         animador.Actualizar(Time.deltaTime);
 
         if (reparando && Time.time >= finDeReparacion) reparando = false;
-        if (Keyboard.current == null) { entradaHorizontal = 0f; ActualizarAnimacion(); return; }
 
         if (trepando) ActualizarTrepado();
         else ActualizarEnElSuelo();
 
-        if (Keyboard.current[teclaReparar].wasPressedThisFrame && !reparando && Time.time >= siguienteReparacion)
+        bool repararAhora = Pulsada(teclaReparar);
+        bool repararTactil = ControlesTactiles.RepararPulsado();
+        if ((repararAhora || repararTactil) && !reparando && Time.time >= siguienteReparacion)
         {
             StartCoroutine(RutinaMartillar());
         }
@@ -82,17 +83,21 @@ public class Muneco : PersonajeBase
     private void ActualizarEnElSuelo()
     {
         float direccion = 0f;
-        if (Keyboard.current[teclaIzquierda].isPressed) direccion -= 1f;
-        if (Keyboard.current[teclaDerecha].isPressed) direccion += 1f;
+        if (Mantenida(teclaIzquierda) || ControlesTactiles.Izquierda) direccion -= 1f;
+        if (Mantenida(teclaDerecha) || ControlesTactiles.Derecha) direccion += 1f;
         if (!reparando && direccion != 0f) mirandoDerecha = direccion > 0f;
         entradaHorizontal = reparando ? 0f : direccion;
 
         if (reparando) return;
 
         // Arriba = agarrarse a la fachada si está debajo del edificio.
-        if (Keyboard.current[teclaSubir].wasPressedThisFrame && Agarrarse()) return;
+        bool subirAhora = Pulsada(teclaSubir);
+        bool subirTactil = ControlesTactiles.ArribaPulsado();
+        if ((subirAhora || subirTactil) && Agarrarse()) return;
 
-        if (Keyboard.current[teclaSaltar].wasPressedThisFrame) Saltar();
+        bool saltarAhora = Pulsada(teclaSaltar);
+        bool saltarTactil = ControlesTactiles.SaltarPulsado();
+        if (saltarAhora || saltarTactil) Saltar();
     }
 
     private bool PuedeAgarrarse()
@@ -139,18 +144,19 @@ public class Muneco : PersonajeBase
         float horizontal = 0f;
         float vertical = 0f;
 
-        if (Keyboard.current[teclaIzquierda].isPressed) horizontal -= 1f;
-        if (Keyboard.current[teclaDerecha].isPressed) horizontal += 1f;
-        if (Keyboard.current[teclaSubir].isPressed) vertical += 1f;
-        if (Keyboard.current[teclaBajar].isPressed) vertical -= 1f;
+        if (Mantenida(teclaIzquierda) || ControlesTactiles.Izquierda) horizontal -= 1f;
+        if (Mantenida(teclaDerecha) || ControlesTactiles.Derecha) horizontal += 1f;
+        if (Mantenida(teclaSubir) || ControlesTactiles.Arriba) vertical += 1f;
+        if (Mantenida(teclaBajar) || ControlesTactiles.Abajo) vertical -= 1f;
 
-        if (Keyboard.current[teclaSaltar].wasPressedThisFrame)
+        bool saltarTactil = ControlesTactiles.SaltarPulsado();
+        if (Pulsada(teclaSaltar) || saltarTactil)
         {
             Soltar();
             return;
         }
 
-        if (Keyboard.current[teclaBajar].isPressed && transform.position.y <= 0.05f)
+        if ((Mantenida(teclaBajar) || ControlesTactiles.Abajo) && transform.position.y <= 0.05f)
         {
             Soltar();
             return;
@@ -223,7 +229,19 @@ public class Muneco : PersonajeBase
 
     private bool TeclasDeTreparEnUso()
     {
-        if (Keyboard.current == null) return false;
-        return Keyboard.current[teclaSubir].isPressed || Keyboard.current[teclaBajar].isPressed;
+        return Mantenida(teclaSubir) || Mantenida(teclaBajar) || ControlesTactiles.Arriba || ControlesTactiles.Abajo;
+    }
+
+    // ------------------------------------------------------------ entrada
+    /// <summary>Tecla del teclado pulsada en este cuadro (sin fallar si no hay teclado, como en Android).</summary>
+    private static bool Pulsada(Key tecla)
+    {
+        return Keyboard.current != null && Keyboard.current[tecla].wasPressedThisFrame;
+    }
+
+    /// <summary>Tecla del teclado mantenida (sin fallar si no hay teclado, como en Android).</summary>
+    private static bool Mantenida(Key tecla)
+    {
+        return Keyboard.current != null && Keyboard.current[tecla].isPressed;
     }
 }
