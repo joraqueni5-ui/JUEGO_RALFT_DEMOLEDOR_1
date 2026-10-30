@@ -25,6 +25,37 @@ public static class HerramientasMenus
     public const string DirFuentes = "Assets/Sprites/Menus/Fuentes";
 
     // ------------------------------------------------------------ menú Tools
+    /// <summary>Construye y guarda MenuPrincipal y FinJuego de una sola vez.</summary>
+    [MenuItem(RaizMenuTools + "Construir Todos los Menús", false, 0)]
+    public static void MenuConstruirTodo()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            EditorUtility.DisplayDialog("Demoledor Unifranz", "Sal del Play Mode antes de construir los menús.", "OK");
+            return;
+        }
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+        if (AbrirEscena(ConstructorMenuPrincipal.RutaEscena, false))
+        {
+            ConstructorMenuPrincipal.Construir();
+            Terminar("Menú principal construido.", true, false);
+        }
+        if (AbrirEscena(ConstructorFinJuego.RutaEscena, false))
+        {
+            ConstructorFinJuego.Construir();
+            Terminar("Pantalla de fin de juego construida.", true, false);
+        }
+        AbrirEscena(ConstructorMenuPrincipal.RutaEscena, false);
+
+        string faltan = EscenasFaltantes();
+        EditorUtility.DisplayDialog("Demoledor Unifranz",
+            "Listo: MenuPrincipal y FinJuego construidos y guardados.\n" +
+            "La pausa se crea sola al jugar en Universidad.\n\nDale Play desde MenuPrincipal." +
+            (string.IsNullOrEmpty(faltan) ? "" : "\n\nAVISO: faltan escenas en Build Settings:\n" + faltan),
+            "OK");
+    }
+
     [MenuItem(RaizMenuTools + "Regenerar Sprites de Menús", false, 40)]
     public static void MenuRegenerarSprites()
     {

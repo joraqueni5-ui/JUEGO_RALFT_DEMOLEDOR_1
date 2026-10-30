@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using DemoledorUnifranz.Game;
+using DemoledorUnifranz.UI.Menus;
 using System.Collections;
 
 /// <summary>
@@ -37,8 +38,10 @@ public class GestorJuego : MonoBehaviour
     private int puntos;
     private int reparaciones;
 
-    // Elementos de la interfaz de Pausa
-    private GameObject panelPausa;
+    // Interfaz de la pausa (Assets/Scripts/Menus/MenuPausaArcade.cs).
+    private MenuPausaArcade menuPausa;
+    private bool munecoActivoAntesDePausa;
+    private bool reactivarMuneco;
 
     // Espera antes de cargar FinJuego (se cancela si se reinicia la partida).
     private Coroutine rutinaFin;
@@ -108,17 +111,56 @@ public class GestorJuego : MonoBehaviour
         }
     }
 
+    private void LateUpdate()
+    {
+        // El muñeco se reactiva un cuadro después de cerrar la pausa: así el ENTER
+        // que pulsó CONTINUAR no se toma también como un martillazo.
+        if (!reactivarMuneco) return;
+        reactivarMuneco = false;
+        if (muneco != null && !partidaTerminada && !estaEnPausa) muneco.enabled = munecoActivoAntesDePausa;
+    }
+
     private void AlternarPausa()
     {
-        estaEnPausa = !estaEnPausa;
+        if (estaEnPausa) Reanudar();
+        else Pausar();
+    }
 
-        if (panelPausa != null)
+    /// <summary>Congela el juego y muestra el menú de pausa.</summary>
+    public void Pausar()
+    {
+        if (estaEnPausa || partidaTerminada) return;
+        estaEnPausa = true;
+
+        // Congela la física y el movimiento del juego.
+        Time.timeScale = 0f;
+
+        // El muñeco lee el teclado en Update: se desactiva para que no se mueva ni repare.
+        if (muneco != null)
         {
-            panelPausa.SetActive(estaEnPausa);
+            munecoActivoAntesDePausa = muneco.enabled;
+            muneco.enabled = false;
         }
 
-        // Congela o reactiva la física y movimiento del juego
-        Time.timeScale = estaEnPausa ? 0f : 1f;
+        if (menuPausa != null && edificio != null) menuPausa.Mostrar(puntos, reparaciones, edificio.PorcentajeDestruido);
+        else if (menuPausa != null) menuPausa.Mostrar(puntos, reparaciones, 0f);
+    }
+
+    /// <summary>Cierra el menú de pausa y continúa la partida.</summary>
+    public void Reanudar()
+    {
+        if (!estaEnPausa) return;
+        estaEnPausa = false;
+        Time.timeScale = 1f;
+        reactivarMuneco = true;
+
+        // Descarta los toques hechos sobre los controles táctiles mientras estaba en pausa.
+        ControlesTactiles.ArribaPulsado();
+        ControlesTactiles.SaltarPulsado();
+        ControlesTactiles.RepararPulsado();
+        ControlesTactiles.ReiniciarPulsado();
+
+        if (menuPausa != null) menuPausa.Ocultar();
     }
 
     private void AlReparar()
@@ -192,13 +234,18 @@ public class GestorJuego : MonoBehaviour
         // Si estaba en pausa, restaurar escala de tiempo antes del cambio
         Time.timeScale = 1f;
 
+        // Datos reales de la partida para la pantalla FinJuego.
+        GameSession.RegistrarDerrumbe(puntos, reparaciones,
+            edificio != null ? edificio.PorcentajeDestruido : 1f, SceneManager.GetActiveScene().name);
+
         rutinaFin = StartCoroutine(CargarFinJuego());
     }
 
     private IEnumerator CargarFinJuego()
     {
         yield return new WaitForSeconds(tiempoEsperaFin);
-        SceneManager.LoadScene(Escenas.FinJuego);
+        // Con fundido; si FinJuego no estuviera en Build Settings se carga como antes.
+        if (!NavegadorEscenas.Cargar(Escenas.FinJuego)) SceneManager.LoadScene(Escenas.FinJuego);
     }
 
     /// <summary>
@@ -215,8 +262,11 @@ public class GestorJuego : MonoBehaviour
 
         Time.timeScale = 1f;
         partidaTerminada = false;
+        bool estabaEnPausa = estaEnPausa;
         estaEnPausa = false;
-        if (panelPausa != null) panelPausa.SetActive(false);
+        reactivarMuneco = false;
+        if (menuPausa != null) menuPausa.OcultarInmediato();
+        if (estabaEnPausa) ControlesTactiles.ReiniciarPulsado();
 
         puntos = 0;
         reparaciones = 0;
@@ -274,36 +324,8 @@ public class GestorJuego : MonoBehaviour
         CrearTexto(raiz, ayudaControles, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 22f),
             new Vector2(1700f, 90f), TextAnchor.LowerCenter, 24, new Color(1f, 1f, 1f, 0.88f), FontStyle.Normal);
 
-        // --- Crear Ventana/Capa de Pausa ---
-        CrearMenuPausa(raiz);
-    }
-
-    private void CrearMenuPausa(Transform raiz)
-    {
-        panelPausa = new GameObject("PanelPausa", typeof(RectTransform));
-        panelPausa.transform.SetParent(raiz, false);
-
-        RectTransform rtPanel = (RectTransform)panelPausa.transform;
-        rtPanel.anchorMin = Vector2.zero;
-        rtPanel.anchorMax = Vector2.one;
-        rtPanel.sizeDelta = Vector2.zero;
-
-        // Fondo oscuro semitransparente que cubre toda la pantalla
-        Image fondoOscuro = panelPausa.AddComponent<Image>();
-        fondoOscuro.color = new Color(0f, 0f, 0f, 0.7f);
-
-        // Texto principal de pausa
-        CrearTexto(panelPausa.transform, "JUEGO EN PAUSA", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 40f), new Vector2(1200f, 100f), TextAnchor.MiddleCenter, 64,
-            new Color(1f, 0.9f, 0.3f, 1f), FontStyle.Bold);
-
-        // Texto explicativo para reanudar
-        CrearTexto(panelPausa.transform, "Presiona  [ ESC ]  para continuar jugando", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -40f), new Vector2(1000f, 60f), TextAnchor.MiddleCenter, 30,
-            Color.white, FontStyle.Normal);
-
-        // Inicia desactivado
-        panelPausa.SetActive(false);
+        // --- Menú de pausa (ventana con CONTINUAR / REINICIAR / MENÚ PRINCIPAL) ---
+        menuPausa = MenuPausaArcade.Crear(this);
     }
 
     private static Text CrearTexto(Transform padre, string contenido, Vector2 ancla, Vector2 pivote,
