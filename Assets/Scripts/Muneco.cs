@@ -9,7 +9,10 @@ using UnityEngine.InputSystem;
 ///
 /// Si cae por un hueco por debajo de su sección, rebota hacia arriba con un rato de
 /// inmunidad para alcanzar una repisa; si sigue cayendo cuando se acaba, pierde una
-/// vida y reaparece en una repisa segura. Si le cae un escombro también pierde una vida.
+/// vida y reaparece en una repisa segura. Si le cae un escombro o choca con el
+/// demoledor también pierde una vida.
+/// Solo se sostiene si el centro de sus pies está sobre una repisa: si queda
+/// colgando del borde, resbala y cae al hueco.
 /// </summary>
 public class Muneco : PersonajeBase
 {
@@ -39,6 +42,16 @@ public class Muneco : PersonajeBase
     [Tooltip("Segundos de inmunidad del rebote al caer por un hueco.")]
     public float tiempoInmunidadCaida = 1.4f;
 
+    [Header("Bordes")]
+    [Tooltip("Segundos colgando del borde (sin pisar con el centro) antes de resbalar.")]
+    public float tiempoParaResbalar = 0.08f;
+
+    [Header("Choque con el demoledor")]
+    [Tooltip("Medio ancho y alto de la zona del demoledor que cuenta como choque.")]
+    public Vector2 tamanoDemoledor = new Vector2(0.35f, 1.0f);
+    [Tooltip("Empujón que recibe al chocar (hacia el costado y hacia abajo).")]
+    public Vector2 empujeDemoledor = new Vector2(3f, -4f);
+
     [Header("Golpes de escombros")]
     [Tooltip("Segundos sin recibir otro golpe después de uno (parpadea).")]
     public float tiempoInvulnerable = 1.5f;
@@ -66,7 +79,10 @@ public class Muneco : PersonajeBase
     private float finAturdido;
     private bool rebotando;
     private bool abajoTactilAntes;
-    private Collider2D repisaIgnorada;
+    private readonly System.Collections.Generic.List<Collider2D> repisasIgnoradas = new System.Collections.Generic.List<Collider2D>();
+    private float colgandoDesde = -1f;
+    private DemoledorAutomatico demoledor;
+    private float empujeHorizontal;
 
     /// <summary>La sección más alta a la que ya llegó: de ahí para abajo no puede volver.</summary>
     public int SeccionAlcanzada { get; private set; }
@@ -87,6 +103,7 @@ public class Muneco : PersonajeBase
     private void Start()
     {
         edificio = EdificioAlto.Instancia;
+        demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>();
     }
 
     private void OnDisable()
@@ -112,8 +129,8 @@ public class Muneco : PersonajeBase
 
         if (Time.time < finAturdido)
         {
-            // Aturdido por el escombro: no se mueve ni martilla un instante.
-            entradaHorizontal = 0f;
+            // Aturdido: no se mueve ni martilla un instante (solo lo lleva el empujón).
+            entradaHorizontal = empujeHorizontal;
         }
         else
         {
@@ -126,6 +143,8 @@ public class Muneco : PersonajeBase
         }
 
         RevisarRepisaPisada();
+        RevisarBorde();
+        RevisarChoqueConDemoledor();
         RevisarCaida();
         ActualizarAnimacion();
         ActualizarParpadeo();
@@ -161,19 +180,85 @@ public class Muneco : PersonajeBase
 
     private IEnumerator RutinaAtravesar(Collider2D repisa)
     {
-        DejarDeAtravesar();
-        repisaIgnorada = repisa;
-        Physics2D.IgnoreCollision(colisionador, repisa, true);
+        Ignorar(repisa);
         cuerpo.linearVelocity = new Vector2(cuerpo.linearVelocity.x, -1.5f);
         yield return new WaitForSeconds(tiempoAtravesar);
         DejarDeAtravesar();
     }
 
-    /// <summary>Vuelve a chocar con la repisa que estaba atravesando.</summary>
+    /// <summary>Deja de chocar un rato con una repisa (para atravesarla o resbalar de ella).</summary>
+    private void Ignorar(Collider2D repisa)
+    {
+        if (repisa == null || colisionador == null || repisasIgnoradas.Contains(repisa)) return;
+        Physics2D.IgnoreCollision(colisionador, repisa, true);
+        repisasIgnoradas.Add(repisa);
+    }
+
+    /// <summary>Vuelve a chocar con las repisas que estaba atravesando.</summary>
     private void DejarDeAtravesar()
     {
-        if (repisaIgnorada != null && colisionador != null) Physics2D.IgnoreCollision(colisionador, repisaIgnorada, false);
-        repisaIgnorada = null;
+        for (int i = 0; i < repisasIgnoradas.Count; i++)
+        {
+            if (repisasIgnoradas[i] != null && colisionador != null)
+                Physics2D.IgnoreCollision(colisionador, repisasIgnoradas[i], false);
+        }
+        repisasIgnoradas.Clear();
+    }
+
+    /// <summary>
+    /// Si está apoyado en una repisa pero el centro de sus pies no la pisa (colgando
+    /// del borde del hueco), resbala: deja de chocar con esa repisa y cae.
+    /// </summary>
+    private void RevisarBorde()
+    {
+        bool apoyado = !enSuelo && Mathf.Abs(cuerpo.linearVelocity.y) < 0.05f;
+        if (!apoyado)
+        {
+            colgandoDesde = -1f;
+            return;
+        }
+
+        if (colgandoDesde < 0f) colgandoDesde = Time.time;
+        if (Time.time - colgandoDesde < tiempoParaResbalar) return;
+
+        Bounds caja = colisionador.bounds;
+        Collider2D[] tocadas = Physics2D.OverlapBoxAll(new Vector2(caja.center.x, caja.min.y - 0.03f),
+            new Vector2(caja.size.x, 0.06f), 0f, capaSuelo);
+        bool resbalo = false;
+        for (int i = 0; i < tocadas.Length; i++)
+        {
+            if (tocadas[i] == null || tocadas[i].GetComponent<RepisaEdificio>() == null) continue;
+            Ignorar(tocadas[i]);
+            resbalo = true;
+        }
+        if (resbalo)
+        {
+            colgandoDesde = -1f;
+            StartCoroutine(VolverAChocar());
+        }
+    }
+
+    private IEnumerator VolverAChocar()
+    {
+        yield return new WaitForSeconds(0.3f);
+        DejarDeAtravesar();
+    }
+
+    /// <summary>Si toca al demoledor pierde una vida y sale empujado.</summary>
+    private void RevisarChoqueConDemoledor()
+    {
+        if (demoledor == null || !demoledor.isActiveAndEnabled || !PuedeRecibirGolpe) return;
+
+        Vector2 d = demoledor.transform.position;
+        Bounds caja = colisionador.bounds;
+        bool tocaX = caja.max.x > d.x - tamanoDemoledor.x && caja.min.x < d.x + tamanoDemoledor.x;
+        bool tocaY = caja.max.y > d.y && caja.min.y < d.y + tamanoDemoledor.y;
+        if (!tocaX || !tocaY) return;
+
+        RecibirGolpe();
+        float lado = transform.position.x < d.x ? -1f : 1f;
+        empujeHorizontal = lado * empujeDemoledor.x / Mathf.Max(0.01f, velocidad);
+        cuerpo.linearVelocity = new Vector2(lado * empujeDemoledor.x, empujeDemoledor.y);
     }
 
     /// <summary>La repisa sobre la que está parado (o null).</summary>
@@ -260,6 +345,7 @@ public class Muneco : PersonajeBase
 
         finInvulnerable = Time.time + tiempoInvulnerable;
         finAturdido = Time.time + tiempoAturdido;
+        empujeHorizontal = 0f;
         if (Golpeado != null) Golpeado();
     }
 

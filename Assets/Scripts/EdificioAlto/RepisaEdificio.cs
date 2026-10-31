@@ -13,6 +13,8 @@ public enum EstadoRepisa
 /// abajo (plataforma de un solo sentido). Los escombros la dañan:
 /// intacta -> agrietada -> destruida. La agrietada se repara con el martillo;
 /// la destruida ya no tiene arreglo y deja un hueco por donde se cae.
+/// Las repisas de secciones a las que el demoledor todavía no llegó están
+/// bloqueadas: se ven, pero no se pueden pisar.
 /// </summary>
 [RequireComponent(typeof(BoxCollider2D))]
 public class RepisaEdificio : MonoBehaviour
@@ -39,8 +41,19 @@ public class RepisaEdificio : MonoBehaviour
 
     public EstadoRepisa Estado { get; private set; }
 
-    /// <summary>True si todavía se puede pisar (no está destruida).</summary>
+    /// <summary>True si no está destruida.</summary>
     public bool SePuedePisar { get { return Estado != EstadoRepisa.Destruida; } }
+
+    /// <summary>False mientras su sección todavía no se habilitó (el demoledor no llegó).</summary>
+    public bool Habilitada
+    {
+        get { return habilitada; }
+        set
+        {
+            habilitada = value;
+            Aplicar();
+        }
+    }
 
     /// <summary>Altura (mundo) donde quedan los pies al pararse encima.</summary>
     public float Superficie { get { return transform.position.y; } }
@@ -58,6 +71,7 @@ public class RepisaEdificio : MonoBehaviour
     }
 
     private bool lista;
+    private bool habilitada = true;
 
     private void Awake()
     {
@@ -109,7 +123,7 @@ public class RepisaEdificio : MonoBehaviour
     {
         int i = (int)Estado;
         if (dibujo != null && sprites != null && i < sprites.Length && sprites[i] != null) dibujo.sprite = sprites[i];
-        if (colision != null) colision.enabled = SePuedePisar;
+        if (colision != null) colision.enabled = SePuedePisar && habilitada;
     }
 
     private void SoltarTrozos(int cantidad)

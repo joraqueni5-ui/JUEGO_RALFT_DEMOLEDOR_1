@@ -10,7 +10,8 @@ using UnityEngine;
 /// El demoledor no deja de golpear. Una sección se completa cuando, después de un
 /// mínimo de golpes, las 15 ventanas de esa sección están intactas al mismo tiempo.
 /// Entonces el demoledor sube a la siguiente. Al completar la última, el edificio
-/// queda salvado.
+/// queda salvado. Las repisas de secciones más arriba que la del demoledor no se
+/// pueden pisar: así el muñeco no lo pasa.
 /// </summary>
 public class EdificioAlto : MonoBehaviour
 {
@@ -285,6 +286,10 @@ public class EdificioAlto : MonoBehaviour
     {
         SeccionActual = seccion;
         GolpesDados = 0;
+        foreach (RepisaEdificio r in repisas)
+        {
+            if (r != null) r.Habilitada = r.seccion <= seccion;
+        }
         if (Cambio != null) Cambio();
     }
 
