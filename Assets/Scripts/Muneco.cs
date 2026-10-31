@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// El muñeco (el que hace de Félix). Es el ÚNICO personaje que controla el jugador:
-/// camina, se trepa a la fachada del edificio y, con el martillo, repara de a un bloque.
+/// camina, se trepa a la fachada del edificio y, con el martillo, repara de a una ventana.
+/// Si le cae un escombro encima pierde una vida (el gestor lleva la cuenta).
 /// </summary>
 public class Muneco : PersonajeBase
 {
@@ -28,6 +29,15 @@ public class Muneco : PersonajeBase
     [Tooltip("Separación con los bordes del edificio al trepar.")]
     public float margenFachada = 0.25f;
 
+    [Header("Golpes de escombros")]
+    [Tooltip("Segundos sin recibir otro golpe después de uno (parpadea).")]
+    public float tiempoInvulnerable = 1.5f;
+    [Tooltip("Segundos que queda aturdido sin moverse al recibir un golpe.")]
+    public float tiempoAturdido = 0.35f;
+
+    /// <summary>Le cayó un escombro (el gestor descuenta una vida).</summary>
+    public event System.Action Golpeado;
+
     [Header("Controles")]
     public Key teclaIzquierda = Key.A;
     public Key teclaDerecha = Key.D;
@@ -41,9 +51,14 @@ public class Muneco : PersonajeBase
     private float finDeReparacion;
     private float siguienteReparacion;
     private float duracionReparacion = 0.33f;
-    private Edificio edificio;
+    private EdificioAlto edificio;
+    private float finInvulnerable;
+    private float finAturdido;
 
     public bool Trepando { get { return trepando; } }
+
+    /// <summary>True si un escombro le puede quitar una vida en este momento.</summary>
+    public bool PuedeRecibirGolpe { get { return enabled && Time.time >= finInvulnerable; } }
 
     protected override void Awake()
     {
@@ -57,7 +72,13 @@ public class Muneco : PersonajeBase
 
     private void Start()
     {
-        edificio = Edificio.Instancia;
+        edificio = EdificioAlto.Instancia;
+    }
+
+    private void OnDisable()
+    {
+        // Que no quede invisible si se pausa justo en un parpadeo.
+        if (dibujo != null) dibujo.enabled = true;
     }
 
     private void Update()
@@ -66,17 +87,63 @@ public class Muneco : PersonajeBase
 
         if (reparando && Time.time >= finDeReparacion) reparando = false;
 
-        if (trepando) ActualizarTrepado();
-        else ActualizarEnElSuelo();
-
         bool repararAhora = Pulsada(teclaReparar);
         bool repararTactil = ControlesTactiles.RepararPulsado();
-        if ((repararAhora || repararTactil) && !reparando && Time.time >= siguienteReparacion)
+
+        if (Time.time < finAturdido)
         {
-            StartCoroutine(RutinaMartillar());
+            // Aturdido por el escombro: no se mueve ni martilla un instante.
+            entradaHorizontal = 0f;
+        }
+        else
+        {
+            if (trepando) ActualizarTrepado();
+            else ActualizarEnElSuelo();
+
+            if ((repararAhora || repararTactil) && !reparando && Time.time >= siguienteReparacion)
+            {
+                StartCoroutine(RutinaMartillar());
+            }
         }
 
         ActualizarAnimacion();
+        ActualizarParpadeo();
+    }
+
+    // ------------------------------------------------------------ golpes
+    /// <summary>Le cae un escombro: avisa al gestor, queda aturdido y parpadea un rato.</summary>
+    public void RecibirGolpe()
+    {
+        if (!PuedeRecibirGolpe) return;
+
+        finInvulnerable = Time.time + tiempoInvulnerable;
+        finAturdido = Time.time + tiempoAturdido;
+        if (Golpeado != null) Golpeado();
+    }
+
+    /// <summary>Lo deja en 'posicion', en el suelo y sin parpadear (al reiniciar la partida).</summary>
+    public void Reaparecer(Vector3 posicion)
+    {
+        StopAllCoroutines();
+        Soltar();
+        reparando = false;
+        finInvulnerable = 0f;
+        finAturdido = 0f;
+        entradaHorizontal = 0f;
+        transform.position = posicion;
+        if (cuerpo != null)
+        {
+            cuerpo.position = posicion;
+            cuerpo.linearVelocity = Vector2.zero;
+        }
+        if (dibujo != null) dibujo.enabled = true;
+    }
+
+    private void ActualizarParpadeo()
+    {
+        if (dibujo == null) return;
+        bool parpadeando = Time.time < finInvulnerable;
+        dibujo.enabled = !parpadeando || Mathf.FloorToInt(Time.time * 12f) % 2 == 0;
     }
 
     // ------------------------------------------------------------ en el suelo
@@ -186,7 +253,7 @@ public class Muneco : PersonajeBase
 
         yield return new WaitForSeconds(momentoDeReparacion);
 
-        if (edificio == null) edificio = Edificio.Instancia;
+        if (edificio == null) edificio = EdificioAlto.Instancia;
         if (edificio != null)
         {
             Vector2 pecho = (Vector2)transform.position + new Vector2(0f, alturaPecho);
