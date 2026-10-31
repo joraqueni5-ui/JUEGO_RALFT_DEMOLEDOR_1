@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// El muñeco (el que hace de Félix). Es el ÚNICO personaje que controla el jugador.
 /// Camina sobre las repisas del edificio, salta a la repisa de arriba (ESPACIO o ↑),
-/// se deja caer a la de abajo (↓) y repara con el martillo, también en el aire.
+/// se deja caer a la de abajo (S) y repara con el martillo, también en el aire.
 ///
 /// Si cae por un hueco por debajo de su sección, rebota hacia arriba con un rato de
 /// inmunidad para alcanzar una repisa; si sigue cayendo cuando se acaba, pierde una
@@ -30,7 +30,7 @@ public class Muneco : PersonajeBase
     public float enfriamiento = 0.28f;
 
     [Header("Repisas")]
-    [Tooltip("Segundos que atraviesa la repisa de abajo al pulsar ↓.")]
+    [Tooltip("Segundos que atraviesa la repisa de abajo al pulsar la tecla para bajar.")]
     public float tiempoAtravesar = 0.3f;
 
     [Header("Caídas")]
@@ -52,7 +52,8 @@ public class Muneco : PersonajeBase
     public Key teclaIzquierda = Key.A;
     public Key teclaDerecha = Key.D;
     public Key teclaSubir = Key.UpArrow;
-    public Key teclaBajar = Key.DownArrow;
+    [Tooltip("Bajar a la repisa de abajo.")]
+    public Key teclaBajarRepisa = Key.S;
     public Key teclaSaltar = Key.Space;
     public Key teclaReparar = Key.Enter;
 
@@ -106,7 +107,7 @@ public class Muneco : PersonajeBase
         bool saltarAhora = Pulsada(teclaSaltar) | Pulsada(teclaSubir) |
                            ControlesTactiles.SaltarPulsado() | ControlesTactiles.ArribaPulsado();
         bool abajoTactil = ControlesTactiles.Abajo;
-        bool bajarAhora = Pulsada(teclaBajar) || (abajoTactil && !abajoTactilAntes);
+        bool bajarAhora = Pulsada(teclaBajarRepisa) || (abajoTactil && !abajoTactilAntes);
         abajoTactilAntes = abajoTactil;
 
         if (Time.time < finAturdido)
