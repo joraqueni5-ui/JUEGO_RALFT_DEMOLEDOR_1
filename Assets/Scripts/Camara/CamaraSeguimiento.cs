@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Cámara que sube y baja con el muñeco por el edificio alto. Mientras el muñeco
 /// siga en pantalla, intenta mostrar también al demoledor de la cornisa de arriba.
+/// Cuando el muñeco llega a una sección nueva, ya no baja de su piso.
 /// Solo se mueve en vertical; el horizontal queda como está en la escena.
 /// También hace el pequeño temblor de pantalla cuando el demoledor golpea.
 /// </summary>
@@ -26,6 +27,8 @@ public class CamaraSeguimiento : MonoBehaviour
     [Header("Límites (y del centro de la cámara)")]
     public float yMinima = 3.1f;
     public float yMaxima = 10.8f;
+    [Tooltip("Desde la sección 2: cuánto se ve por debajo del piso de la sección.")]
+    public float margenBajoSeccion = 0.9f;
 
     [Header("Temblor")]
     [Tooltip("Apaga o prende el temblor de pantalla de los golpes.")]
@@ -34,6 +37,7 @@ public class CamaraSeguimiento : MonoBehaviour
     private static CamaraSeguimiento instancia;
 
     private Camera camara;
+    private Muneco muneco;
     private Vector3 basePosicion;     // posición sin el temblor
     private float fuerzaTemblor;
     private float duracionTemblor;
@@ -53,6 +57,8 @@ public class CamaraSeguimiento : MonoBehaviour
 
     private void Start()
     {
+        if (objetivo != null) muneco = objetivo.GetComponent<Muneco>();
+
         // Empieza ya en su sitio, sin deslizarse desde donde quedó en la escena.
         basePosicion.y = Deseada();
         transform.position = basePosicion;
@@ -106,6 +112,12 @@ public class CamaraSeguimiento : MonoBehaviour
             y = Mathf.Max(y, Mathf.Min(paraVerDemoledor, maximoConMuneco));
         }
 
-        return Mathf.Clamp(y, yMinima, Mathf.Max(yMinima, yMaxima));
+        // Desde la segunda sección la cámara no baja del piso de la sección del muñeco.
+        float minimo = yMinima;
+        EdificioAlto edificio = EdificioAlto.Instancia;
+        if (edificio != null && muneco != null && muneco.SeccionAlcanzada > 0)
+            minimo = Mathf.Max(yMinima, edificio.PisoSeccion(muneco.SeccionAlcanzada) - margenBajoSeccion + alto);
+
+        return Mathf.Clamp(y, Mathf.Min(minimo, yMaxima), Mathf.Max(yMinima, yMaxima));
     }
 }
