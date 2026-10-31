@@ -311,11 +311,7 @@ public class GestorJuego : MonoBehaviour
         mensajeFinal = porDerrumbe ? "¡EL EDIFICIO SE CAYÓ!" : "¡TE QUEDASTE SIN VIDAS!";
 
         if (demoledor != null) demoledor.Detener();
-        if (muneco != null)
-        {
-            muneco.Soltar();
-            muneco.enabled = false;
-        }
+        if (muneco != null) muneco.enabled = false;
 
         // Si estaba en pausa, restaurar escala de tiempo antes del cambio
         Time.timeScale = 1f;

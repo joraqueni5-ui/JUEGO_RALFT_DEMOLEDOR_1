@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// El edificio alto de la Unifranz: 9 pisos x 5 columnas de ventanas repartidos
-/// en 3 secciones de 3 pisos. Todas las ventanas empiezan intactas.
+/// El edificio alto de la Unifranz: 9 pisos x 5 columnas de ventanas, cada una con
+/// su repisa pisable debajo, repartidos en 3 secciones de 3 pisos.
+/// Todas las ventanas y repisas empiezan intactas.
 ///
-/// En cada sección el demoledor tiene una cantidad de golpes. Cuando ya los usó
-/// todos, no queda ningún escombro cayendo y todas las ventanas de la sección
-/// están intactas, la sección se completa y el demoledor sube a la siguiente.
-/// Al completar la última sección el edificio queda salvado.
+/// El demoledor no deja de golpear. Una sección se completa cuando, después de un
+/// mínimo de golpes, las 15 ventanas de esa sección están intactas al mismo tiempo.
+/// Entonces el demoledor sube a la siguiente. Al completar la última, el edificio
+/// queda salvado.
 /// </summary>
 public class EdificioAlto : MonoBehaviour
 {
@@ -21,7 +22,7 @@ public class EdificioAlto : MonoBehaviour
     public int secciones = 3;
 
     [Header("Geometría (en unidades, relativa a este objeto)")]
-    [Tooltip("Zona de la fachada por donde puede trepar el muñeco.")]
+    [Tooltip("Zona de la fachada del edificio.")]
     public Rect fachada = new Rect(0f, 0f, 7.22f, 13.18f);
     [Tooltip("Altura donde se para el demoledor en cada sección (cornisas y, la última, el techo).")]
     public float[] alturaCornisas = { 5.9f, 9.54f, 13.18f };
@@ -31,12 +32,12 @@ public class EdificioAlto : MonoBehaviour
     public Vector2 terraza = new Vector2(4.82f, 6.8f);
 
     [Header("Reglas")]
-    [Tooltip("Golpes que da el demoledor en cada sección antes de rendirse.")]
-    public int[] golpesPorSeccion = { 12, 16, 20 };
+    [Tooltip("Golpes que da el demoledor en cada sección antes de que se pueda completar.")]
+    public int[] golpesMinimosPorSeccion = { 8, 10, 12 };
 
-    /// <summary>Cualquier cambio de ventana, golpe o sección.</summary>
+    /// <summary>Cualquier cambio de ventana, repisa, golpe o sección.</summary>
     public event Action Cambio;
-    /// <summary>El muñeco subió el estado de una ventana con un martillazo.</summary>
+    /// <summary>El muñeco reparó algo con un martillazo.</summary>
     public event Action Reparacion;
     /// <summary>Se completó una sección; el número es la NUEVA sección (igual a 'secciones' si ya terminó).</summary>
     public event Action<int> SeccionCompletada;
@@ -45,11 +46,9 @@ public class EdificioAlto : MonoBehaviour
 
     public int SeccionActual { get; private set; }
     public bool Terminado { get { return SeccionActual >= secciones; } }
-    public int GolpesRestantes { get; private set; }
+    public int GolpesDados { get; private set; }
     public int Pisos { get { return pisosPorSeccion * secciones; } }
-
-    /// <summary>Escombros que todavía están cayendo (los cuenta EscombroCayendo).</summary>
-    public int EscombrosEnElAire { get; set; }
+    public int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
 
     /// <summary>Zona de la fachada en coordenadas de mundo.</summary>
     public Rect Limites
@@ -62,7 +61,9 @@ public class EdificioAlto : MonoBehaviour
     }
 
     private readonly List<VentanaEdificio> ventanas = new List<VentanaEdificio>();
+    private readonly List<RepisaEdificio> repisas = new List<RepisaEdificio>();
     private VentanaEdificio[,] rejilla;
+    private RepisaEdificio[,] rejillaRepisas;
     private bool reiniciando;
 
     private void Awake()
@@ -80,7 +81,7 @@ public class EdificioAlto : MonoBehaviour
     private void Update()
     {
         if (Terminado) return;
-        if (GolpesRestantes > 0 || EscombrosEnElAire > 0) return;
+        if (GolpesDados < GolpesMinimos(SeccionActual)) return;
         if (DanadasEnSeccion(SeccionActual) > 0) return;
 
         Avanzar();
@@ -91,7 +92,6 @@ public class EdificioAlto : MonoBehaviour
         ventanas.Clear();
         ventanas.AddRange(GetComponentsInChildren<VentanaEdificio>(true));
         rejilla = new VentanaEdificio[Mathf.Max(1, Pisos), Mathf.Max(1, columnas)];
-
         foreach (VentanaEdificio v in ventanas)
         {
             if (v == null) continue;
@@ -99,6 +99,18 @@ public class EdificioAlto : MonoBehaviour
             v.CambioEstado += AlCambiarVentana;
             if (v.piso >= 0 && v.piso < Pisos && v.columna >= 0 && v.columna < columnas)
                 rejilla[v.piso, v.columna] = v;
+        }
+
+        repisas.Clear();
+        repisas.AddRange(GetComponentsInChildren<RepisaEdificio>(true));
+        rejillaRepisas = new RepisaEdificio[Mathf.Max(1, Pisos), Mathf.Max(1, columnas)];
+        foreach (RepisaEdificio r in repisas)
+        {
+            if (r == null) continue;
+            r.Preparar();
+            r.CambioEstado += AlCambiarRepisa;
+            if (r.piso >= 0 && r.piso < Pisos && r.columna >= 0 && r.columna < columnas)
+                rejillaRepisas[r.piso, r.columna] = r;
         }
     }
 
@@ -110,20 +122,12 @@ public class EdificioAlto : MonoBehaviour
         return rejilla[piso, columna];
     }
 
-    /// <summary>Ventanas de una columna dentro de una sección, de arriba hacia abajo.</summary>
-    public List<VentanaEdificio> ColumnaDeSeccion(int seccion, int columna)
+    public RepisaEdificio RepisaEn(int piso, int columna)
     {
-        List<VentanaEdificio> lista = new List<VentanaEdificio>();
-        int primero = seccion * pisosPorSeccion;
-        for (int p = primero + pisosPorSeccion - 1; p >= primero; p--)
-        {
-            VentanaEdificio v = VentanaEn(p, columna);
-            if (v != null) lista.Add(v);
-        }
-        return lista;
+        if (rejillaRepisas == null) return null;
+        if (piso < 0 || columna < 0 || piso >= rejillaRepisas.GetLength(0) || columna >= rejillaRepisas.GetLength(1)) return null;
+        return rejillaRepisas[piso, columna];
     }
-
-    public int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
 
     /// <summary>Ventanas de la sección que no están intactas.</summary>
     public int DanadasEnSeccion(int seccion)
@@ -137,8 +141,8 @@ public class EdificioAlto : MonoBehaviour
     }
 
     /// <summary>
-    /// Destrozo de la sección actual (0 a 1): una ventana destruida cuenta entera
-    /// y una rota cuenta la mitad.
+    /// Destrozo de la sección actual (0 a 1), solo con las ventanas: una destruida
+    /// cuenta entera y una rota cuenta la mitad.
     /// </summary>
     public float DestrozoSeccionActual
     {
@@ -174,79 +178,113 @@ public class EdificioAlto : MonoBehaviour
         return transform.position.x + centroColumnas[i];
     }
 
-    /// <summary>Columna más cercana a una x de mundo.</summary>
-    public int ColumnaMasCercana(float x)
-    {
-        int mejor = 0;
-        float distancia = float.MaxValue;
-        for (int c = 0; c < columnas; c++)
-        {
-            float d = Mathf.Abs(CentroColumna(c) - x);
-            if (d < distancia) { distancia = d; mejor = c; }
-        }
-        return mejor;
-    }
-
     public float CentroTerraza { get { return transform.position.x + (terraza.x + terraza.y) * 0.5f; } }
 
-    // ------------------------------------------------------------ acciones
-    /// <summary>El demoledor pide permiso para dar un golpe (descuenta uno).</summary>
-    public bool ConsumirGolpe()
+    /// <summary>Altura (mundo) de la primera fila de repisas de una sección: es su "piso".</summary>
+    public float PisoSeccion(int seccion)
     {
-        if (Terminado || GolpesRestantes <= 0) return false;
-        GolpesRestantes--;
-        if (Cambio != null) Cambio();
-        return true;
+        int s = Mathf.Clamp(seccion, 0, secciones - 1);
+        RepisaEdificio r = RepisaEn(s * pisosPorSeccion, 0);
+        return r != null ? r.Superficie : transform.position.y;
     }
 
     /// <summary>
-    /// Repara (sube un estado) la ventana dañada más cercana al punto.
-    /// Un solo martillazo = una sola ventana. Devuelve la ventana o null.
+    /// Repisa donde reaparecer en una sección: la de la primera fila más cercana a x
+    /// que todavía se pueda pisar (o cualquiera de la sección si esa fila está rota).
     /// </summary>
-    public VentanaEdificio RepararMasCercano(Vector2 punto, float radio)
+    public RepisaEdificio RepisaSegura(int seccion, float x)
     {
-        VentanaEdificio mejor = null;
-        float mejorDistancia = radio;
+        int s = Mathf.Clamp(seccion, 0, secciones - 1);
+        for (int p = s * pisosPorSeccion; p < (s + 1) * pisosPorSeccion; p++)
+        {
+            RepisaEdificio mejor = null;
+            float distancia = float.MaxValue;
+            for (int c = 0; c < columnas; c++)
+            {
+                RepisaEdificio r = RepisaEn(p, c);
+                if (r == null || !r.SePuedePisar) continue;
+                float d = Mathf.Abs(r.CentroX - x);
+                if (d < distancia) { distancia = d; mejor = r; }
+            }
+            if (mejor != null) return mejor;
+        }
+        return null;
+    }
 
+    private int GolpesMinimos(int seccion)
+    {
+        if (golpesMinimosPorSeccion == null || golpesMinimosPorSeccion.Length == 0) return 0;
+        return golpesMinimosPorSeccion[Mathf.Clamp(seccion, 0, golpesMinimosPorSeccion.Length - 1)];
+    }
+
+    // ------------------------------------------------------------ acciones
+    /// <summary>El demoledor avisa que dio un golpe en la sección actual.</summary>
+    public void RegistrarGolpe()
+    {
+        if (Terminado) return;
+        GolpesDados++;
+    }
+
+    /// <summary>
+    /// Un martillazo: sube un estado la ventana dañada más cercana al pecho; si no hay
+    /// ninguna a mano, repara la repisa agrietada más cercana. Devuelve true si reparó algo.
+    /// </summary>
+    public bool RepararMasCercano(Vector2 pecho, float radio)
+    {
+        VentanaEdificio mejorVentana = null;
+        float mejorDistancia = radio;
         foreach (VentanaEdificio v in ventanas)
         {
             if (v == null || v.Estado == EstadoVentana.Intacta) continue;
-
             Rect area = v.Area;
-            float distancia = area.Contains(punto) ? 0f : Vector2.Distance(punto, area.center);
-            if (distancia > mejorDistancia) continue;
-
-            mejorDistancia = distancia;
-            mejor = v;
+            float d = area.Contains(pecho) ? 0f : Vector2.Distance(pecho, area.center);
+            if (d > mejorDistancia) continue;
+            mejorDistancia = d;
+            mejorVentana = v;
         }
 
-        if (mejor == null) return null;
+        if (mejorVentana != null)
+        {
+            mejorVentana.Reparar();
+            if (Reparacion != null) Reparacion();
+            return true;
+        }
 
-        mejor.Reparar();
-        if (Reparacion != null) Reparacion();
-        return mejor;
+        RepisaEdificio mejorRepisa = null;
+        mejorDistancia = radio + 0.15f;
+        foreach (RepisaEdificio r in repisas)
+        {
+            if (r == null || r.Estado != EstadoRepisa.Agrietada) continue;
+            float d = Vector2.Distance(pecho, r.Area.center);
+            if (d > mejorDistancia) continue;
+            mejorDistancia = d;
+            mejorRepisa = r;
+        }
+
+        if (mejorRepisa != null)
+        {
+            mejorRepisa.Reparar();
+            if (Reparacion != null) Reparacion();
+            return true;
+        }
+        return false;
     }
 
-    /// <summary>Todas las ventanas intactas, primera sección y golpes al inicio.</summary>
+    /// <summary>Todo intacto, primera sección y golpes a cero.</summary>
     public void Reiniciar()
     {
         reiniciando = true;
-        foreach (VentanaEdificio v in ventanas)
-        {
-            if (v != null) v.Reiniciar();
-        }
+        foreach (VentanaEdificio v in ventanas) if (v != null) v.Reiniciar();
+        foreach (RepisaEdificio r in repisas) if (r != null) r.Reiniciar();
         reiniciando = false;
 
-        // Los escombros en el aire los borra el gestor antes de llamar aquí.
-        EscombrosEnElAire = 0;
         EmpezarSeccion(0);
     }
 
     private void EmpezarSeccion(int seccion)
     {
         SeccionActual = seccion;
-        int i = Mathf.Clamp(seccion, 0, Mathf.Max(0, golpesPorSeccion.Length - 1));
-        GolpesRestantes = (Terminado || golpesPorSeccion == null || golpesPorSeccion.Length == 0) ? 0 : golpesPorSeccion[i];
+        GolpesDados = 0;
         if (Cambio != null) Cambio();
     }
 
@@ -258,6 +296,12 @@ public class EdificioAlto : MonoBehaviour
     }
 
     private void AlCambiarVentana(VentanaEdificio ventana)
+    {
+        if (reiniciando) return;
+        if (Cambio != null) Cambio();
+    }
+
+    private void AlCambiarRepisa(RepisaEdificio repisa)
     {
         if (reiniciando) return;
         if (Cambio != null) Cambio();

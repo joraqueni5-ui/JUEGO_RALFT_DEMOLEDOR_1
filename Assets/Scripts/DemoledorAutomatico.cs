@@ -3,10 +3,10 @@ using UnityEngine;
 
 /// <summary>
 /// El demoledor (el "Ralph"). NO se controla: se para en la cornisa de la sección
-/// actual del edificio alto, camina de columna en columna y golpea el piso.
-/// Cada golpe suelta escombros que caen por esa columna y pueden romper ventanas.
-/// Cuando la sección queda reparada sube a la siguiente cornisa; al final se queda
-/// en la terraza del techo.
+/// actual del edificio alto, camina de columna en columna y golpea el piso sin parar.
+/// Cada golpe suelta escombros que caen por esa columna y pueden romper ventanas y
+/// repisas. Cuando la sección queda reparada sube a la siguiente cornisa; al final
+/// se queda en la terraza del techo.
 /// </summary>
 public class DemoledorAutomatico : MonoBehaviour
 {
@@ -40,9 +40,8 @@ public class DemoledorAutomatico : MonoBehaviour
     public int escombrosPorGolpe = 1;
     [Tooltip("Velocidad con la que empiezan a caer.")]
     public float velocidadEscombro = 2.2f;
-    [Tooltip("Probabilidad de romper cada ventana que cruza el escombro.")]
-    [Range(0f, 1f)]
-    public float probabilidadRomperVentana = 0.4f;
+    [Tooltip("Probabilidad de cada impacto del escombro en ventanas o repisas (hasta 3 impactos).")]
+    public float[] probabilidadesImpacto = { 0.5f, 0.35f, 0.2f };
     public int ordenEscombro = 6;
 
     [Header("Temblor de pantalla")]
@@ -137,25 +136,16 @@ public class DemoledorAutomatico : MonoBehaviour
                 continue;
             }
 
-            if (edificio.GolpesRestantes > 0)
-            {
-                int destino = ElegirColumna();
-                yield return CaminarHasta(edificio.CentroColumna(destino));
-                columnaActual = destino;
+            // No para nunca: elige otra columna, camina y golpea.
+            int destino = ElegirColumna();
+            yield return CaminarHasta(edificio.CentroColumna(destino));
+            columnaActual = destino;
 
-                if (activo && edificio.SeccionActual == seccion && edificio.GolpesRestantes > 0)
-                {
-                    yield return Golpe(true);
-                }
-                yield return new WaitForSeconds(esperaEntrePisos / Ritmo);
-            }
-            else
+            if (activo && edificio.SeccionActual == seccion)
             {
-                // Ya no le quedan golpes: espera de pie a que reparen la sección.
-                if (dibujo != null) dibujo.flipX = false;
-                animador.MostrarCuadroFijo(mirandoDerecha ? caminarDerecha : caminarIzquierda, 0);
-                yield return null;
+                yield return Golpe(true);
             }
+            yield return new WaitForSeconds(esperaEntrePisos / Ritmo);
         }
     }
 
@@ -194,10 +184,11 @@ public class DemoledorAutomatico : MonoBehaviour
 
         yield return new WaitForSeconds(momentoDeImpacto);
 
-        // El golpe se descuenta justo al caer los escombros, en el mismo cuadro,
-        // para que la sección no se dé por terminada entre medio.
-        if (activo && conEscombros && edificio != null && edificio.SeccionActual == seccion && edificio.ConsumirGolpe())
+        if (activo && conEscombros && edificio != null && edificio.SeccionActual == seccion)
+        {
+            edificio.RegistrarGolpe();
             SoltarEscombros();
+        }
         if (activo && temblorGolpe > 0f) CamaraSeguimiento.Temblar(temblorGolpe, duracionTemblor);
 
         float esperaGolpe = Mathf.Max(0.05f, duracionGolpe - momentoDeImpacto) + pausaTrasGolpe / Ritmo;
@@ -217,7 +208,7 @@ public class DemoledorAutomatico : MonoBehaviour
                 edificio.AlturaCornisa(seccion) - 0.12f,
                 0f);
             EscombroCayendo.Crear(spriteEscombro, origen, columnaActual, velocidadEscombro * Ritmo,
-                probabilidadRomperVentana, ordenEscombro);
+                probabilidadesImpacto, ordenEscombro);
         }
     }
 
