@@ -12,7 +12,7 @@ public static class InspeccionAseprite
 {
     static readonly string[] Rutas =
     {
-        "Assets/Edificio/edificio.aseprite",
+        "Assets/Sprites/Edificio/edificio_alto.aseprite",
         "Assets/Edificio/ventanas.aseprite",
         "Assets/personaje/Movimiento Abajo.aseprite",
         "Assets/personaje/Movimiento Espalda1.aseprite",
