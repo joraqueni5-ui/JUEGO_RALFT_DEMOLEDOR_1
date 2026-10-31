@@ -22,7 +22,7 @@ public static class ConstructorEdificioAlto
     private const string RutaFachada = "Assets/Sprites/Edificio/edificio_alto.png";
     private const string RutaEscombro = "Assets/Sprites/Edificio/escombro.png";
     private const string RutaVentanas = "Assets/Sprites/Ventanas/ventana_{0}_{1}.png";
-    private const string RutaRepisas = "Assets/Sprites/Repisas/repisa_{0}_{1}.png";
+    private const string RutaRepisas = "Assets/Sprites/Repisas/repisa_40_{0}.png";
 
     // Medidas del dibujo (píxeles) y escala (50 píxeles = 1 unidad).
     private const float Ppu = 50f;
@@ -38,10 +38,11 @@ public static class ConstructorEdificioAlto
     private static readonly int[] ColumnasX = { 22, 84, 156, 218, 280 };
     private static readonly int[] PisosY = { 539, 481, 423, 357, 299, 241, 175, 117, 59 };
 
-    // Repisas: borde izquierdo y ancho (píxeles) de cada columna; quedan pegadas entre sí.
+    // Repisas: una por ventana, de 40 px, centrada bajo el marco. Entre una y otra queda
+    // un hueco de 22 a 32 px (más ancho que el muñeco): si no salta, se cae.
     // Su parte de arriba está 42 píxeles bajo el borde superior de la ventana.
-    private static readonly int[] RepisasX = { 14, 76, 143, 210, 272 };
-    private static readonly int[] RepisasAncho = { 62, 67, 67, 62, 62 };
+    private const int AnchoRepisa = 40;
+    private static readonly int[] RepisasX = { 25, 87, 159, 221, 283 };
     private const int RepisaBajoVentana = 42;
     private const int GrosorRepisa = 6;
     private const int ColumnaInicioMuneco = 1;
@@ -74,13 +75,12 @@ public static class ConstructorEdificioAlto
         Sprite fachada = AssetDatabase.LoadAssetAtPath<Sprite>(RutaFachada);
         Sprite escombro = AssetDatabase.LoadAssetAtPath<Sprite>(RutaEscombro);
         Sprite[,] ventanas = new Sprite[4, 3];
-        Sprite[,] repisas = new Sprite[2, 3];   // [0] = 62 px de ancho, [1] = 67 px
+        Sprite[] repisas = new Sprite[3];
         bool faltan = fachada == null || escombro == null;
         for (int e = 0; e < 3; e++)
         {
-            repisas[0, e] = AssetDatabase.LoadAssetAtPath<Sprite>(string.Format(RutaRepisas, 62, e));
-            repisas[1, e] = AssetDatabase.LoadAssetAtPath<Sprite>(string.Format(RutaRepisas, 67, e));
-            if (repisas[0, e] == null || repisas[1, e] == null) faltan = true;
+            repisas[e] = AssetDatabase.LoadAssetAtPath<Sprite>(string.Format(RutaRepisas, e));
+            if (repisas[e] == null) faltan = true;
         }
         for (int t = 0; t < 4; t++)
         {
@@ -152,15 +152,14 @@ public static class ConstructorEdificioAlto
             int arriba = PisosY[piso] + RepisaBajoVentana;
             for (int col = 0; col < RepisasX.Length; col++)
             {
-                int ancho = RepisasAncho[col];
-                int juego = ancho == 62 ? 0 : 1;
+                int ancho = AnchoRepisa;
 
                 GameObject obj = new GameObject(string.Format("Repisa_{0}_{1}", piso, col));
                 obj.transform.SetParent(contRepisas.transform, false);
                 obj.transform.localPosition = new Vector3(RepisasX[col] / Ppu, (AltoDibujo - arriba) / Ppu, 0f);
 
                 SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
-                sr.sprite = repisas[juego, 0];
+                sr.sprite = repisas[0];
                 sr.sortingOrder = OrdenRepisas;
 
                 BoxCollider2D caja = obj.AddComponent<BoxCollider2D>();
@@ -178,7 +177,7 @@ public static class ConstructorEdificioAlto
                 r.seccion = piso / 3;
                 r.dibujo = sr;
                 r.colision = caja;
-                r.sprites = new Sprite[] { repisas[juego, 0], repisas[juego, 1], repisas[juego, 2] };
+                r.sprites = new Sprite[] { repisas[0], repisas[1], repisas[2] };
                 r.spriteTrozos = escombro;
                 r.tamano = new Vector2(ancho / Ppu, GrosorRepisa / Ppu);
             }
@@ -216,7 +215,7 @@ public static class ConstructorEdificioAlto
             Undo.RecordObject(muneco.transform, "Construir edificio alto");
             int c = ColumnaInicioMuneco;
             muneco.transform.position = new Vector3(
-                EdificioX + (RepisasX[c] + RepisasAncho[c] * 0.5f) / Ppu,
+                EdificioX + (RepisasX[c] + AnchoRepisa * 0.5f) / Ppu,
                 EdificioY + (AltoDibujo - (PisosY[0] + RepisaBajoVentana)) / Ppu + 0.02f,
                 muneco.transform.position.z);
         }
