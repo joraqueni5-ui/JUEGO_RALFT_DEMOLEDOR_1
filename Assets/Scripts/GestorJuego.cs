@@ -18,7 +18,7 @@ public class GestorJuego : MonoBehaviour
     [Tooltip("Si la sección actual pasa de este % de destrozo, el edificio se cae y termina la partida.")]
     [Range(0.5f, 1f)]
     public float limiteDerrumbe = 0.7f;
-    [Tooltip("Puntos por cada martillazo que repara una ventana.")]
+    [Tooltip("Puntos por cada martillazo que repara una ventana o repisa.")]
     public int puntosPorReparacion = 10;
     [Tooltip("Puntos extra al completar cada sección.")]
     public int bonoPorSeccion = 100;
@@ -29,16 +29,12 @@ public class GestorJuego : MonoBehaviour
     [Tooltip("Segundos para ver al demoledor en la terraza antes de ir a FinJuego al ganar.")]
     public float tiempoEsperaVictoria = 3f;
 
-    [Header("Textos")]
-    public string titulo = "¡AGÁRRALO! EL DEMOLEDOR NO SE DETIENE";
-    public string ayudaControles =
-        "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar    ·    ↓  bajar    ·    ENTER  reparar    ·    ESC  pausa    ·    R  reiniciar";
-
     private EdificioAlto edificio;
     private DemoledorAutomatico demoledor;
     private Muneco muneco;
 
     private Text textoEstado;
+    private Text textoDestrozo;
     private Text textoMensaje;
     private RectTransform rellenoBarra;
     private Image[] corazones;
@@ -61,7 +57,7 @@ public class GestorJuego : MonoBehaviour
     // Espera antes de cargar FinJuego (se cancela si se reinicia la partida).
     private Coroutine rutinaFin;
 
-    private const float AnchoBarra = 640f;
+    private const float AnchoBarra = 300f;
 
     private void Awake()
     {
@@ -213,7 +209,7 @@ public class GestorJuego : MonoBehaviour
             return;
         }
 
-        MostrarAviso("¡AY! TE CAYÓ UN ESCOMBRO  (-1 VIDA)", 1.5f);
+        MostrarAviso("¡AY!  -1 VIDA", 1.5f);
     }
 
     private void AlCompletarSeccion(int nuevaSeccion)
@@ -263,11 +259,11 @@ public class GestorJuego : MonoBehaviour
         if (textoEstado != null)
         {
             textoEstado.text = string.Format(
-                "PUNTOS: {0}      VIDAS: {1}      SECCIÓN: {2}/{3}      VENTANAS ROTAS: {4}/{5}      DESTROZO: {6}%",
-                puntos, vidas, seccionVisible, edificio.secciones,
-                edificio.Terminado ? 0 : edificio.DanadasEnSeccion(edificio.SeccionActual), edificio.VentanasPorSeccion,
-                Mathf.RoundToInt(destrozo * 100f));
+                "PUNTOS  {0}\nSECCIÓN  {1}/{2}\nVENTANAS ROTAS  {3}/{4}",
+                puntos, seccionVisible, edificio.secciones,
+                edificio.Terminado ? 0 : edificio.DanadasEnSeccion(edificio.SeccionActual), edificio.VentanasPorSeccion);
         }
+        if (textoDestrozo != null) textoDestrozo.text = "DESTROZO  " + Mathf.RoundToInt(destrozo * 100f) + "%";
 
         if (corazones != null)
         {
@@ -282,7 +278,7 @@ public class GestorJuego : MonoBehaviour
         {
             // La barra se llena hasta el límite de derrumbe.
             float lleno = Mathf.Clamp01(destrozo / Mathf.Max(0.01f, limiteDerrumbe));
-            rellenoBarra.sizeDelta = new Vector2(lleno * AnchoBarra, 20f);
+            rellenoBarra.sizeDelta = new Vector2(lleno * AnchoBarra, 16f);
             Image imagen = rellenoBarra.GetComponent<Image>();
             if (imagen != null) imagen.color = Color.Lerp(new Color(0.95f, 0.75f, 0.2f), new Color(0.85f, 0.15f, 0.12f), lleno);
         }
@@ -390,34 +386,39 @@ public class GestorJuego : MonoBehaviour
 
         Transform raiz = lienzo.transform;
 
-        CrearTexto(raiz, titulo, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f),
-            new Vector2(1600f, 50f), TextAnchor.UpperCenter, 38, new Color(1f, 0.96f, 0.85f, 1f), FontStyle.Bold);
+        // Panel de estado a la izquierda, bajo el botón de pausa (que está en 24, -20 y mide 112 x 96).
+        Image panel = CrearImagen(raiz, "PanelEstado", new Color(0.05f, 0.06f, 0.08f, 0.6f),
+            new Vector2(0f, 1f), new Vector2(24f, -128f), new Vector2(380f, 196f));
+        panel.rectTransform.pivot = new Vector2(0f, 1f);
 
-        textoEstado = CrearTexto(raiz, "", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -82f),
-            new Vector2(1700f, 40f), TextAnchor.UpperCenter, 26, Color.white, FontStyle.Normal);
+        textoEstado = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(42f, -140f),
+            new Vector2(350f, 110f), TextAnchor.UpperLeft, 28, Color.white, FontStyle.Bold);
 
-        // Barra de estructura (fondo + relleno rojo que crece con la destrucción).
-        Image fondoBarra = CrearImagen(raiz, "BarraFondo", new Color(0.05f, 0.06f, 0.08f, 0.75f),
-            new Vector2(0.5f, 1f), new Vector2(0f, -128f), new Vector2(AnchoBarra + 8f, 28f));
+        textoDestrozo = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(42f, -252f),
+            new Vector2(350f, 34f), TextAnchor.UpperLeft, 24, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
+
+        // Barra de destrozo (se llena hasta el límite de derrumbe).
+        Image fondoBarra = CrearImagen(raiz, "BarraFondo", new Color(0.02f, 0.02f, 0.03f, 0.8f),
+            new Vector2(0f, 1f), new Vector2(42f, -290f), new Vector2(AnchoBarra + 8f, 24f));
+        fondoBarra.rectTransform.pivot = new Vector2(0f, 1f);
 
         Image relleno = CrearImagen(raiz, "BarraRelleno", new Color(0.95f, 0.75f, 0.2f, 1f),
-            new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 20f));
+            new Vector2(0f, 1f), new Vector2(46f, -302f), new Vector2(0f, 16f));
         rellenoBarra = relleno.rectTransform;
-        rellenoBarra.anchorMin = new Vector2(0.5f, 1f);
-        rellenoBarra.anchorMax = new Vector2(0.5f, 1f);
         rellenoBarra.pivot = new Vector2(0f, 0.5f);
-        rellenoBarra.anchoredPosition = new Vector2(-AnchoBarra * 0.5f, -128f);
 
-        // Vidas: un corazón por vida, debajo de la barra (se apagan al perderlas).
+        // Vidas: un corazón por vida, arriba a la derecha (se apagan al perderlas).
+        // En el celular el botón REINICIAR ocupa esa esquina, así que bajan un poco.
         int totalCorazones = Mathf.Max(1, vidasIniciales);
         corazones = new Image[totalCorazones];
-        const float AnchoCorazon = 54f;
-        const float SeparacionCorazon = 66f;
-        float inicioCorazones = -(totalCorazones - 1) * SeparacionCorazon * 0.5f;
+        const float AnchoCorazon = 60f;
+        const float SeparacionCorazon = 72f;
+        float alturaCorazones = ControlesTactiles.DebeMostrarse ? -140f : -56f;
         for (int i = 0; i < totalCorazones; i++)
         {
-            Image corazon = CrearImagen(raiz, "Vida" + (i + 1), Color.white, new Vector2(0.5f, 1f),
-                new Vector2(inicioCorazones + i * SeparacionCorazon, -178f), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
+            float x = -(40f + AnchoCorazon * 0.5f + (totalCorazones - 1 - i) * SeparacionCorazon);
+            Image corazon = CrearImagen(raiz, "Vida" + (i + 1), Color.white, new Vector2(1f, 1f),
+                new Vector2(x, alturaCorazones), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
             corazon.sprite = SpriteCorazon();
             corazon.preserveAspect = true;
             corazones[i] = corazon;
@@ -425,9 +426,6 @@ public class GestorJuego : MonoBehaviour
 
         textoMensaje = CrearTexto(raiz, "", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 260f),
             new Vector2(1500f, 100f), TextAnchor.MiddleCenter, 58, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
-
-        CrearTexto(raiz, ayudaControles, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 22f),
-            new Vector2(1700f, 90f), TextAnchor.LowerCenter, 24, new Color(1f, 1f, 1f, 0.88f), FontStyle.Normal);
 
         // --- Menú de pausa (ventana con CONTINUAR / REINICIAR / MENÚ PRINCIPAL) ---
         menuPausa = MenuPausaArcade.Crear(this);
