@@ -25,7 +25,7 @@ public static class GeneradorJuego
     const string RutaMenu = DirEscenas + "/MenuPrincipal.unity";
     const string RutaNivel = DirEscenas + "/Nivel1.unity";
     const string RutaFin = DirEscenas + "/FinJuego.unity";
-    const string RutaEdificio = "Assets/Edificio/edificio.aseprite";
+    const string RutaEdificio = "Assets/Sprites/Edificio/edificio_alto_fondo.png";
     const string RutaVentanas = "Assets/Edificio/ventanas.aseprite";
     const string RutaJugadorFrente = "Assets/personaje/Movimiento Abajo.aseprite";
     const string RutaEnemigoCamina = "Assets/Animaciones/Enemigo/animacion_caminata_derecha.aseprite";
