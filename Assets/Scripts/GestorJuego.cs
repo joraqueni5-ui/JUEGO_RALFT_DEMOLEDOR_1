@@ -7,36 +7,51 @@ using DemoledorUnifranz.UI.Menus;
 using System.Collections;
 
 /// <summary>
-/// Marcador del juego: puntos por reparar, porcentaje destruido y aviso de derrumbe.
-/// Incluye sistema de pausa con Escape y cambio a FinJuego al perder.
+/// Marcador del juego con el edificio alto: puntos, vidas, sección y destrozo.
+/// Se pierde si el muñeco se queda sin vidas o si la sección actual pasa el límite
+/// de destrozo (el edificio se cae). Se gana al completar las 3 secciones.
+/// Incluye sistema de pausa con Escape y cambio a FinJuego al terminar.
 /// </summary>
 public class GestorJuego : MonoBehaviour
 {
     [Header("Reglas")]
-    [Tooltip("Si el edificio pasa de este % destruido, se cae y termina la partida.")]
+    [Tooltip("Si la sección actual pasa de este % de destrozo, el edificio se cae y termina la partida.")]
     [Range(0.5f, 1f)]
     public float limiteDerrumbe = 0.7f;
-    [Tooltip("Puntos que da reparar un bloque.")]
+    [Tooltip("Puntos por cada martillazo que repara una ventana.")]
     public int puntosPorReparacion = 10;
+    [Tooltip("Puntos extra al completar cada sección.")]
+    public int bonoPorSeccion = 100;
+    [Tooltip("Vidas del muñeco al empezar.")]
+    public int vidasIniciales = 3;
     [Tooltip("Segundos de espera antes de ir a la escena FinJuego")]
     public float tiempoEsperaFin = 1.5f;
+    [Tooltip("Segundos para ver al demoledor en la terraza antes de ir a FinJuego al ganar.")]
+    public float tiempoEsperaVictoria = 3f;
 
     [Header("Textos")]
     public string titulo = "¡AGÁRRALO! EL DEMOLEDOR NO SE DETIENE";
     public string ayudaControles =
         "A / D  caminar    ·    ESPACIO  saltar    ·    ↑  trepar    ·    ↓  bajar    ·    ENTER  reparar    ·    ESC  pausa    ·    R  reiniciar";
 
-    private Edificio edificio;
+    private EdificioAlto edificio;
     private DemoledorAutomatico demoledor;
     private Muneco muneco;
 
     private Text textoEstado;
     private Text textoMensaje;
     private RectTransform rellenoBarra;
+    private Image[] corazones;
+    private static Sprite spriteCorazon;
     private bool partidaTerminada;
     private bool estaEnPausa;
     private int puntos;
     private int reparaciones;
+    private int vidas;
+    private Vector3 inicioMuneco;
+    private string mensajeFinal = "";
+    private string mensajeTemporal = "";
+    private float finMensajeTemporal;
 
     // Interfaz de la pausa (Assets/Scripts/Menus/MenuPausaArcade.cs).
     private MenuPausaArcade menuPausa;
@@ -54,6 +69,8 @@ public class GestorJuego : MonoBehaviour
 
         demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>();
         muneco = Object.FindFirstObjectByType<Muneco>();
+        if (muneco != null) inicioMuneco = muneco.transform.position;
+        vidas = vidasIniciales;
     }
 
     private void Start()
@@ -61,13 +78,16 @@ public class GestorJuego : MonoBehaviour
         // Aseguramos que el tiempo corra con normalidad al iniciar
         Time.timeScale = 1f;
 
-        edificio = Edificio.Instancia != null ? Edificio.Instancia : Object.FindFirstObjectByType<Edificio>();
+        edificio = EdificioAlto.Instancia != null ? EdificioAlto.Instancia : Object.FindFirstObjectByType<EdificioAlto>();
 
         if (edificio != null)
         {
             edificio.Cambio += Refrescar;
             edificio.Reparacion += AlReparar;
+            edificio.SeccionCompletada += AlCompletarSeccion;
+            edificio.Salvado += AlSalvarEdificio;
         }
+        if (muneco != null) muneco.Golpeado += AlGolpearMuneco;
 
         CrearHud();
         Refrescar();
@@ -88,7 +108,10 @@ public class GestorJuego : MonoBehaviour
         {
             edificio.Cambio -= Refrescar;
             edificio.Reparacion -= AlReparar;
+            edificio.SeccionCompletada -= AlCompletarSeccion;
+            edificio.Salvado -= AlSalvarEdificio;
         }
+        if (muneco != null) muneco.Golpeado -= AlGolpearMuneco;
     }
 
     private void Update()
@@ -108,6 +131,13 @@ public class GestorJuego : MonoBehaviour
         if ((reiniciarTecla || reiniciarTactil) && !estaEnPausa)
         {
             ReiniciarPartida();
+        }
+
+        // Borra el aviso temporal ("¡SECCIÓN COMPLETA!", "-1 VIDA") cuando se cumple su tiempo.
+        if (mensajeTemporal.Length > 0 && Time.time >= finMensajeTemporal)
+        {
+            mensajeTemporal = "";
+            Refrescar();
         }
     }
 
@@ -142,7 +172,7 @@ public class GestorJuego : MonoBehaviour
             muneco.enabled = false;
         }
 
-        if (menuPausa != null && edificio != null) menuPausa.Mostrar(puntos, reparaciones, edificio.PorcentajeDestruido);
+        if (menuPausa != null && edificio != null) menuPausa.Mostrar(puntos, reparaciones, edificio.DestrozoSeccionActual);
         else if (menuPausa != null) menuPausa.Mostrar(puntos, reparaciones, 0f);
     }
 
@@ -172,46 +202,100 @@ public class GestorJuego : MonoBehaviour
         Refrescar();
     }
 
+    private void AlGolpearMuneco()
+    {
+        if (partidaTerminada) return;
+
+        vidas = Mathf.Max(0, vidas - 1);
+        if (vidas <= 0)
+        {
+            TerminarPartida(false);
+            return;
+        }
+
+        MostrarAviso("¡AY! TE CAYÓ UN ESCOMBRO  (-1 VIDA)", 1.5f);
+    }
+
+    private void AlCompletarSeccion(int nuevaSeccion)
+    {
+        if (partidaTerminada || edificio == null) return;
+
+        puntos += bonoPorSeccion;
+        if (nuevaSeccion < edificio.secciones)
+        {
+            MostrarAviso(string.Format("¡SECCIÓN {0} REPARADA! +{1}   ¡EL DEMOLEDOR SUBE!", nuevaSeccion, bonoPorSeccion), 2.5f);
+        }
+        else
+        {
+            Refrescar();
+        }
+    }
+
+    private void AlSalvarEdificio()
+    {
+        if (partidaTerminada) return;
+        partidaTerminada = true;
+        mensajeFinal = "¡EDIFICIO SALVADO!";
+
+        // El demoledor sigue en la terraza (no se detiene); el muñeco ya no se controla.
+        if (muneco != null) muneco.enabled = false;
+
+        Time.timeScale = 1f;
+        GameSession.RegistrarVictoria(puntos, reparaciones, SceneManager.GetActiveScene().name);
+        Refrescar();
+        rutinaFin = StartCoroutine(CargarFinJuego(tiempoEsperaVictoria));
+    }
+
+    private void MostrarAviso(string texto, float segundos)
+    {
+        mensajeTemporal = texto;
+        finMensajeTemporal = Time.time + segundos;
+        Refrescar();
+    }
+
     private void Refrescar()
     {
         if (edificio == null) return;
 
-        float destruido = edificio.PorcentajeDestruido;
+        float destrozo = edificio.DestrozoSeccionActual;
+        int seccionVisible = Mathf.Min(edificio.SeccionActual + 1, edificio.secciones);
 
         if (textoEstado != null)
         {
             textoEstado.text = string.Format(
-                "PUNTOS: {0}      REPARACIONES: {1}      ESTRUCTURA: {2}% destruida      BLOQUES: {3}/{4}",
-                puntos, reparaciones, Mathf.RoundToInt(destruido * 100f), edificio.Demolidos, edificio.Total);
+                "PUNTOS: {0}      VIDAS: {1}      SECCIÓN: {2}/{3}      VENTANAS ROTAS: {4}/{5}      DESTROZO: {6}%",
+                puntos, vidas, seccionVisible, edificio.secciones,
+                edificio.Terminado ? 0 : edificio.DanadasEnSeccion(edificio.SeccionActual), edificio.VentanasPorSeccion,
+                Mathf.RoundToInt(destrozo * 100f));
+        }
+
+        if (corazones != null)
+        {
+            for (int i = 0; i < corazones.Length; i++)
+            {
+                if (corazones[i] == null) continue;
+                corazones[i].color = i < vidas ? new Color(0.92f, 0.2f, 0.24f, 1f) : new Color(0.25f, 0.25f, 0.3f, 0.6f);
+            }
         }
 
         if (rellenoBarra != null)
         {
-            float ancho = Mathf.Clamp01(destruido) * AnchoBarra;
-            rellenoBarra.sizeDelta = new Vector2(ancho, 20f);
+            // La barra se llena hasta el límite de derrumbe.
+            float lleno = Mathf.Clamp01(destrozo / Mathf.Max(0.01f, limiteDerrumbe));
+            rellenoBarra.sizeDelta = new Vector2(lleno * AnchoBarra, 20f);
             Image imagen = rellenoBarra.GetComponent<Image>();
-            if (imagen != null) imagen.color = Color.Lerp(new Color(0.95f, 0.75f, 0.2f), new Color(0.85f, 0.15f, 0.12f), destruido);
+            if (imagen != null) imagen.color = Color.Lerp(new Color(0.95f, 0.75f, 0.2f), new Color(0.85f, 0.15f, 0.12f), lleno);
+        }
+
+        if (!partidaTerminada && destrozo >= limiteDerrumbe)
+        {
+            TerminarPartida(true);
         }
 
         if (textoMensaje == null) return;
 
-        if (!partidaTerminada && destruido >= limiteDerrumbe)
-        {
-            TerminarPartida();
-        }
-
-        if (partidaTerminada)
-        {
-            textoMensaje.text = "¡EL EDIFICIO SE CAYÓ!";
-        }
-        else if (destruido > 0.0001f && edificio.Demolidos == 0 && edificio.Agrietados == 0)
-        {
-            textoMensaje.text = "¡TODO REPARADO!";
-        }
-        else
-        {
-            textoMensaje.text = "";
-        }
+        if (partidaTerminada) textoMensaje.text = mensajeFinal;
+        else textoMensaje.text = mensajeTemporal;
     }
 
     public bool PartidaTerminada { get { return partidaTerminada; } }
@@ -219,10 +303,12 @@ public class GestorJuego : MonoBehaviour
     public int Reparaciones { get { return reparaciones; } }
     public bool EstaEnPausa { get { return estaEnPausa; } }
 
-    private void TerminarPartida()
+    /// <summary>Pierde la partida: por derrumbe (true) o porque el muñeco se quedó sin vidas (false).</summary>
+    private void TerminarPartida(bool porDerrumbe)
     {
         if (partidaTerminada) return;
         partidaTerminada = true;
+        mensajeFinal = porDerrumbe ? "¡EL EDIFICIO SE CAYÓ!" : "¡TE QUEDASTE SIN VIDAS!";
 
         if (demoledor != null) demoledor.Detener();
         if (muneco != null)
@@ -235,21 +321,25 @@ public class GestorJuego : MonoBehaviour
         Time.timeScale = 1f;
 
         // Datos reales de la partida para la pantalla FinJuego.
-        GameSession.RegistrarDerrumbe(puntos, reparaciones,
-            edificio != null ? edificio.PorcentajeDestruido : 1f, SceneManager.GetActiveScene().name);
+        string escena = SceneManager.GetActiveScene().name;
+        if (porDerrumbe)
+            GameSession.RegistrarDerrumbe(puntos, reparaciones, edificio != null ? edificio.DestrozoSeccionActual : 1f, escena);
+        else
+            GameSession.RegistrarSinVidas(puntos, reparaciones, escena);
 
-        rutinaFin = StartCoroutine(CargarFinJuego());
+        Refrescar();
+        rutinaFin = StartCoroutine(CargarFinJuego(tiempoEsperaFin));
     }
 
-    private IEnumerator CargarFinJuego()
+    private IEnumerator CargarFinJuego(float espera)
     {
-        yield return new WaitForSeconds(tiempoEsperaFin);
+        yield return new WaitForSeconds(espera);
         // Con fundido; si FinJuego no estuviera en Build Settings se carga como antes.
         if (!NavegadorEscenas.Cargar(Escenas.FinJuego)) SceneManager.LoadScene(Escenas.FinJuego);
     }
 
     /// <summary>
-    /// Vuelve a empezar: edificio entero, demoledor desde arriba y puntos a cero.
+    /// Vuelve a empezar: ventanas intactas, sección 1, vidas llenas y puntos a cero.
     /// Mantiene compatibilidad con scripts de verificación y tests.
     /// </summary>
     public void ReiniciarPartida()
@@ -270,13 +360,17 @@ public class GestorJuego : MonoBehaviour
 
         puntos = 0;
         reparaciones = 0;
+        vidas = vidasIniciales;
+        mensajeFinal = "";
+        mensajeTemporal = "";
 
+        EscombroCayendo.EliminarTodos();
         if (edificio != null) edificio.Reiniciar();
 
         if (muneco != null)
         {
             muneco.enabled = true;
-            muneco.Soltar();
+            muneco.Reaparecer(inicioMuneco);
         }
         if (demoledor != null) demoledor.Reiniciar();
 
@@ -317,6 +411,21 @@ public class GestorJuego : MonoBehaviour
         rellenoBarra.anchorMax = new Vector2(0.5f, 1f);
         rellenoBarra.pivot = new Vector2(0f, 0.5f);
         rellenoBarra.anchoredPosition = new Vector2(-AnchoBarra * 0.5f, -128f);
+
+        // Vidas: un corazón por vida, debajo de la barra (se apagan al perderlas).
+        int totalCorazones = Mathf.Max(1, vidasIniciales);
+        corazones = new Image[totalCorazones];
+        const float AnchoCorazon = 54f;
+        const float SeparacionCorazon = 66f;
+        float inicioCorazones = -(totalCorazones - 1) * SeparacionCorazon * 0.5f;
+        for (int i = 0; i < totalCorazones; i++)
+        {
+            Image corazon = CrearImagen(raiz, "Vida" + (i + 1), Color.white, new Vector2(0.5f, 1f),
+                new Vector2(inicioCorazones + i * SeparacionCorazon, -178f), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
+            corazon.sprite = SpriteCorazon();
+            corazon.preserveAspect = true;
+            corazones[i] = corazon;
+        }
 
         textoMensaje = CrearTexto(raiz, "", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 260f),
             new Vector2(1500f, 100f), TextAnchor.MiddleCenter, 58, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
@@ -375,6 +484,52 @@ public class GestorJuego : MonoBehaviour
         imagen.color = color;
         imagen.raycastTarget = false;
         return imagen;
+    }
+
+    /// <summary>Corazón en pixel art (9x8) creado por código: no necesita ningún archivo.</summary>
+    private static Sprite SpriteCorazon()
+    {
+        if (spriteCorazon != null) return spriteCorazon;
+
+        string[] dibujo =
+        {
+            ".XX...XX.",
+            "XwwX.XooX",
+            "XwooXoooX",
+            "XoooooooX",
+            ".XoooooX.",
+            "..XoooX..",
+            "...XoX...",
+            "....X....",
+        };
+
+        int ancho = dibujo[0].Length;
+        int alto = dibujo.Length;
+        Texture2D textura = new Texture2D(ancho, alto, TextureFormat.RGBA32, false);
+        textura.filterMode = FilterMode.Point;
+        textura.wrapMode = TextureWrapMode.Clamp;
+
+        for (int y = 0; y < alto; y++)
+        {
+            string fila = dibujo[alto - 1 - y];   // la textura empieza abajo
+            for (int x = 0; x < ancho; x++)
+            {
+                Color c;
+                switch (fila[x])
+                {
+                    case 'X': c = new Color(0.12f, 0.08f, 0.1f, 1f); break;
+                    case 'w': c = new Color(1f, 1f, 1f, 1f); break;
+                    case 'o': c = new Color(0.86f, 0.86f, 0.86f, 1f); break;
+                    default: c = new Color(0f, 0f, 0f, 0f); break;
+                }
+                textura.SetPixel(x, y, c);
+            }
+        }
+        textura.Apply();
+
+        spriteCorazon = Sprite.Create(textura, new Rect(0f, 0f, ancho, alto), new Vector2(0.5f, 0.5f), 100f);
+        spriteCorazon.name = "Corazon";
+        return spriteCorazon;
     }
 
     private static Font FuentePredeterminada()

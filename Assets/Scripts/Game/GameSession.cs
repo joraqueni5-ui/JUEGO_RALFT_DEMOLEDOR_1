@@ -41,6 +41,34 @@ namespace DemoledorUnifranz.Game
             NivelActual = nivel;
         }
 
+        /// <summary>
+        /// El edificio alto quedó salvado (se completaron todas las secciones).
+        /// FinJuego muestra "¡VICTORIA!" con el puntaje.
+        /// </summary>
+        public static void RegistrarVictoria(int puntos, int reparaciones, string nivel)
+        {
+            Puntaje = puntos;
+            Reparaciones = reparaciones;
+            PorcentajeDestruido = 0f;
+            Victoria = true;
+            HayDatosDerrumbe = false;
+            NivelActual = nivel;
+        }
+
+        /// <summary>
+        /// El muñeco se quedó sin vidas (el edificio sigue en pie).
+        /// FinJuego muestra "GAME OVER" con el puntaje.
+        /// </summary>
+        public static void RegistrarSinVidas(int puntos, int reparaciones, string nivel)
+        {
+            Puntaje = puntos;
+            Reparaciones = reparaciones;
+            PorcentajeDestruido = 0f;
+            Victoria = false;
+            HayDatosDerrumbe = false;
+            NivelActual = nivel;
+        }
+
         /// <summary>Reinicia los contadores al comenzar una partida nueva.</summary>
         public static void IniciarPartida(int metaLadrillos, string nivel)
         {
