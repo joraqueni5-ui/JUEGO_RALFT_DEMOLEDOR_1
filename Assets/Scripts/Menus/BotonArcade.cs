@@ -6,7 +6,8 @@ namespace DemoledorUnifranz.UI.Menus
 {
     /// <summary>
     /// Efecto de botón arcade: crece al pasar el cursor (o al seleccionarlo con teclado),
-    /// se aplasta al presionar y suena. Funciona con mouse y con toques.
+    /// muestra un marco blanco y una flecha que se mueve, se aplasta al presionar,
+    /// suena y vibra en el celular. Funciona con mouse, teclado, mando y toques.
     /// Usa tiempo sin escala para seguir animando con el juego en pausa.
     /// </summary>
     [RequireComponent(typeof(Button))]
@@ -20,8 +21,15 @@ namespace DemoledorUnifranz.UI.Menus
         public float escalaPresionado = 0.93f;
         [Tooltip("Velocidad de la animación.")]
         public float suavizado = 16f;
-        [Tooltip("Inclinación (grados) al pasar el cursor, para darle personalidad.")]
-        public float inclinacion = 1.5f;
+        [Tooltip("Inclinación (grados) al pasar el cursor (0 = sin inclinación, mejor para pixel art).")]
+        public float inclinacion = 0f;
+
+        [Header("Selección")]
+        public GameObject marcoSeleccion;
+        public RectTransform flecha;
+
+        private Vector2 posicionFlecha;
+        private bool flechaGuardada;
 
         private Button boton;
         private Vector3 escalaBase = Vector3.one;
@@ -43,6 +51,8 @@ namespace DemoledorUnifranz.UI.Menus
             presionado = false;
             transform.localScale = escalaBase;
             transform.localRotation = Quaternion.identity;
+            if (marcoSeleccion != null) marcoSeleccion.SetActive(false);
+            if (flecha != null) flecha.gameObject.SetActive(false);
         }
 
         private void Update()
@@ -59,11 +69,23 @@ namespace DemoledorUnifranz.UI.Menus
                 ? Mathf.Sin(Time.unscaledTime * 6f) * inclinacion
                 : 0f;
             transform.localRotation = Quaternion.Slerp(transform.localRotation, Quaternion.Euler(0f, 0f, angulo), k);
+
+            bool marcado = activo && (encima || seleccionado);
+            if (marcoSeleccion != null && marcoSeleccion.activeSelf != marcado) marcoSeleccion.SetActive(marcado);
+            if (flecha != null)
+            {
+                if (!flechaGuardada) { posicionFlecha = flecha.anchoredPosition; flechaGuardada = true; }
+                if (flecha.gameObject.activeSelf != marcado) flecha.gameObject.SetActive(marcado);
+                // La flecha "late" de 4 en 4 unidades, como un cursor de arcade.
+                float paso = Mathf.Floor(Mathf.PingPong(Time.unscaledTime * 16f, 2f)) * 4f;
+                flecha.anchoredPosition = posicionFlecha + new Vector2(-paso, 0f);
+            }
         }
 
         private void AlHacerClic()
         {
             ServiciosMenus.Instancia.Clic();
+            PreferenciasMenus.VibrarCorto();
         }
 
         public void OnPointerEnter(PointerEventData datos)
