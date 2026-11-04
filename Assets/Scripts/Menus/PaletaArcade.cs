@@ -18,6 +18,8 @@ namespace DemoledorUnifranz.UI.Menus
         public static readonly Color NaranjaOscuro = Hex(0xC2450C);
         public static readonly Color Rojo = Hex(0xE23B2E);
         public static readonly Color Ladrillo = Hex(0xB4532A);
+        public static readonly Color Morado = Hex(0x8C5AC8);
+        public static readonly Color Verde = Hex(0x3CAA5A);
         public static readonly Color Contorno = Hex(0x0A0F24);
         public static readonly Color Crema = Hex(0xFFF4DC);
         public static readonly Color Velo = new Color(0.02f, 0.04f, 0.10f, 0.72f);
