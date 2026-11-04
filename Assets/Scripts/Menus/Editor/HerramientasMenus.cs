@@ -169,7 +169,10 @@ public static class HerramientasMenus
             Undo.RegisterCreatedObjectUndo(es, "Crear EventSystem");
         }
 
-        FabricaUIArcade.Fuente = CargarFuente();
+        Font titulos, cuerpo;
+        CargarFuentes(out titulos, out cuerpo);
+        FabricaUIArcade.Fuente = titulos;
+        FabricaUIArcade.FuenteCuerpo = cuerpo;
     }
 
     public static void Conectar(Button boton, UnityEngine.Events.UnityAction accion)
@@ -177,9 +180,9 @@ public static class HerramientasMenus
         UnityEventTools.AddPersistentListener(boton.onClick, accion);
     }
 
-    public static Button Boton(Transform padre, string nombre, string texto, Sprite sprite, Vector2 posicion, Vector2 tamano, int fuente)
+    public static Button Boton(Transform padre, string nombre, string texto, Sprite sprite, Vector2 posicion, Vector2 tamano, int fuente, Sprite icono = null)
     {
-        Button b = FabricaUIArcade.CrearBoton(padre, nombre, texto, sprite, tamano, fuente);
+        Button b = FabricaUIArcade.CrearBoton(padre, nombre, texto, sprite, tamano, fuente, icono);
         FabricaUIArcade.Centrar((RectTransform)b.transform, posicion, tamano);
         return b;
     }
@@ -187,35 +190,54 @@ public static class HerramientasMenus
     /// <summary>Franja de peligro horizontal dentro de una caja (pegada arriba o abajo).</summary>
     public static Image FranjaEnCaja(RectTransform caja, Sprite franja, bool arriba, float margen, float alto)
     {
-        Image f = FabricaUIArcade.CrearImagen(caja, arriba ? "FranjaSuperior" : "FranjaInferior", franja, Color.white);
-        f.type = Image.Type.Tiled;
-        RectTransform rt = f.rectTransform;
-        float y = arriba ? 1f : 0f;
-        rt.anchorMin = new Vector2(0f, y);
-        rt.anchorMax = new Vector2(1f, y);
-        rt.pivot = new Vector2(0.5f, y);
-        rt.offsetMin = new Vector2(margen, arriba ? -margen - alto : margen);
-        rt.offsetMax = new Vector2(-margen, arriba ? -margen : margen + alto);
-        return f;
+        return FabricaUIArcade.Franja(caja, franja, arriba, margen, alto);
     }
 
     // ------------------------------------------------------------ recursos
-    private static Font CargarFuente()
+    private const string RutaFuenteTitulos = DirFuentes + "/Silkscreen-Bold.ttf";
+    private const string RutaFuenteCuerpo = DirFuentes + "/Silkscreen-Regular.ttf";
+
+    /// <summary>
+    /// Carga la fuente pixel (Silkscreen, licencia OFL) y la configura para que se vea
+    /// nítida (sin suavizado). Si no está, usa la fuente integrada de Unity.
+    /// </summary>
+    public static void CargarFuentes(out Font titulos, out Font cuerpo)
     {
-        if (AssetDatabase.IsValidFolder(DirFuentes))
+        // La fuente viaja en el repositorio como .bytes (los .ttf van por Git LFS);
+        // la primera vez se copia como .ttf para que Unity la importe como fuente.
+        CrearTtfDesdeBytes(RutaFuenteTitulos);
+        CrearTtfDesdeBytes(RutaFuenteCuerpo);
+
+        titulos = PrepararFuente(RutaFuenteTitulos);
+        cuerpo = PrepararFuente(RutaFuenteCuerpo);
+        if (titulos == null)
         {
-            string[] guids = AssetDatabase.FindAssets("t:Font", new[] { DirFuentes });
-            if (guids.Length > 0)
-            {
-                Font f = AssetDatabase.LoadAssetAtPath<Font>(AssetDatabase.GUIDToAssetPath(guids[0]));
-                if (f != null)
-                {
-                    Debug.Log("[Menus] Fuente de los menús: " + f.name);
-                    return f;
-                }
-            }
+            titulos = FabricaUIArcade.FuenteIntegrada();
+            Debug.LogWarning("[Menus] No se encontró " + RutaFuenteTitulos + ": se usa la fuente integrada.");
         }
-        return FabricaUIArcade.FuenteIntegrada();
+        if (cuerpo == null) cuerpo = titulos;
+    }
+
+    private static void CrearTtfDesdeBytes(string rutaTtf)
+    {
+        string origen = Path.ChangeExtension(rutaTtf, ".bytes");
+        if (File.Exists(rutaTtf) || !File.Exists(origen)) return;
+        File.Copy(origen, rutaTtf);
+        AssetDatabase.ImportAsset(rutaTtf, ImportAssetOptions.ForceSynchronousImport);
+        Debug.Log("[Menus] Fuente creada: " + rutaTtf);
+    }
+
+    private static Font PrepararFuente(string ruta)
+    {
+        TrueTypeFontImporter imp = AssetImporter.GetAtPath(ruta) as TrueTypeFontImporter;
+        if (imp == null) return null;
+        if (imp.fontRenderingMode != FontRenderingMode.HintedRaster || imp.fontTextureCase != FontTextureCase.Dynamic)
+        {
+            imp.fontRenderingMode = FontRenderingMode.HintedRaster;   // pixeles nítidos, sin suavizado
+            imp.fontTextureCase = FontTextureCase.Dynamic;
+            imp.SaveAndReimport();
+        }
+        return AssetDatabase.LoadAssetAtPath<Font>(ruta);
     }
 
     private struct DefSprite
@@ -224,37 +246,69 @@ public static class HerramientasMenus
         public Func<Texture2D> dibujar;
         public Vector4 borde;
         public bool repetir;
+        public bool pixel;
 
-        public DefSprite(string nombre, Func<Texture2D> dibujar, Vector4 borde, bool repetir = false)
+        public DefSprite(string nombre, Func<Texture2D> dibujar, Vector4 borde, bool repetir = false, bool pixel = true)
         {
             this.nombre = nombre;
             this.dibujar = dibujar;
             this.borde = borde;
             this.repetir = repetir;
+            this.pixel = pixel;
         }
+    }
+
+    private static DefSprite Ico(string nombre, string[] mapa)
+    {
+        return new DefSprite(nombre, () => GeneradorPixelArt.Icono(mapa, nombre), Vector4.zero);
     }
 
     private static DefSprite[] Definiciones()
     {
+        Vector4 bb = GeneradorPixelArt.BordeBoton, bp = GeneradorPixelArt.BordePanel, bs = GeneradorPixelArt.BordeBarra;
         return new[]
         {
-            new DefSprite("boton_amarillo", () => GeneradorSpritesArcade.Boton(PaletaArcade.Amarillo, "boton_amarillo"), KitSpritesArcade.BordeBoton),
-            new DefSprite("boton_naranja", () => GeneradorSpritesArcade.Boton(PaletaArcade.Naranja, "boton_naranja"), KitSpritesArcade.BordeBoton),
-            new DefSprite("boton_azul", () => GeneradorSpritesArcade.Boton(PaletaArcade.AzulClaro, "boton_azul"), KitSpritesArcade.BordeBoton),
-            new DefSprite("boton_rojo", () => GeneradorSpritesArcade.Boton(PaletaArcade.Rojo, "boton_rojo"), KitSpritesArcade.BordeBoton),
-            new DefSprite("panel_arcade", GeneradorSpritesArcade.Panel, KitSpritesArcade.BordePanel),
-            new DefSprite("franja_peligro", GeneradorSpritesArcade.FranjaPeligro, Vector4.zero, true),
-            new DefSprite("ladrillo_menu", GeneradorSpritesArcade.Ladrillo, Vector4.zero),
-            new DefSprite("barra", GeneradorSpritesArcade.Barra, KitSpritesArcade.BordeBarra),
-            new DefSprite("barra_relleno", GeneradorSpritesArcade.Relleno, KitSpritesArcade.BordeBarra),
-            new DefSprite("perilla", GeneradorSpritesArcade.Perilla, Vector4.zero),
-            new DefSprite("casilla", GeneradorSpritesArcade.Casilla, KitSpritesArcade.BordeCasilla),
-            new DefSprite("marca", GeneradorSpritesArcade.Marca, Vector4.zero),
-            // Menú principal.
-            new DefSprite("muro_ladrillo", GeneradorSpritesArcade.MuroLadrillo, Vector4.zero, true),
-            new DefSprite("cartel_obra", GeneradorSpritesArcade.Cartel, KitSpritesArcade.BordeCartel),
-            new DefSprite("hueco_muro", GeneradorSpritesArcade.Hueco, Vector4.zero),
-            new DefSprite("vineta", GeneradorSpritesArcade.Vineta, Vector4.zero),
+            // Botones y marcos.
+            new DefSprite("boton_px_amarillo", () => GeneradorPixelArt.Boton(PaletaArcade.Amarillo, "boton_px_amarillo"), bb),
+            new DefSprite("boton_px_naranja", () => GeneradorPixelArt.Boton(PaletaArcade.Naranja, "boton_px_naranja"), bb),
+            new DefSprite("boton_px_azul", () => GeneradorPixelArt.Boton(PaletaArcade.AzulClaro, "boton_px_azul"), bb),
+            new DefSprite("boton_px_rojo", () => GeneradorPixelArt.Boton(PaletaArcade.Rojo, "boton_px_rojo"), bb),
+            new DefSprite("boton_px_morado", () => GeneradorPixelArt.Boton(PaletaArcade.Morado, "boton_px_morado"), bb),
+            new DefSprite("marco_seleccion", GeneradorPixelArt.MarcoSeleccion, bb),
+            new DefSprite("panel_px", () => GeneradorPixelArt.Panel(PaletaArcade.Amarillo, "panel_px"), bp),
+            new DefSprite("panel_px_rojo", () => GeneradorPixelArt.Panel(PaletaArcade.Rojo, "panel_px_rojo"), bp),
+            new DefSprite("panel_px_morado", () => GeneradorPixelArt.Panel(PaletaArcade.Morado, "panel_px_morado"), bp),
+            new DefSprite("cartel_px", GeneradorPixelArt.Cartel, GeneradorPixelArt.BordeCartel),
+            new DefSprite("franja_px", GeneradorPixelArt.Franja, Vector4.zero, true),
+            new DefSprite("ladrillo_px", GeneradorPixelArt.Ladrillo, Vector4.zero),
+            new DefSprite("muro_px", GeneradorPixelArt.Muro, Vector4.zero, true),
+            new DefSprite("hueco_px", GeneradorPixelArt.Hueco, Vector4.zero),
+            // Controles.
+            new DefSprite("barra_px", GeneradorPixelArt.Barra, bs),
+            new DefSprite("relleno_px", GeneradorPixelArt.Relleno, bs),
+            new DefSprite("perilla_px", GeneradorPixelArt.Perilla, Vector4.zero),
+            new DefSprite("casilla_px", GeneradorPixelArt.Casilla, GeneradorPixelArt.BordeCasilla),
+            new DefSprite("marca_px", GeneradorPixelArt.Marca, Vector4.zero),
+            // Iconos.
+            Ico("icono_jugar", GeneradorPixelArt.IconoJugar),
+            Ico("icono_opciones", GeneradorPixelArt.IconoOpciones),
+            Ico("icono_ayuda", GeneradorPixelArt.IconoAyuda),
+            Ico("icono_salir", GeneradorPixelArt.IconoSalir),
+            Ico("icono_trofeo", GeneradorPixelArt.IconoTrofeo),
+            Ico("icono_reiniciar", GeneradorPixelArt.IconoReiniciar),
+            Ico("icono_casa", GeneradorPixelArt.IconoCasa),
+            Ico("icono_flecha", GeneradorPixelArt.IconoFlecha),
+            Ico("icono_estrella", GeneradorPixelArt.IconoEstrella),
+            Ico("icono_pausa", GeneradorPixelArt.IconoPausa),
+            Ico("icono_arriba", GeneradorPixelArt.IconoArriba),
+            Ico("icono_abajo", GeneradorPixelArt.IconoAbajo),
+            // Medallas.
+            new DefSprite("medalla_bronce", () => GeneradorPixelArt.Medalla(PaletaArcade.Hex(0xC8743A), "medalla_bronce"), Vector4.zero),
+            new DefSprite("medalla_plata", () => GeneradorPixelArt.Medalla(PaletaArcade.Hex(0xC9D2E0), "medalla_plata"), Vector4.zero),
+            new DefSprite("medalla_oro", () => GeneradorPixelArt.Medalla(PaletaArcade.Hex(0xF0B41E), "medalla_oro"), Vector4.zero),
+            // Fondos suaves (no pixel).
+            new DefSprite("vineta", GeneradorPixelArt.Vineta, Vector4.zero, false, false),
+            new DefSprite("sombra_lateral", GeneradorPixelArt.SombraLateral, Vector4.zero, false, false),
         };
     }
 
@@ -283,7 +337,7 @@ public static class HerramientasMenus
             imp.mipmapEnabled = false;
             imp.alphaIsTransparency = true;
             imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.filterMode = FilterMode.Bilinear;
+            imp.filterMode = def.pixel ? FilterMode.Point : FilterMode.Bilinear;
             imp.wrapMode = def.repetir ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
             imp.npotScale = TextureImporterNPOTScale.None;
             imp.spriteBorder = def.borde;
@@ -304,25 +358,64 @@ public static class HerramientasMenus
         return s;
     }
 
-    /// <summary>Genera los PNG que falten y devuelve el juego de sprites cargado.</summary>
+    /// <summary>Genera los PNG que falten y devuelve el juego de sprites completo.</summary>
     public static KitSpritesArcade CargarKit()
     {
         GenerarSprites(false);
         return new KitSpritesArcade
         {
-            botonAmarillo = S("boton_amarillo"),
-            botonNaranja = S("boton_naranja"),
-            botonAzul = S("boton_azul"),
-            botonRojo = S("boton_rojo"),
-            panel = S("panel_arcade"),
-            franja = S("franja_peligro"),
-            ladrillo = S("ladrillo_menu"),
-            barra = S("barra"),
-            relleno = S("barra_relleno"),
-            perilla = S("perilla"),
-            casilla = S("casilla"),
-            marca = S("marca"),
+            botonAmarillo = S("boton_px_amarillo"),
+            botonNaranja = S("boton_px_naranja"),
+            botonAzul = S("boton_px_azul"),
+            botonRojo = S("boton_px_rojo"),
+            botonMorado = S("boton_px_morado"),
+            marcoSeleccion = S("marco_seleccion"),
+            panel = S("panel_px"),
+            panelRojo = S("panel_px_rojo"),
+            panelMorado = S("panel_px_morado"),
+            cartel = S("cartel_px"),
+            franja = S("franja_px"),
+            ladrillo = S("ladrillo_px"),
+            muro = S("muro_px"),
+            hueco = S("hueco_px"),
+            vineta = S("vineta"),
+            sombraLateral = S("sombra_lateral"),
+            barra = S("barra_px"),
+            relleno = S("relleno_px"),
+            perilla = S("perilla_px"),
+            casilla = S("casilla_px"),
+            marca = S("marca_px"),
+            iconoJugar = S("icono_jugar"),
+            iconoOpciones = S("icono_opciones"),
+            iconoAyuda = S("icono_ayuda"),
+            iconoSalir = S("icono_salir"),
+            iconoTrofeo = S("icono_trofeo"),
+            iconoReiniciar = S("icono_reiniciar"),
+            iconoCasa = S("icono_casa"),
+            iconoFlecha = S("icono_flecha"),
+            iconoEstrella = S("icono_estrella"),
+            iconoPausa = S("icono_pausa"),
+            iconoArriba = S("icono_arriba"),
+            iconoAbajo = S("icono_abajo"),
+            medallaBronce = S("medalla_bronce"),
+            medallaPlata = S("medalla_plata"),
+            medallaOro = S("medalla_oro"),
         };
+    }
+
+    /// <summary>
+    /// Agrega a la escena el objeto RecursosMenus con las fuentes y los sprites, para que
+    /// los menús creados por código (la pausa en Universidad) usen los mismos recursos.
+    /// </summary>
+    public static RecursosMenus AgregarRecursos(Transform padre, KitSpritesArcade kit, Font titulos, Font cuerpo)
+    {
+        GameObject objeto = new GameObject("RecursosMenus");
+        objeto.transform.SetParent(padre, false);
+        RecursosMenus r = objeto.AddComponent<RecursosMenus>();
+        r.kit = kit;
+        r.fuenteTitulos = titulos;
+        r.fuenteCuerpo = cuerpo;
+        return r;
     }
 
     /// <summary>Carga los sprites de una animación del equipo (por ejemplo Assets/Arte/Demoledor/golpe_0..5).</summary>
