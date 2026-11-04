@@ -8,7 +8,7 @@ namespace DemoledorUnifranz.UI.Menus
     /// <summary>
     /// Objeto persistente (DontDestroyOnLoad) que da servicio a todos los menús:
     /// - Sonidos de la interfaz, sintetizados por código (no hay audios en el proyecto).
-    /// - Fundido a negro al cambiar de escena.
+    /// - Transición de ladrillos al cambiar de escena (TransicionLadrillos).
     /// - Un AudioListener de respaldo para las escenas de menú que no tienen uno.
     /// Se crea solo la primera vez que se necesita.
     /// </summary>
@@ -34,7 +34,7 @@ namespace DemoledorUnifranz.UI.Menus
 
         private AudioSource fuente;
         private AudioListener oyente;
-        private Image cortina;
+        private TransicionLadrillos transicion;
         private bool cargando;
 
         private AudioClip sonidoHover;
@@ -69,7 +69,7 @@ namespace DemoledorUnifranz.UI.Menus
             sonidoPanel = CrearTono("ui_panel", 0.14f, 300f, 620f, 0.16f, true);
             sonidoGolpe = CrearTono("ui_golpe", 0.10f, 140f, 60f, 0.22f, true);
 
-            CrearCortina();
+            transicion = TransicionLadrillos.Crear(transform);
             RevisarOyente();
             SceneManager.sceneLoaded += AlCargarEscena;
         }
@@ -152,28 +152,7 @@ namespace DemoledorUnifranz.UI.Menus
         }
 
         // ------------------------------------------------------------ cambio de escena
-        private void CrearCortina()
-        {
-            GameObject lienzo = new GameObject("Cortina", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
-            lienzo.transform.SetParent(transform, false);
-            Canvas canvas = lienzo.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 1000;
-
-            GameObject imagen = new GameObject("Negro", typeof(RectTransform), typeof(Image));
-            imagen.transform.SetParent(lienzo.transform, false);
-            RectTransform rt = (RectTransform)imagen.transform;
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-
-            cortina = imagen.GetComponent<Image>();
-            cortina.color = new Color(PaletaArcade.AzulNoche.r, PaletaArcade.AzulNoche.g, PaletaArcade.AzulNoche.b, 0f);
-            cortina.raycastTarget = false;
-        }
-
-        /// <summary>Funde a oscuro, carga la escena y vuelve a mostrar.</summary>
+        /// <summary>Tapa la pantalla con la pared de ladrillos, carga la escena y la destapa.</summary>
         public void CargarEscena(string nombre)
         {
             if (cargando) return;
@@ -183,31 +162,15 @@ namespace DemoledorUnifranz.UI.Menus
         private IEnumerator RutinaCarga(string nombre)
         {
             cargando = true;
-            cortina.raycastTarget = true;
-            yield return Fundir(0f, 1f, 0.25f);
+            yield return transicion.Cerrar();
 
             Time.timeScale = 1f;
             SceneManager.LoadScene(nombre);
             yield return null;
+            yield return null;
 
-            yield return Fundir(1f, 0f, 0.3f);
-            cortina.raycastTarget = false;
+            yield return transicion.Abrir();
             cargando = false;
-        }
-
-        private IEnumerator Fundir(float desde, float hasta, float duracion)
-        {
-            float t = 0f;
-            Color c = cortina.color;
-            while (t < duracion)
-            {
-                t += Time.unscaledDeltaTime;
-                c.a = Mathf.Lerp(desde, hasta, Mathf.SmoothStep(0f, 1f, t / duracion));
-                cortina.color = c;
-                yield return null;
-            }
-            c.a = hasta;
-            cortina.color = c;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
