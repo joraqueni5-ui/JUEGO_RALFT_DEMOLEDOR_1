@@ -41,6 +41,7 @@ namespace DemoledorUnifranz.UI.Menus
         private AudioClip sonidoClic;
         private AudioClip sonidoTic;
         private AudioClip sonidoPanel;
+        private AudioClip sonidoGolpe;
         private float ultimoTic;
 
         public bool Cargando { get { return cargando; } }
@@ -66,6 +67,7 @@ namespace DemoledorUnifranz.UI.Menus
             sonidoClic = CrearTono("ui_clic", 0.12f, 540f, 240f, 0.20f, true);
             sonidoTic = CrearTono("ui_tic", 0.03f, 1200f, 1100f, 0.12f, false);
             sonidoPanel = CrearTono("ui_panel", 0.14f, 300f, 620f, 0.16f, true);
+            sonidoGolpe = CrearTono("ui_golpe", 0.10f, 140f, 60f, 0.22f, true);
 
             CrearCortina();
             RevisarOyente();
@@ -87,6 +89,7 @@ namespace DemoledorUnifranz.UI.Menus
         public void Hover() { Reproducir(sonidoHover); }
         public void Clic() { Reproducir(sonidoClic); }
         public void Panel() { Reproducir(sonidoPanel); }
+        public void Golpe() { Reproducir(sonidoGolpe); }
 
         /// <summary>Tic corto (al mover el slider), limitado para que no se amontone.</summary>
         public void Tic()
