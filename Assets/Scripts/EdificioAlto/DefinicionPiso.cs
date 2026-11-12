@@ -39,6 +39,8 @@ public class DefinicionPiso : ScriptableObject
     public Sprite fondo;
     [Tooltip("Tinte provisional que se aplica a objetos, plataformas y fondo mientras no haya arte propio.")]
     public Color tinte = Color.white;
+    [Tooltip("Color de la cámara fuera del fondo (barras en pantallas más anchas que 16:9). Con alfa 0 se calcula a partir del tinte.")]
+    public Color colorFondo = new Color(0f, 0f, 0f, 0f);
 
     [Header("Dificultad")]
     [Tooltip("Multiplica la velocidad del demoledor (1 = normal).")]

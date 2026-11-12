@@ -33,6 +33,7 @@ namespace DemoledorUnifranz.UI
         /// <summary>Carga la escena del primer nivel.</summary>
         public void Jugar()
         {
+            GameSession.NuevaPartida();   // modo de pisos: una partida nueva empieza en el Piso 1
             SceneManager.LoadScene(Escenas.Nivel1);
         }
 

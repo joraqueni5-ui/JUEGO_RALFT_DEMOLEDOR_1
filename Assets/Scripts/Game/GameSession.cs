@@ -69,6 +69,34 @@ namespace DemoledorUnifranz.Game
             NivelActual = nivel;
         }
 
+        // ---- Modo de 6 pisos (EdificioPisos). El modo original no usa estos datos.
+        /// <summary>Piso en curso (0 = Piso 1). Al perder se continúa desde aquí.</summary>
+        public static int PisoActual;
+        /// <summary>Piso más alto alcanzado en la partida.</summary>
+        public static int PisoMaximo;
+        /// <summary>Puntos con los que empezó el piso en curso (los pisos ya completados).</summary>
+        public static int PuntosAcumulados;
+        /// <summary>Vidas con las que empezó el piso en curso (0 = todavía no se guardó ninguna).</summary>
+        public static int VidasAlEmpezarPiso;
+
+        /// <summary>Partida nueva del modo de pisos: vuelve al Piso 1 con todo en cero.</summary>
+        public static void NuevaPartida()
+        {
+            PisoActual = 0;
+            PisoMaximo = 0;
+            PuntosAcumulados = 0;
+            VidasAlEmpezarPiso = 0;
+        }
+
+        /// <summary>Guarda el estado con el que empieza un piso: a él se vuelve al perder o con R.</summary>
+        public static void GuardarInicioPiso(int piso, int puntos, int vidas)
+        {
+            PisoActual = piso;
+            if (piso > PisoMaximo) PisoMaximo = piso;
+            PuntosAcumulados = puntos;
+            VidasAlEmpezarPiso = vidas;
+        }
+
         /// <summary>Reinicia los contadores al comenzar una partida nueva.</summary>
         public static void IniciarPartida(int metaLadrillos, string nivel)
         {

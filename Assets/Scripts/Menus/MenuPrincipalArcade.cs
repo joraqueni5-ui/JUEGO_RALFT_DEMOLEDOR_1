@@ -168,6 +168,7 @@ namespace DemoledorUnifranz.UI.Menus
         // ------------------------------------------------------------ botones
         public void Jugar()
         {
+            GameSession.NuevaPartida();   // modo de pisos: una partida nueva empieza en el Piso 1
             NavegadorEscenas.Cargar(Escenas.Nivel1);
         }
 

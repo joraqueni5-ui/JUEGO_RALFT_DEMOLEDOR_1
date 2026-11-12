@@ -20,11 +20,24 @@ public class EdificioPisos : EdificioAlto
     [Header("Pisos")]
     [Tooltip("Los 6 pisos en orden (Assets/Data/Pisos).")]
     public DefinicionPiso[] pisos = new DefinicionPiso[6];
+    [Tooltip("Cuántos pisos se juegan (los demás todavía no están hechos). 0 = todos los de la lista. " +
+             "Al completar el último de estos, el edificio queda salvado.")]
+    public int pisosActivos = 2;
     [Tooltip("Piso con el que arranca (0 = Piso 1). Sirve para probar un piso concreto.")]
     public int pisoInicial;
     [Tooltip("Si está activo, al completar un piso carga el siguiente de inmediato. " +
              "Se apaga cuando la transición entre pisos se encarga de cargarlo.")]
     public bool cargarSiguienteSolo = true;
+
+    [Header("Escena (solo se aplica al jugar en modo pisos)")]
+    [Tooltip("Altura (mundo) a la que se queda fija la cámara: la sección entera cabe en pantalla.")]
+    public float camaraY = 4.4f;
+    [Tooltip("Fondo exterior del edificio original (objeto 'Fondo'): se oculta en el modo pisos.")]
+    public GameObject fondoExterior;
+    [Tooltip("Imagen de fondo del piso (704 x 396 px). Si el piso no tiene fondo, se usa un color provisional.")]
+    public SpriteRenderer fondoPiso;
+    [Tooltip("Cuánto se oscurece el tinte del piso para usarlo de color de fondo provisional.")]
+    [Range(0.2f, 1f)] public float brilloFondoProvisional = 0.5f;
 
     /// <summary>Se cargó un piso; el número es el índice (0 = Piso 1).</summary>
     public event Action<int> PisoCargado;
@@ -32,7 +45,14 @@ public class EdificioPisos : EdificioAlto
     public event Action<int> PisoCompletado;
 
     public int PisoActual { get; private set; }
-    public int TotalPisos { get { return pisos == null ? 0 : pisos.Length; } }
+    public int TotalPisos
+    {
+        get
+        {
+            if (pisos == null) return 0;
+            return pisosActivos > 0 ? Mathf.Min(pisos.Length, pisosActivos) : pisos.Length;
+        }
+    }
 
     private bool finalizado;
     private bool esperandoSiguiente;
@@ -76,8 +96,31 @@ public class EdificioPisos : EdificioAlto
     {
         PisoActual = Mathf.Clamp(pisoInicial, 0, Mathf.Max(0, TotalPisos - 1));
         base.Awake();
+        PrepararEscena();
         AplicarPiso();
     }
+
+    /// <summary>Cámara fija y fondo exterior apagado. Solo cambia valores en ejecución, no en la escena.</summary>
+    private void PrepararEscena()
+    {
+        if (fondoExterior != null) fondoExterior.SetActive(false);
+
+        camara = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
+        if (camara == null) return;
+
+        CamaraSeguimiento seguir = camara.GetComponent<CamaraSeguimiento>();
+        if (seguir != null)
+        {
+            seguir.yMinima = camaraY;
+            seguir.yMaxima = camaraY;
+        }
+        Vector3 p = camara.transform.position;
+        p.y = camaraY;
+        camara.transform.position = p;
+        camara.clearFlags = CameraClearFlags.SolidColor;
+    }
+
+    private Camera camara;
 
     protected override int GolpesMinimos(int seccion)
     {
@@ -130,6 +173,32 @@ public class EdificioPisos : EdificioAlto
     {
         DefinicionPiso d = DefinicionActual;
         if (d == null) return;
+
+        // Fondo: la imagen del piso o, mientras no exista, un color tomado de su tinte.
+        if (fondoPiso != null)
+        {
+            fondoPiso.sprite = d.fondo;
+            fondoPiso.enabled = d.fondo != null;
+            if (camara != null)
+            {
+                fondoPiso.transform.position = new Vector3(camara.transform.position.x, camaraY, fondoPiso.transform.position.z);
+                // En pantallas más anchas que el fondo (16:9), lo agranda para que cubra todo.
+                float escala = 1f;
+                if (d.fondo != null)
+                {
+                    Vector2 tam = d.fondo.bounds.size;
+                    float alto = camara.orthographicSize * 2f;
+                    escala = Mathf.Max(1f, alto * camara.aspect / tam.x, alto / tam.y);
+                }
+                fondoPiso.transform.localScale = new Vector3(escala, escala, 1f);
+            }
+        }
+        if (camara != null)
+        {
+            Color c = d.colorFondo.a > 0f ? d.colorFondo : d.tinte * brilloFondoProvisional;
+            c.a = 1f;
+            camara.backgroundColor = c;
+        }
 
         Sprite[] plataformas = d.SpritesPlataforma();
         foreach (VentanaEdificio v in ventanas)

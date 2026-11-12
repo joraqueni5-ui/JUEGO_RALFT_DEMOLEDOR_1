@@ -57,6 +57,19 @@ public class GestorJuego : MonoBehaviour
     // Espera antes de cargar FinJuego (se cancela si se reinicia la partida).
     private Coroutine rutinaFin;
 
+    // Modo de 6 pisos: solo se usa si SelectorModoJuego lo activó. En el modo original
+    // 'modoPisos' es false y nada de esto se ejecuta.
+    private EdificioPisos pisos;
+    private bool modoPisos;
+    private bool enTransicion;
+    private TransicionPiso transicion;
+    private int puntosInicioPiso;
+    private int vidasInicioPiso;
+    private int reparacionesInicioPiso;
+
+    /// <summary>Destrozo a partir del cual el edificio se cae: el del piso en curso o el general.</summary>
+    private float LimiteActual { get { return modoPisos ? pisos.LimiteDerrumbe : limiteDerrumbe; } }
+
     private const float AnchoBarra = 300f;
 
     private void Awake()
@@ -85,8 +98,13 @@ public class GestorJuego : MonoBehaviour
         }
         if (muneco != null) muneco.Golpeado += AlGolpearMuneco;
 
+        pisos = edificio as EdificioPisos;
+        modoPisos = SelectorModoJuego.ModoPisosActivo && pisos != null;
+        if (modoPisos) IniciarModoPisos();
+
         CrearHud();
         Refrescar();
+        if (modoPisos) MostrarAviso(NombrePisoActual(), 2.5f);
 
         // ControlesTactiles se crea automáticamente solo en la primera escena que abre el juego.
         // Ahora el juego arranca en MenuPrincipal, así que aquí se asegura que existan.
@@ -108,10 +126,14 @@ public class GestorJuego : MonoBehaviour
             edificio.Salvado -= AlSalvarEdificio;
         }
         if (muneco != null) muneco.Golpeado -= AlGolpearMuneco;
+        if (pisos != null) pisos.PisoCompletado -= AlCompletarPiso;
     }
 
     private void Update()
     {
+        // Mientras se muestra la ficha del piso siguiente no hay pausa ni reinicio.
+        if (enTransicion) return;
+
         Keyboard teclado = Keyboard.current;
         bool reiniciarTactil = ControlesTactiles.ReiniciarPulsado();
         bool reiniciarTecla = teclado != null && teclado[Key.R].wasPressedThisFrame;
@@ -155,7 +177,7 @@ public class GestorJuego : MonoBehaviour
     /// <summary>Congela el juego y muestra el menú de pausa.</summary>
     public void Pausar()
     {
-        if (estaEnPausa || partidaTerminada) return;
+        if (estaEnPausa || partidaTerminada || enTransicion) return;
         estaEnPausa = true;
 
         // Congela la física y el movimiento del juego.
@@ -227,6 +249,87 @@ public class GestorJuego : MonoBehaviour
         }
     }
 
+    // ------------------------------------------------------------ modo de 6 pisos
+    private void IniciarModoPisos()
+    {
+        // La ficha entre pisos se encarga de cargar el siguiente piso.
+        pisos.cargarSiguienteSolo = false;
+        pisos.PisoCompletado += AlCompletarPiso;
+
+        // Continúa desde el piso donde se cayó (o desde el piso de pruebas del Inspector).
+        int piso = Mathf.Max(GameSession.PisoActual, pisos.pisoInicial);
+        if (piso != pisos.PisoActual) pisos.CargarPiso(piso);
+
+        // Los puntos y las vidas con que empezó ese piso.
+        puntos = GameSession.PuntosAcumulados;
+        vidas = GameSession.VidasAlEmpezarPiso > 0
+            ? Mathf.Min(GameSession.VidasAlEmpezarPiso, vidasIniciales)
+            : vidasIniciales;
+        GuardarInicioPiso();
+
+        transicion = TransicionPiso.Crear(transform);
+    }
+
+    /// <summary>Guarda cómo empieza el piso en curso: a ese estado se vuelve al perder o con R.</summary>
+    private void GuardarInicioPiso()
+    {
+        puntosInicioPiso = puntos;
+        vidasInicioPiso = vidas;
+        reparacionesInicioPiso = reparaciones;
+        GameSession.GuardarInicioPiso(pisos.PisoActual, puntos, vidas);
+    }
+
+    private string NombrePisoActual()
+    {
+        DefinicionPiso d = pisos.DefinicionActual;
+        string nombre = d != null ? d.TituloCompleto : "Piso " + (pisos.PisoActual + 1);
+        return nombre.ToUpperInvariant();
+    }
+
+    private void AlCompletarPiso(int indice)
+    {
+        if (partidaTerminada || pisos == null) return;
+
+        puntos += bonoPorSeccion;
+        // Al completar el último piso, EdificioPisos avisa 'Salvado' y termina la partida.
+        if (indice >= pisos.TotalPisos - 1)
+        {
+            Refrescar();
+            return;
+        }
+        StartCoroutine(SubirDePiso(indice + 1));
+    }
+
+    private IEnumerator SubirDePiso(int siguiente)
+    {
+        enTransicion = true;
+        Time.timeScale = 0f;
+        if (muneco != null) muneco.enabled = false;
+        Refrescar();
+
+        bool cerrada = false;
+        System.Action alCerrar = () => cerrada = true;
+        transicion.Cerrada += alCerrar;
+        transicion.Mostrar(pisos.DefinicionDe(siguiente));
+        while (!cerrada) yield return null;
+        transicion.Cerrada -= alCerrar;
+        yield return new WaitForSecondsRealtime(0.25f);   // deja que la ficha termine de cerrarse
+
+        EscombroCayendo.EliminarTodos();
+        pisos.CargarPiso(siguiente);
+        if (muneco != null) muneco.Reaparecer(inicioMuneco);
+        if (demoledor != null) demoledor.Reiniciar();
+        GuardarInicioPiso();
+
+        Time.timeScale = 1f;
+        enTransicion = false;
+        // El muñeco se reactiva un cuadro después, como al cerrar la pausa: el ENTER que
+        // cerró la ficha no cuenta como martillazo.
+        munecoActivoAntesDePausa = true;
+        reactivarMuneco = true;
+        MostrarAviso(NombrePisoActual(), 2.5f);
+    }
+
     private void AlSalvarEdificio()
     {
         if (partidaTerminada) return;
@@ -238,6 +341,7 @@ public class GestorJuego : MonoBehaviour
 
         Time.timeScale = 1f;
         GameSession.RegistrarVictoria(puntos, reparaciones, SceneManager.GetActiveScene().name);
+        if (modoPisos) GameSession.NuevaPartida();   // ganó: la próxima partida empieza en el Piso 1
         Refrescar();
         rutinaFin = StartCoroutine(CargarFinJuego(tiempoEsperaVictoria));
     }
@@ -256,7 +360,14 @@ public class GestorJuego : MonoBehaviour
         float destrozo = edificio.DestrozoSeccionActual;
         int seccionVisible = Mathf.Min(edificio.SeccionActual + 1, edificio.secciones);
 
-        if (textoEstado != null)
+        if (textoEstado != null && modoPisos)
+        {
+            textoEstado.text = string.Format(
+                "PUNTOS  {0}\nPISO  {1}/{2}\nOBJETOS ROTOS  {3}/{4}",
+                puntos, pisos.PisoActual + 1, pisos.TotalPisos,
+                edificio.Terminado ? 0 : edificio.DanadasEnSeccion(edificio.SeccionActual), edificio.VentanasPorSeccion);
+        }
+        else if (textoEstado != null)
         {
             textoEstado.text = string.Format(
                 "PUNTOS  {0}\nSECCIÓN  {1}/{2}\nVENTANAS ROTAS  {3}/{4}",
@@ -277,13 +388,13 @@ public class GestorJuego : MonoBehaviour
         if (rellenoBarra != null)
         {
             // La barra se llena hasta el límite de derrumbe.
-            float lleno = Mathf.Clamp01(destrozo / Mathf.Max(0.01f, limiteDerrumbe));
+            float lleno = Mathf.Clamp01(destrozo / Mathf.Max(0.01f, LimiteActual));
             rellenoBarra.sizeDelta = new Vector2(lleno * AnchoBarra, 16f);
             Image imagen = rellenoBarra.GetComponent<Image>();
             if (imagen != null) imagen.color = Color.Lerp(new Color(0.95f, 0.75f, 0.2f), new Color(0.85f, 0.15f, 0.12f), lleno);
         }
 
-        if (!partidaTerminada && destrozo >= limiteDerrumbe)
+        if (!partidaTerminada && destrozo >= LimiteActual)
         {
             TerminarPartida(true);
         }
@@ -350,14 +461,19 @@ public class GestorJuego : MonoBehaviour
         if (menuPausa != null) menuPausa.OcultarInmediato();
         if (estabaEnPausa) ControlesTactiles.ReiniciarPulsado();
 
-        puntos = 0;
-        reparaciones = 0;
-        vidas = vidasIniciales;
+        // Modo pisos: R reinicia solo el piso en curso, con los puntos y las vidas con que empezó.
+        puntos = modoPisos ? puntosInicioPiso : 0;
+        reparaciones = modoPisos ? reparacionesInicioPiso : 0;
+        vidas = modoPisos ? vidasInicioPiso : vidasIniciales;
         mensajeFinal = "";
         mensajeTemporal = "";
 
         EscombroCayendo.EliminarTodos();
-        if (edificio != null) edificio.Reiniciar();
+        if (edificio != null)
+        {
+            if (modoPisos) pisos.ReiniciarPiso();
+            else edificio.Reiniciar();
+        }
 
         if (muneco != null)
         {
