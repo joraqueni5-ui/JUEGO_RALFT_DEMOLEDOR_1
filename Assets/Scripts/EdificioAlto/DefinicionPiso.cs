@@ -13,6 +13,56 @@ public class ObjetoPiso
     public Sprite[] sprites = new Sprite[3];
 }
 
+/// <summary>Un laboratorio del piso (mitad izquierda o derecha) con su color provisional.</summary>
+[Serializable]
+public class LaboratorioPiso
+{
+    public string nombre = "Laboratorio";
+    [Tooltip("Color provisional de los objetos y el suelo de este laboratorio mientras no haya sprites.")]
+    public Color color = Color.white;
+}
+
+/// <summary>
+/// Un objeto reparable del piso visto desde arriba. El mapa (prefab) coloca el objeto y
+/// le pone el mismo 'indice' que tiene aquí; el arte y el tamaño salen de esta ficha.
+/// </summary>
+[Serializable]
+public class ObjetoCenital
+{
+    public string nombre = "Objeto";
+    [Tooltip("0 = laboratorio izquierdo, 1 = laboratorio derecho.")]
+    [Range(0, 1)] public int laboratorio;
+    [Tooltip("Tamaño en baldosas (1 baldosa = 32 px). Es el tamaño del collider y de la figura provisional.")]
+    public Vector2Int tamanoBaldosas = new Vector2Int(2, 2);
+    [Tooltip("Sprites en orden: intacto, dañado, roto. Opcional: sin ellos se usa una figura de color.")]
+    public Sprite[] sprites = new Sprite[3];
+
+    /// <summary>Los 3 sprites, o null si falta alguno.</summary>
+    public Sprite[] SpritesCompletos()
+    {
+        if (sprites == null || sprites.Length < 3) return null;
+        for (int i = 0; i < 3; i++) if (sprites[i] == null) return null;
+        return sprites;
+    }
+}
+
+/// <summary>Cuadros de animación de un personaje visto desde arriba. Todo es opcional.</summary>
+[Serializable]
+public class AnimacionesCenital
+{
+    [Header("Caminar / quieto (la izquierda se voltea de la derecha)")]
+    public Sprite[] caminarAbajo;
+    public Sprite[] caminarArriba;
+    public Sprite[] caminarDerecha;
+    [Header("Martillo (jugador) o puñetazo (demoledor)")]
+    public Sprite[] golpeAbajo;
+    public Sprite[] golpeArriba;
+    public Sprite[] golpeDerecha;
+    [Header("Otros")]
+    [Tooltip("Preparación del lanzamiento (demoledor) o cuadros de daño (jugador).")]
+    public Sprite[] especial;
+}
+
 /// <summary>
 /// Datos de un piso de Unifranz para el modo de 6 niveles: nombre, carrera, arte,
 /// dificultad y ficha informativa. Todo el arte es opcional: si falta, el juego
@@ -28,7 +78,58 @@ public class DefinicionPiso : ScriptableObject
     [Tooltip("Carrera que se representa en este piso.")]
     public string carrera = "";
 
-    [Header("Objetos reparables (4 tipos x 3 estados)")]
+    [Header("Mapa (vista desde arriba)")]
+    [Tooltip("Prefab del mapa de este piso (Mapa_PisoN): Tilemaps, objetos, ventanal y ascensor. " +
+             "El equipo lo edita a mano; el A* lee el mapa tal como quede.")]
+    public GameObject prefabMapa;
+    [Tooltip("Tamaño de referencia del mapa en baldosas (22 x 12 = 704 x 384 px).")]
+    public Vector2Int tamanoMapa = new Vector2Int(22, 12);
+    [Tooltip("Los dos laboratorios: izquierda y derecha.")]
+    public LaboratorioPiso[] laboratorios = new LaboratorioPiso[2];
+
+    [Header("Objetos reparables (12: 6 por laboratorio)")]
+    public ObjetoCenital[] objetosCenital = new ObjetoCenital[0];
+
+    [Header("Baldosas de referencia (32 x 32 px). El mapa se pinta con las baldosas de su Tile Palette")]
+    public Sprite sueloLaboratorioA;
+    public Sprite sueloLaboratorioB;
+    public Sprite sueloPasillo;
+    public Sprite pared;
+    public Sprite puerta;
+    public Sprite ventanalEntero;
+    public Sprite ventanalRoto;
+    public Sprite ascensorCerrado;
+    public Sprite ascensorAbierto;
+
+    [Header("Animaciones (opcionales)")]
+    public AnimacionesCenital jugador = new AnimacionesCenital();
+    public AnimacionesCenital demoledor = new AnimacionesCenital();
+    [Tooltip("Escombro que lanza el demoledor (16 x 16 px).")]
+    public Sprite escombro;
+    [Tooltip("Sombra de impacto en el suelo (32 x 16 px).")]
+    public Sprite sombraImpacto;
+
+    [Header("Ataques del demoledor")]
+    [Tooltip("Segundos de preparación visible del puñetazo.")]
+    [Min(0.1f)] public float preparacionPunetazo = 0.5f;
+    [Tooltip("Radio (baldosas) del puñetazo: el jugador dentro pierde una vida.")]
+    [Min(0.2f)] public float radioPunetazo = 1.0f;
+    [Tooltip("Segundos de preparación del lanzamiento.")]
+    [Min(0.1f)] public float preparacionLanzamiento = 0.8f;
+    [Tooltip("Segundos que tarda el escombro en llegar a su destino.")]
+    [Min(0.2f)] public float vueloLanzamiento = 0.9f;
+    [Tooltip("Radio (baldosas) del impacto del escombro.")]
+    [Min(0.2f)] public float radioImpacto = 1.0f;
+    [Tooltip("Cada cuántos segundos como mínimo puede lanzar escombros.")]
+    [Min(1f)] public float intervaloLanzamiento = 8f;
+    [Tooltip("Si el jugador está más lejos que esto (baldosas), prefiere lanzar.")]
+    [Min(1f)] public float distanciaJugadorLejos = 7f;
+    [Tooltip("Proporción de ataques que son lanzamiento cuando puede elegir (0 = solo puñetazos, 1 = solo lanzamientos).")]
+    [Range(0f, 1f)] public float proporcionLanzamiento = 0.3f;
+    [Tooltip("Probabilidad de que el lanzamiento apunte al jugador (si no, a un objeto lejano).")]
+    [Range(0f, 1f)] public float lanzarAlJugador = 0.5f;
+
+    [Header("MODO LATERAL (obsoleto, se elimina al terminar el modo cenital)")]
     [Tooltip("Hasta 4 tipos de objeto. Un tipo sin sprites usa las ventanas actuales.")]
     public ObjetoPiso[] objetos = new ObjetoPiso[4];
 
@@ -76,6 +177,20 @@ public class DefinicionPiso : ScriptableObject
     }
 
     /// <summary>Sprites de plataforma, o null si falta alguno.</summary>
+    /// <summary>Objeto de la lista cenital por índice, o null si no existe.</summary>
+    public ObjetoCenital ObjetoCenitalDe(int indice)
+    {
+        if (objetosCenital == null || indice < 0 || indice >= objetosCenital.Length) return null;
+        return objetosCenital[indice];
+    }
+
+    /// <summary>Laboratorio por índice (0 o 1), o null.</summary>
+    public LaboratorioPiso LaboratorioDe(int indice)
+    {
+        if (laboratorios == null || indice < 0 || indice >= laboratorios.Length) return null;
+        return laboratorios[indice];
+    }
+
     public Sprite[] SpritesPlataforma()
     {
         if (plataformas == null || plataformas.Length < 3) return null;

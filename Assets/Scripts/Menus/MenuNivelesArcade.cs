@@ -163,7 +163,10 @@ namespace DemoledorUnifranz.UI.Menus
         private void IniciarPiso(int piso)
         {
             GameSession.SeleccionarNivel(true, piso);
-            NavegadorEscenas.Cargar(Escenas.Nivel1);
+            string escena = Escenas.ParaPiso(piso);
+            // Si la escena cenital todavía no está en Build Settings, se juega el modo lateral.
+            if (!NavegadorEscenas.Disponible(escena)) escena = Escenas.Nivel1;
+            NavegadorEscenas.Cargar(escena);
         }
     }
 }

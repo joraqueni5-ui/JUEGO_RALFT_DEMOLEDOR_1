@@ -15,6 +15,134 @@ MonoBehaviour:
   numero: 2
   nombre: "Inform\xE1tica"
   carrera: "Inform\xE1tica"
+  prefabMapa: {fileID: 0}
+  tamanoMapa: {x: 22, y: 12}
+  laboratorios:
+  - nombre: Laboratorio A
+    color: {r: 0.95, g: 0.7, b: 0.35, a: 1}
+  - nombre: Laboratorio B
+    color: {r: 0.4, g: 0.75, b: 0.9, a: 1}
+  objetosCenital:
+  - nombre: Objeto 1
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 2
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 3
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 4
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 5
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 6
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 7
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 8
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 9
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 10
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 11
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto 12
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  sueloLaboratorioA: {fileID: 0}
+  sueloLaboratorioB: {fileID: 0}
+  sueloPasillo: {fileID: 0}
+  pared: {fileID: 0}
+  puerta: {fileID: 0}
+  ventanalEntero: {fileID: 0}
+  ventanalRoto: {fileID: 0}
+  ascensorCerrado: {fileID: 0}
+  ascensorAbierto: {fileID: 0}
+  jugador:
+    caminarAbajo: []
+    caminarArriba: []
+    caminarDerecha: []
+    golpeAbajo: []
+    golpeArriba: []
+    golpeDerecha: []
+    especial: []
+  demoledor:
+    caminarAbajo: []
+    caminarArriba: []
+    caminarDerecha: []
+    golpeAbajo: []
+    golpeArriba: []
+    golpeDerecha: []
+    especial: []
+  escombro: {fileID: 0}
+  sombraImpacto: {fileID: 0}
+  preparacionPunetazo: 0.5
+  radioPunetazo: 1
+  preparacionLanzamiento: 0.8
+  vueloLanzamiento: 0.9
+  radioImpacto: 1
+  intervaloLanzamiento: 7.4
+  distanciaJugadorLejos: 7
+  proporcionLanzamiento: 0.35000002
+  lanzarAlJugador: 0.5
   objetos:
   - nombre: Monitor
     sprites:

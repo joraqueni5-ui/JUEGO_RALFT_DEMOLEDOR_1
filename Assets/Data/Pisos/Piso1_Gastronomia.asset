@@ -13,8 +13,136 @@ MonoBehaviour:
   m_Name: Piso1_Gastronomia
   m_EditorClassIdentifier: Assembly-CSharp::DefinicionPiso
   numero: 1
-  nombre: "Gastronom\xEDa"
-  carrera: "Gastronom\xEDa"
+  nombre: "Gastronom\xEDa y Medicina"
+  carrera: "Gastronom\xEDa y Medicina"
+  prefabMapa: {fileID: 9137073833297364175, guid: 660cb4bac1c7f1147a90e632faf5e070, type: 3}
+  tamanoMapa: {x: 22, y: 12}
+  laboratorios:
+  - nombre: "Lab. de Gastronom\xEDa"
+    color: {r: 1, g: 0.62, b: 0.25, a: 1}
+  - nombre: Lab. de Medicina
+    color: {r: 0.3, g: 0.8, b: 0.85, a: 1}
+  objetosCenital:
+  - nombre: Horno
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Cocina a gas
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: "Mes\xF3n de acero"
+    laboratorio: 0
+    tamanoBaldosas: {x: 4, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Refrigerador
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Lavaplatos
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Estante de vajilla
+    laboratorio: 0
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Camilla 1
+    laboratorio: 1
+    tamanoBaldosas: {x: 1, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Camilla 2
+    laboratorio: 1
+    tamanoBaldosas: {x: 1, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: "Maniqu\xED cl\xEDnico"
+    laboratorio: 1
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Mesa de microscopios
+    laboratorio: 1
+    tamanoBaldosas: {x: 3, y: 2}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Vitrina
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Lavamanos con monitor
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  sueloLaboratorioA: {fileID: 21300000, guid: 263ab3c20649d344aa7b3edd015e3bea, type: 3}
+  sueloLaboratorioB: {fileID: 21300000, guid: 29b83beafa038a44f9208513bf30577d, type: 3}
+  sueloPasillo: {fileID: 21300000, guid: 2f05a3711dd3d9942a1b9e6f6b7fb610, type: 3}
+  pared: {fileID: 21300000, guid: 2afd75230d6923448bb0bac4810a7bc2, type: 3}
+  puerta: {fileID: 21300000, guid: 0b673e22cc2185d46b963415dcf366a6, type: 3}
+  ventanalEntero: {fileID: 0}
+  ventanalRoto: {fileID: 0}
+  ascensorCerrado: {fileID: 21300000, guid: 9627031533f79214cb39b99166132c86, type: 3}
+  ascensorAbierto: {fileID: 0}
+  jugador:
+    caminarAbajo: []
+    caminarArriba: []
+    caminarDerecha: []
+    golpeAbajo: []
+    golpeArriba: []
+    golpeDerecha: []
+    especial: []
+  demoledor:
+    caminarAbajo: []
+    caminarArriba: []
+    caminarDerecha: []
+    golpeAbajo: []
+    golpeArriba: []
+    golpeDerecha: []
+    especial: []
+  escombro: {fileID: 0}
+  sombraImpacto: {fileID: 0}
+  preparacionPunetazo: 0.5
+  radioPunetazo: 1
+  preparacionLanzamiento: 0.8
+  vueloLanzamiento: 0.9
+  radioImpacto: 1
+  intervaloLanzamiento: 8
+  distanciaJugadorLejos: 7
+  proporcionLanzamiento: 0.3
+  lanzarAlJugador: 0.5
   objetos:
   - nombre: Horno
     sprites:

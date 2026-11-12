@@ -32,6 +32,10 @@ public class GestorJuego : MonoBehaviour
     private EdificioAlto edificio;
     private DemoledorAutomatico demoledor;
     private Muneco muneco;
+    // Piso 1 visto desde arriba (escena PisoCenital): reemplaza al muñeco y al demoledor laterales.
+    private JugadorCenital jugadorC;
+    private DemoledorCenital demoledorC;
+    private PisoCenital cenital;
 
     private Text textoEstado;
     private Text textoDestrozo;
@@ -68,7 +72,20 @@ public class GestorJuego : MonoBehaviour
     private int reparacionesInicioPiso;
 
     /// <summary>Destrozo a partir del cual el edificio se cae: el del piso en curso o el general.</summary>
-    private float LimiteActual { get { return modoPisos ? pisos.LimiteDerrumbe : limiteDerrumbe; } }
+    private float LimiteActual { get { return modoPisos ? pisos.LimiteDerrumbe : cenital != null ? cenital.LimiteDerrumbe : limiteDerrumbe; } }
+
+    // Activar, pausar y reaparecer al jugador, sea el muñeco lateral o el cenital.
+    private bool JugadorActivo { get { return muneco != null ? muneco.enabled : jugadorC != null && jugadorC.enabled; } }
+    private void ActivarJugador(bool activo)
+    {
+        if (muneco != null) muneco.enabled = activo;
+        if (jugadorC != null) jugadorC.enabled = activo;
+    }
+    private void ReaparecerJugador()
+    {
+        if (muneco != null) muneco.Reaparecer(inicioMuneco);
+        if (jugadorC != null) jugadorC.Reaparecer(inicioMuneco);
+    }
 
     private const float AnchoBarra = 300f;
 
@@ -78,7 +95,10 @@ public class GestorJuego : MonoBehaviour
 
         demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>();
         muneco = Object.FindFirstObjectByType<Muneco>();
+        jugadorC = Object.FindFirstObjectByType<JugadorCenital>();
+        demoledorC = Object.FindFirstObjectByType<DemoledorCenital>();
         if (muneco != null) inicioMuneco = muneco.transform.position;
+        else if (jugadorC != null) inicioMuneco = jugadorC.transform.position;
         vidas = vidasIniciales;
     }
 
@@ -97,7 +117,9 @@ public class GestorJuego : MonoBehaviour
             edificio.Salvado += AlSalvarEdificio;
         }
         if (muneco != null) muneco.Golpeado += AlGolpearMuneco;
+        if (jugadorC != null) jugadorC.Golpeado += AlGolpearMuneco;
 
+        cenital = edificio as PisoCenital;
         pisos = edificio as EdificioPisos;
         modoPisos = SelectorModoJuego.ModoPisosActivo && pisos != null;
         if (modoPisos) IniciarModoPisos();
@@ -126,6 +148,7 @@ public class GestorJuego : MonoBehaviour
             edificio.Salvado -= AlSalvarEdificio;
         }
         if (muneco != null) muneco.Golpeado -= AlGolpearMuneco;
+        if (jugadorC != null) jugadorC.Golpeado -= AlGolpearMuneco;
         if (pisos != null) pisos.PisoCompletado -= AlCompletarPiso;
     }
 
@@ -165,7 +188,7 @@ public class GestorJuego : MonoBehaviour
         // que pulsó CONTINUAR no se toma también como un martillazo.
         if (!reactivarMuneco) return;
         reactivarMuneco = false;
-        if (muneco != null && !partidaTerminada && !estaEnPausa) muneco.enabled = munecoActivoAntesDePausa;
+        if (!partidaTerminada && !estaEnPausa) ActivarJugador(munecoActivoAntesDePausa);
     }
 
     private void AlternarPausa()
@@ -184,10 +207,10 @@ public class GestorJuego : MonoBehaviour
         Time.timeScale = 0f;
 
         // El muñeco lee el teclado en Update: se desactiva para que no se mueva ni repare.
-        if (muneco != null)
+        if (muneco != null || jugadorC != null)
         {
-            munecoActivoAntesDePausa = muneco.enabled;
-            muneco.enabled = false;
+            munecoActivoAntesDePausa = JugadorActivo;
+            ActivarJugador(false);
         }
 
         if (menuPausa != null && edificio != null) menuPausa.Mostrar(puntos, reparaciones, edificio.DestrozoSeccionActual);
@@ -337,7 +360,8 @@ public class GestorJuego : MonoBehaviour
         mensajeFinal = "¡EDIFICIO SALVADO!";
 
         // El demoledor sigue en la terraza (no se detiene); el muñeco ya no se controla.
-        if (muneco != null) muneco.enabled = false;
+        ActivarJugador(false);
+        if (demoledorC != null) demoledorC.Detener();
 
         Time.timeScale = 1f;
         GameSession.RegistrarVictoria(puntos, reparaciones, SceneManager.GetActiveScene().name);
@@ -360,7 +384,13 @@ public class GestorJuego : MonoBehaviour
         float destrozo = edificio.DestrozoSeccionActual;
         int seccionVisible = Mathf.Min(edificio.SeccionActual + 1, edificio.secciones);
 
-        if (textoEstado != null && modoPisos)
+        if (textoEstado != null && cenital != null)
+        {
+            textoEstado.text = string.Format(
+                "PUNTOS  {0}\nPISO  1/1\nOBJETOS ROTOS  {1}/{2}",
+                puntos, edificio.Terminado ? 0 : edificio.DanadasEnSeccion(0), edificio.VentanasPorSeccion);
+        }
+        else if (textoEstado != null && modoPisos)
         {
             textoEstado.text = string.Format(
                 "PUNTOS  {0}\nPISO  {1}/{2}\nOBJETOS ROTOS  {3}/{4}",
@@ -418,7 +448,8 @@ public class GestorJuego : MonoBehaviour
         mensajeFinal = porDerrumbe ? "¡EL EDIFICIO SE CAYÓ!" : "¡TE QUEDASTE SIN VIDAS!";
 
         if (demoledor != null) demoledor.Detener();
-        if (muneco != null) muneco.enabled = false;
+        if (demoledorC != null) demoledorC.Detener();
+        ActivarJugador(false);
 
         // Si estaba en pausa, restaurar escala de tiempo antes del cambio
         Time.timeScale = 1f;
@@ -475,12 +506,10 @@ public class GestorJuego : MonoBehaviour
             else edificio.Reiniciar();
         }
 
-        if (muneco != null)
-        {
-            muneco.enabled = true;
-            muneco.Reaparecer(inicioMuneco);
-        }
+        ActivarJugador(true);
+        ReaparecerJugador();
         if (demoledor != null) demoledor.Reiniciar();
+        if (demoledorC != null) demoledorC.Reiniciar();
 
         Refrescar();
     }

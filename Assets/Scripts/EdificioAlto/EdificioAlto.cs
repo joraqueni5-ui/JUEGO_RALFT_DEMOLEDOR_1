@@ -49,7 +49,7 @@ public class EdificioAlto : MonoBehaviour
     public virtual bool Terminado { get { return SeccionActual >= secciones; } }
     public int GolpesDados { get; private set; }
     public int Pisos { get { return pisosPorSeccion * secciones; } }
-    public int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
+    public virtual int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
 
     /// <summary>Zona de la fachada en coordenadas de mundo.</summary>
     public Rect Limites
@@ -131,7 +131,7 @@ public class EdificioAlto : MonoBehaviour
     }
 
     /// <summary>Ventanas de la sección que no están intactas.</summary>
-    public int DanadasEnSeccion(int seccion)
+    public virtual int DanadasEnSeccion(int seccion)
     {
         int cuenta = 0;
         foreach (VentanaEdificio v in ventanas)
@@ -145,7 +145,7 @@ public class EdificioAlto : MonoBehaviour
     /// Destrozo de la sección actual (0 a 1), solo con las ventanas: una destruida
     /// cuenta entera y una rota cuenta la mitad.
     /// </summary>
-    public float DestrozoSeccionActual
+    public virtual float DestrozoSeccionActual
     {
         get
         {
@@ -272,7 +272,7 @@ public class EdificioAlto : MonoBehaviour
     }
 
     /// <summary>Todo intacto, primera sección y golpes a cero.</summary>
-    public void Reiniciar()
+    public virtual void Reiniciar()
     {
         reiniciando = true;
         foreach (VentanaEdificio v in ventanas) if (v != null) v.Reiniciar();
@@ -305,6 +305,11 @@ public class EdificioAlto : MonoBehaviour
     protected void AvisarCambio()
     {
         if (Cambio != null) Cambio();
+    }
+
+    protected void AvisarReparacion()
+    {
+        if (Reparacion != null) Reparacion();
     }
 
     protected void AvisarSalvado()

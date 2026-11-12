@@ -300,7 +300,9 @@ namespace DemoledorUnifranz.UI.Menus
         public void VolverAJugar()
         {
             GuardarIniciales();   // si dejó las iniciales a medias, el récord no se pierde
-            NavegadorEscenas.Cargar(Escenas.Nivel1);
+            string escena = Escenas.EscenaDeJuego();
+            if (!NavegadorEscenas.Disponible(escena)) escena = Escenas.Nivel1;
+            NavegadorEscenas.Cargar(escena);
         }
 
         public void IrAlMenuPrincipal()

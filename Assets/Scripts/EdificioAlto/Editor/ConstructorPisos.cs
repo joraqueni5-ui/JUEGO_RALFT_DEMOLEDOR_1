@@ -48,16 +48,37 @@ public static class ConstructorPisos
     [MenuItem("Tools/Demoledor Unifranz/Crear definiciones de piso", false, 21)]
     public static void Crear()
     {
+        int creados, existentes, migrados;
+        Procesar(out creados, out existentes, out migrados);
+        Selection.activeObject = AssetDatabase.LoadAssetAtPath<DefinicionPiso>(Carpeta + "/" + Pisos[0].archivo + ".asset");
+
+        EditorUtility.DisplayDialog("Definiciones de piso",
+            "Listo.\n\n• Creados: " + creados + "\n• Migrados (datos cenitales añadidos): " + migrados +
+            "\n• Ya completos (sin tocar): " + existentes +
+            "\n\nEstán en " + Carpeta + ".\nNo se modificó ninguna escena.", "OK");
+    }
+
+    /// <summary>Crea o completa las 6 definiciones sin mostrar diálogos (la usa el constructor del piso cenital).</summary>
+    public static void Procesar(out int creados, out int existentes, out int migrados)
+    {
         AsegurarCarpeta();
 
-        int creados = 0, existentes = 0;
+        creados = 0; existentes = 0; migrados = 0;
         for (int i = 0; i < Pisos.Length; i++)
         {
             Datos d = Pisos[i];
             string ruta = Carpeta + "/" + d.archivo + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<DefinicionPiso>(ruta) != null)
+            DefinicionPiso previo = AssetDatabase.LoadAssetAtPath<DefinicionPiso>(ruta);
+            if (previo != null)
             {
-                existentes++;
+                // Asset de antes del modo cenital: solo se le añaden los datos nuevos que faltan.
+                if (previo.objetosCenital == null || previo.objetosCenital.Length == 0)
+                {
+                    CompletarCenital(previo, i);
+                    EditorUtility.SetDirty(previo);
+                    migrados++;
+                }
+                else existentes++;
                 continue;
             }
 
@@ -79,17 +100,69 @@ public static class ConstructorPisos
             piso.fichaDescripcion = "Ficha por completar.";
             piso.fichaDatoUtil = "Dato por completar.";
 
+            CompletarCenital(piso, i);
             AssetDatabase.CreateAsset(piso, ruta);
             creados++;
         }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Selection.activeObject = AssetDatabase.LoadAssetAtPath<DefinicionPiso>(Carpeta + "/" + Pisos[0].archivo + ".asset");
+    }
 
-        EditorUtility.DisplayDialog("Definiciones de piso",
-            "Listo.\n\n• Creados: " + creados + "\n• Ya existían (sin tocar): " + existentes +
-            "\n\nEstán en " + Carpeta + ".\nNo se modificó ninguna escena.", "OK");
+    // Objetos del piso 1: nombre, laboratorio (0 = Gastronomía, 1 = Medicina) y tamaño en baldosas.
+    private static readonly (string nombre, int lab, int ancho, int alto)[] ObjetosPiso1 =
+    {
+        ("Horno", 0, 2, 2), ("Cocina a gas", 0, 2, 2), ("Mesón de acero", 0, 4, 2),
+        ("Refrigerador", 0, 2, 2), ("Lavaplatos", 0, 2, 1), ("Estante de vajilla", 0, 3, 1),
+        ("Camilla 1", 1, 1, 2), ("Camilla 2", 1, 1, 2), ("Maniquí clínico", 1, 1, 1),
+        ("Mesa de microscopios", 1, 3, 2), ("Vitrina", 1, 2, 1), ("Lavamanos con monitor", 1, 2, 1),
+    };
+
+    /// <summary>Rellena los datos del modo cenital: laboratorios, 12 objetos y ataques por defecto.</summary>
+    private static void CompletarCenital(DefinicionPiso piso, int indice)
+    {
+        piso.tamanoMapa = new Vector2Int(22, 12);
+
+        if (indice == 0)
+        {
+            piso.nombre = "Gastronomía y Medicina";
+            piso.carrera = "Gastronomía y Medicina";
+            piso.laboratorios = new[]
+            {
+                new LaboratorioPiso { nombre = "Lab. de Gastronomía", color = new Color(1.00f, 0.62f, 0.25f) },
+                new LaboratorioPiso { nombre = "Lab. de Medicina",    color = new Color(0.30f, 0.80f, 0.85f) },
+            };
+            piso.objetosCenital = new ObjetoCenital[ObjetosPiso1.Length];
+            for (int o = 0; o < ObjetosPiso1.Length; o++)
+            {
+                var d = ObjetosPiso1[o];
+                piso.objetosCenital[o] = new ObjetoCenital
+                {
+                    nombre = d.nombre, laboratorio = d.lab,
+                    tamanoBaldosas = new Vector2Int(d.ancho, d.alto), sprites = new Sprite[3],
+                };
+            }
+        }
+        else
+        {
+            // Pisos por definir: mismo molde (2 laboratorios x 6 objetos) con nombres genéricos.
+            piso.laboratorios = new[]
+            {
+                new LaboratorioPiso { nombre = "Laboratorio A", color = new Color(0.95f, 0.70f, 0.35f) },
+                new LaboratorioPiso { nombre = "Laboratorio B", color = new Color(0.40f, 0.75f, 0.90f) },
+            };
+            piso.objetosCenital = new ObjetoCenital[12];
+            for (int o = 0; o < 12; o++)
+                piso.objetosCenital[o] = new ObjetoCenital
+                {
+                    nombre = "Objeto " + (o + 1), laboratorio = o < 6 ? 0 : 1,
+                    tamanoBaldosas = new Vector2Int(2, 2), sprites = new Sprite[3],
+                };
+        }
+
+        // Más difícil en pisos altos: lanza más seguido y más a menudo.
+        piso.intervaloLanzamiento = Mathf.Max(4f, 8f - indice * 0.6f);
+        piso.proporcionLanzamiento = Mathf.Min(0.6f, 0.3f + indice * 0.05f);
     }
 
     private static void AsegurarCarpeta()

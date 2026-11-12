@@ -78,7 +78,7 @@ public class ControlesTactiles : MonoBehaviour
     {
         LimpiarEstado();
 
-        if (Object.FindAnyObjectByType<Muneco>() == null) return;
+        if (Object.FindAnyObjectByType<Muneco>() == null && Object.FindAnyObjectByType<JugadorCenital>() == null) return;
         if (Object.FindAnyObjectByType<ControlesTactiles>() != null) return;
 
         GameObject objeto = new GameObject("ControlesTactiles");
@@ -197,6 +197,21 @@ public class ControlesTactiles : MonoBehaviour
         escalador.matchWidthOrHeight = 0.5f;
 
         Transform raiz = lienzo.transform;
+
+        // Piso visto desde arriba: cruz de 4 direcciones a la izquierda y MARTILLO a la derecha.
+        if (Object.FindAnyObjectByType<JugadorCenital>() != null)
+        {
+            Vector2 cruz = new Vector2(150f, 150f);
+            BotonNuevo(raiz, "^", EsquinaInferiorIzquierda, new Vector2(200f, 360f), cruz, 54, apretado => Arriba = apretado);
+            BotonNuevo(raiz, "<", EsquinaInferiorIzquierda, new Vector2(40f, 200f), cruz, 54, apretado => Izquierda = apretado);
+            BotonNuevo(raiz, ">", EsquinaInferiorIzquierda, new Vector2(360f, 200f), cruz, 54, apretado => Derecha = apretado);
+            BotonNuevo(raiz, "v", EsquinaInferiorIzquierda, new Vector2(200f, 40f), cruz, 54, apretado => Abajo = apretado);
+            BotonNuevo(raiz, "MARTILLO", EsquinaInferiorDerecha, new Vector2(-20f, 40f), new Vector2(240f, 160f), 34,
+                apretado => { if (apretado) repararPendiente = true; });
+            BotonNuevo(raiz, "REINICIAR", EsquinaSuperiorDerecha, new Vector2(-20f, -20f), new Vector2(220f, 76f), 28,
+                apretado => { if (apretado) reiniciarPendiente = true; });
+            return;
+        }
 
         // Caminar: abajo a la izquierda.
         BotonNuevo(raiz, "<", EsquinaInferiorIzquierda, new Vector2(40f, 40f), new Vector2(150f, 150f), 54,
