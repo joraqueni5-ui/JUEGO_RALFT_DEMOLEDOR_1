@@ -118,3 +118,8 @@ Tools/out/
 
 # El APK del juego se publica junto al proyecto
 !/[Ee]jecutable android/*.apk
+
+# Archivos de recuperación y exportaciones locales (no van al repositorio)
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+/EXPORTADO.zip
