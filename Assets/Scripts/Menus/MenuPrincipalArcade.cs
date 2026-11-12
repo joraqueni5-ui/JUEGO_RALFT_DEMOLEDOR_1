@@ -31,6 +31,8 @@ namespace DemoledorUnifranz.UI.Menus
         public PanelAnimado panelComoJugar;
         public PanelAnimado panelRecords;
         public PanelAnimado panelCreditos;
+        [Tooltip("Ventana NIVELES: elegir el edificio completo o un piso para probarlo.")]
+        public PanelAnimado panelNiveles;
 
         [Header("Récords")]
         public GameObject insigniaRecord;
@@ -63,7 +65,7 @@ namespace DemoledorUnifranz.UI.Menus
         {
             Time.timeScale = 1f;
 
-            PanelAnimado[] ventanas = { panelOpciones, panelComoJugar, panelRecords, panelCreditos };
+            PanelAnimado[] ventanas = { panelOpciones, panelComoJugar, panelRecords, panelCreditos, panelNiveles };
             foreach (PanelAnimado v in ventanas) if (v != null) v.OcultarInmediato();
 
             RefrescarRecord();
@@ -93,6 +95,7 @@ namespace DemoledorUnifranz.UI.Menus
             else if (panelComoJugar != null && panelComoJugar.Visible) CerrarComoJugar();
             else if (panelRecords != null && panelRecords.Visible) CerrarRecords();
             else if (panelCreditos != null && panelCreditos.Visible) CerrarCreditos();
+            else if (panelNiveles != null && panelNiveles.Visible) CerrarNiveles();
         }
 
         private static bool AlgunaTeclaOToque()
@@ -172,6 +175,8 @@ namespace DemoledorUnifranz.UI.Menus
             NavegadorEscenas.Cargar(Escenas.Nivel1);
         }
 
+        public void AbrirNiveles() { Abrir(panelNiveles); }
+        public void CerrarNiveles() { Cerrar(panelNiveles); }
         public void AbrirOpciones() { Abrir(panelOpciones); }
         public void CerrarOpciones() { Cerrar(panelOpciones); }
         public void AbrirComoJugar() { Abrir(panelComoJugar); }

@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace DemoledorUnifranz.Game
 {
     /// <summary>
@@ -79,9 +81,27 @@ namespace DemoledorUnifranz.Game
         /// <summary>Vidas con las que empezó el piso en curso (0 = todavía no se guardó ninguna).</summary>
         public static int VidasAlEmpezarPiso;
 
+        /// <summary>Modo elegido en el menú NIVELES (SegunEscena = el que marca SelectorModoJuego en la escena).</summary>
+        public enum ModoElegido { SegunEscena, Original, Pisos }
+        public static ModoElegido ModoSeleccionado = ModoElegido.SegunEscena;
+
+        /// <summary>
+        /// Elige un nivel desde el menú NIVELES: el edificio original completo o un piso concreto
+        /// (0 = Piso 1). Al perder, el jugador sigue en ese modo y ese piso.
+        /// </summary>
+        public static void SeleccionarNivel(bool modoPisos, int piso)
+        {
+            NuevaPartida();
+            ModoSeleccionado = modoPisos ? ModoElegido.Pisos : ModoElegido.Original;
+            if (!modoPisos) return;
+            PisoActual = Mathf.Max(0, piso);
+            PisoMaximo = PisoActual;
+        }
+
         /// <summary>Partida nueva del modo de pisos: vuelve al Piso 1 con todo en cero.</summary>
         public static void NuevaPartida()
         {
+            ModoSeleccionado = ModoElegido.SegunEscena;
             PisoActual = 0;
             PisoMaximo = 0;
             PuntosAcumulados = 0;

@@ -53,6 +53,7 @@ public static class ConstructorMenuPrincipal
         menu.panelComoJugar = CrearVentanaComoJugar(raiz, kit, menu);
         menu.panelRecords = CrearVentanaRecords(raiz, kit, menu);
         menu.panelCreditos = CrearVentanaCreditos(raiz, kit, menu);
+        menu.panelNiveles = CrearVentanaNiveles(raiz, kit, menu);
 
         Undo.RegisterCreatedObjectUndo(canvas.gameObject, "Crear menú principal");
         Undo.CollapseUndoOperations(grupo);
@@ -164,15 +165,18 @@ public static class ConstructorMenuPrincipal
             new Vector2(-420f, -150f), new Vector2(840f, 720f), true);
         menu.panelBotones = panel;
 
-        Vector2 tam = new Vector2(640f, 100f);
-        Button jugar = HerramientasMenus.Boton(panel, "BotonJugar", "JUGAR", kit.botonAmarillo, new Vector2(0f, 240f), new Vector2(660f, 112f), 48, kit.iconoJugar);
-        Button opciones = HerramientasMenus.Boton(panel, "BotonOpciones", "OPCIONES", kit.botonNaranja, new Vector2(0f, 112f), tam, 40, kit.iconoOpciones);
-        Button ayuda = HerramientasMenus.Boton(panel, "BotonComoJugar", "CÓMO JUGAR", kit.botonAzul, new Vector2(0f, -8f), tam, 40, kit.iconoAyuda);
-        Button records = HerramientasMenus.Boton(panel, "BotonRecords", "RÉCORDS", kit.botonMorado, new Vector2(0f, -128f), tam, 40, kit.iconoTrofeo);
-        Button salir = HerramientasMenus.Boton(panel, "BotonSalir", "SALIR", kit.botonRojo, new Vector2(0f, -248f), tam, 40, kit.iconoSalir);
-        FabricaUIArcade.NavegacionVertical(jugar, opciones, ayuda, records, salir);
+        // Seis botones (con NIVELES) en el mismo panel: un poco más bajos y juntos.
+        Vector2 tam = new Vector2(640f, 92f);
+        Button jugar = HerramientasMenus.Boton(panel, "BotonJugar", "JUGAR", kit.botonAmarillo, new Vector2(0f, 270f), new Vector2(660f, 104f), 44, kit.iconoJugar);
+        Button niveles = HerramientasMenus.Boton(panel, "BotonNiveles", "NIVELES", kit.botonAzul, new Vector2(0f, 162f), tam, 38, kit.iconoArriba);
+        Button opciones = HerramientasMenus.Boton(panel, "BotonOpciones", "OPCIONES", kit.botonNaranja, new Vector2(0f, 58f), tam, 38, kit.iconoOpciones);
+        Button ayuda = HerramientasMenus.Boton(panel, "BotonComoJugar", "CÓMO JUGAR", kit.botonAzul, new Vector2(0f, -46f), tam, 38, kit.iconoAyuda);
+        Button records = HerramientasMenus.Boton(panel, "BotonRecords", "RÉCORDS", kit.botonMorado, new Vector2(0f, -150f), tam, 38, kit.iconoTrofeo);
+        Button salir = HerramientasMenus.Boton(panel, "BotonSalir", "SALIR", kit.botonRojo, new Vector2(0f, -254f), tam, 38, kit.iconoSalir);
+        FabricaUIArcade.NavegacionVertical(jugar, niveles, opciones, ayuda, records, salir);
 
         HerramientasMenus.Conectar(jugar, menu.Jugar);
+        HerramientasMenus.Conectar(niveles, menu.AbrirNiveles);
         HerramientasMenus.Conectar(opciones, menu.AbrirOpciones);
         HerramientasMenus.Conectar(ayuda, menu.AbrirComoJugar);
         HerramientasMenus.Conectar(records, menu.AbrirRecords);
@@ -346,6 +350,156 @@ public static class ConstructorMenuPrincipal
         rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(200f, 56f);
         return toggle;
+    }
+
+    /// <summary>
+    /// Ventana "ELIGE UN PISO": el edificio completo (solo para mirar) dividido en una franja por
+    /// piso y, a la derecha, la ficha del piso elegido con los botones JUGAR y EDIFICIO COMPLETO.
+    /// Los textos salen de los assets DefinicionPiso; un piso se puede jugar si ya tiene su fondo
+    /// (arte aplicado). Si agregas un piso nuevo, vuelve a ejecutar "Construir Menú Principal".
+    /// </summary>
+    private static PanelAnimado CrearVentanaNiveles(Transform raiz, KitSpritesArcade kit, MenuPrincipalArcade menu)
+    {
+        const int TotalPisos = 6;
+        const float K = 1.2f;                       // ampliación de la fachada (386 x 700 px)
+        const float AnchoFachada = 386f, AltoFachada = 700f;
+        const float FachadaX = -430f, FachadaY = -10f;
+        // Zona de la fachada donde están las ventanas (píxeles del dibujo, desde arriba).
+        const float VentanasArriba = 48f, VentanasAbajo = 590f;
+        const float CuerpoCentroX = 170f, CuerpoAncho = 338f;   // sin la columna oscura de la derecha
+
+        // Datos de cada piso desde los assets.
+        string[] titulos = new string[TotalPisos];
+        string[] carreras = new string[TotalPisos];
+        string[] descripciones = new string[TotalPisos];
+        string[] datos = new string[TotalPisos];
+        bool[] disponible = new bool[TotalPisos];
+        for (int i = 0; i < TotalPisos; i++)
+        {
+            titulos[i] = "PISO " + (i + 1) + " · POR DEFINIR";
+            carreras[i] = "";
+            descripciones[i] = "";
+            datos[i] = "";
+            disponible[i] = false;
+        }
+        if (AssetDatabase.IsValidFolder("Assets/Data/Pisos"))
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:DefinicionPiso", new[] { "Assets/Data/Pisos" }))
+            {
+                DefinicionPiso d = AssetDatabase.LoadAssetAtPath<DefinicionPiso>(AssetDatabase.GUIDToAssetPath(guid));
+                if (d == null || d.numero < 1 || d.numero > TotalPisos) continue;
+                int i = d.numero - 1;
+                disponible[i] = d.fondo != null;
+                titulos[i] = ("PISO " + d.numero + " · " + d.nombre).ToUpperInvariant();
+                carreras[i] = d.carrera;
+                descripciones[i] = disponible[i] ? d.fichaDescripcion : "ESTE PISO TODAVÍA NO ESTÁ LISTO.\nPRONTO PODRÁS JUGARLO.";
+                datos[i] = d.fichaDatoUtil;
+            }
+        }
+
+        RectTransform caja;
+        PanelAnimado panel = FabricaUIArcade.CrearVentana(raiz, "PanelNiveles", "ELIGE UN PISO", new Vector2(1760f, 960f), kit, out caja, null, kit.iconoArriba);
+        MenuNivelesArcade niveles = panel.gameObject.AddComponent<MenuNivelesArcade>();
+
+        // --- el edificio completo, solo para mirar
+        Sprite fachada = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Edificio/edificio_alto.png");
+        if (fachada == null) Debug.LogWarning("[Menus] No se encontró Assets/Sprites/Edificio/edificio_alto.png: el edificio se verá vacío.");
+        Image edificio = FabricaUIArcade.CrearImagen(caja, "Edificio", fachada, fachada != null ? Color.white : new Color(0.3f, 0.32f, 0.4f));
+        edificio.preserveAspect = true;
+        FabricaUIArcade.Centrar(edificio.rectTransform, new Vector2(FachadaX, FachadaY), new Vector2(AnchoFachada * K, AltoFachada * K));
+
+        // --- una franja por piso (el Piso 1 abajo), que se puede tocar
+        Button[] botones = new Button[TotalPisos];
+        Image[] bandas = new Image[TotalPisos];
+        Text[] etiquetas = new Text[TotalPisos];
+        float altoBanda = (VentanasAbajo - VentanasArriba) / TotalPisos;
+        float centroX = FachadaX + (CuerpoCentroX - AnchoFachada * 0.5f) * K;
+        float arribaFachadaY = FachadaY + AltoFachada * K * 0.5f;
+        for (int i = 0; i < TotalPisos; i++)
+        {
+            float yBajo = VentanasAbajo - i * altoBanda;
+            float centroDibujo = yBajo - altoBanda * 0.5f;
+            float y = arribaFachadaY - centroDibujo * K;
+
+            Image banda = FabricaUIArcade.CrearImagen(caja, "BandaPiso" + (i + 1), null, new Color(0f, 0f, 0f, 0f), true);
+            FabricaUIArcade.Centrar(banda.rectTransform, new Vector2(centroX, y), new Vector2(CuerpoAncho * K, altoBanda * K - 6f));
+            Button boton = banda.gameObject.AddComponent<Button>();
+            boton.targetGraphic = banda;
+            boton.transition = Selectable.Transition.None;
+
+            Text etiqueta = FabricaUIArcade.CrearTexto(banda.transform, "Etiqueta", "PISO " + (i + 1), 34, PaletaArcade.Crema, TextAnchor.MiddleLeft, Px, Px);
+            FabricaUIArcade.Estirar(etiqueta.rectTransform);
+            etiqueta.rectTransform.offsetMin = new Vector2(18f, 0f);
+
+            botones[i] = boton;
+            bandas[i] = banda;
+            etiquetas[i] = etiqueta;
+        }
+
+        // --- ficha a la derecha
+        Text pista = FabricaUIArcade.CrearTexto(caja, "Pista", PreferenciasMenus.EsCelular ? "TOCA UN PISO PARA VER SU FICHA" : "PASA EL MOUSE O USA LAS FLECHAS · ENTER PARA JUGAR", 22,
+            new Color(0.8f, 0.85f, 1f), TextAnchor.MiddleCenter, Px * 0.5f, 0f);
+        FabricaUIArcade.Centrar(pista.rectTransform, new Vector2(360f, 405f), new Vector2(980f, 32f));
+
+        Text titulo = FabricaUIArcade.CrearTexto(caja, "FichaTitulo", "", 44, PaletaArcade.Amarillo, TextAnchor.MiddleCenter, Px, Px);
+        FabricaUIArcade.Centrar(titulo.rectTransform, new Vector2(360f, 335f), new Vector2(1000f, 60f));
+        Text carrera = FabricaUIArcade.CrearTexto(caja, "FichaCarrera", "", 30, PaletaArcade.Crema, TextAnchor.MiddleCenter, Px * 0.75f, 0f);
+        FabricaUIArcade.Centrar(carrera.rectTransform, new Vector2(360f, 278f), new Vector2(1000f, 44f));
+        Text estado = FabricaUIArcade.CrearTexto(caja, "FichaEstado", "", 28, PaletaArcade.Verde, TextAnchor.MiddleCenter, Px * 0.75f, 0f);
+        FabricaUIArcade.Centrar(estado.rectTransform, new Vector2(360f, 228f), new Vector2(1000f, 40f));
+
+        Text descripcion = FabricaUIArcade.CrearTexto(caja, "FichaDescripcion", "", 28, PaletaArcade.Crema, TextAnchor.UpperCenter, Px * 0.5f, 0f, true);
+        descripcion.horizontalOverflow = HorizontalWrapMode.Wrap;
+        descripcion.lineSpacing = 1.25f;
+        FabricaUIArcade.Centrar(descripcion.rectTransform, new Vector2(360f, 120f), new Vector2(860f, 150f));
+
+        Text datoTitulo = FabricaUIArcade.CrearTexto(caja, "FichaDatoTitulo", "DATO ÚTIL", 28, PaletaArcade.Naranja, TextAnchor.MiddleCenter, Px * 0.75f, 0f);
+        FabricaUIArcade.Centrar(datoTitulo.rectTransform, new Vector2(360f, 20f), new Vector2(860f, 40f));
+        Text dato = FabricaUIArcade.CrearTexto(caja, "FichaDato", "", 26, PaletaArcade.Crema, TextAnchor.UpperCenter, Px * 0.5f, 0f, true);
+        dato.horizontalOverflow = HorizontalWrapMode.Wrap;
+        dato.lineSpacing = 1.25f;
+        FabricaUIArcade.Centrar(dato.rectTransform, new Vector2(360f, -55f), new Vector2(860f, 100f));
+
+        Button jugar = HerramientasMenus.Boton(caja, "BotonJugarPiso", "JUGAR", kit.botonAmarillo, new Vector2(360f, -170f), new Vector2(680f, 100f), 40, kit.iconoJugar);
+        Button edificioCompleto = HerramientasMenus.Boton(caja, "BotonEdificioCompleto", "EDIFICIO COMPLETO", kit.botonNaranja, new Vector2(360f, -282f), new Vector2(680f, 88f), 34, kit.iconoCasa);
+        Button volver = HerramientasMenus.Boton(caja, "BotonVolver", "VOLVER", kit.botonRojo, new Vector2(360f, -388f), new Vector2(420f, 80f), 34, kit.iconoCasa);
+        HerramientasMenus.Conectar(volver, menu.CerrarNiveles);
+
+        // --- navegación con teclado: las franjas suben y bajan; a la derecha están los botones
+        for (int i = 0; i < TotalPisos; i++)
+        {
+            botones[i].navigation = new Navigation
+            {
+                mode = Navigation.Mode.Explicit,
+                selectOnUp = i + 1 < TotalPisos ? botones[i + 1] : null,
+                selectOnDown = i > 0 ? botones[i - 1] : null,
+                selectOnRight = jugar,
+            };
+        }
+        jugar.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = volver, selectOnDown = edificioCompleto, selectOnLeft = botones[0] };
+        edificioCompleto.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = jugar, selectOnDown = volver, selectOnLeft = botones[0] };
+        volver.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = edificioCompleto, selectOnDown = jugar, selectOnLeft = botones[0] };
+
+        niveles.botonesBanda = botones;
+        niveles.bandas = bandas;
+        niveles.etiquetas = etiquetas;
+        niveles.titulos = titulos;
+        niveles.carreras = carreras;
+        niveles.descripciones = descripciones;
+        niveles.datos = datos;
+        niveles.disponible = disponible;
+        niveles.textoTitulo = titulo;
+        niveles.textoCarrera = carrera;
+        niveles.textoEstado = estado;
+        niveles.textoDescripcion = descripcion;
+        niveles.textoDatoTitulo = datoTitulo;
+        niveles.textoDato = dato;
+        niveles.botonJugar = jugar;
+        niveles.botonEdificio = edificioCompleto;
+
+        panel.seleccionInicial = botones[0].gameObject;
+        panel.gameObject.SetActive(false);
+        return panel;
     }
 
     private static PanelAnimado CrearVentanaComoJugar(Transform raiz, KitSpritesArcade kit, MenuPrincipalArcade menu)

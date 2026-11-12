@@ -1,4 +1,5 @@
 using UnityEngine;
+using DemoledorUnifranz.Game;
 
 /// <summary>
 /// Interruptor entre los dos modos de la escena Universidad:
@@ -30,8 +31,14 @@ public class SelectorModoJuego : MonoBehaviour
 
     private void Awake()
     {
-        Aplicar();
-        ModoPisosActivo = modoPisos && edificioPisos != null;
+        // El menú NIVELES puede forzar un modo para esta partida; si no, manda la casilla.
+        bool pisos = modoPisos;
+        if (GameSession.ModoSeleccionado == GameSession.ModoElegido.Original) pisos = false;
+        else if (GameSession.ModoSeleccionado == GameSession.ModoElegido.Pisos) pisos = true;
+
+        pisos = pisos && edificioPisos != null;   // sin EdificioPisos en la escena, se juega el original
+        Aplicar(pisos);
+        ModoPisosActivo = pisos;
     }
 
     private void OnDestroy()
@@ -39,11 +46,16 @@ public class SelectorModoJuego : MonoBehaviour
         ModoPisosActivo = false;
     }
 
-    /// <summary>Enciende el edificio del modo elegido y apaga el otro.</summary>
+    /// <summary>Enciende el edificio del modo de la casilla y apaga el otro.</summary>
     public void Aplicar()
     {
-        Activar(edificioOriginal, !modoPisos);
-        Activar(edificioPisos, modoPisos);
+        Aplicar(modoPisos);
+    }
+
+    private void Aplicar(bool pisos)
+    {
+        Activar(edificioOriginal, !pisos);
+        Activar(edificioPisos, pisos);
     }
 
     private static void Activar(GameObject objeto, bool activo)
