@@ -98,6 +98,7 @@ public class DemoledorCenital : MonoBehaviour
         def = piso != null ? piso.Definicion : null;
         jugador = FindFirstObjectByType<JugadorCenital>();
         if (def != null) animaciones = Combinar(animaciones, def.demoledor);
+        animaciones.QuitarInvalidos();
         Reiniciar();
     }
 

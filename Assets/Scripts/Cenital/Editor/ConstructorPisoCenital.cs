@@ -260,7 +260,8 @@ public static class ConstructorPisoCenital
         dibJ.AddComponent<SpriteRenderer>();
         JugadorCenital jugador = jug.AddComponent<JugadorCenital>();
         jugador.animaciones.caminarAbajo = Sprites("Assets/personaje/Movimiento Abajo.aseprite");
-        jugador.animaciones.caminarArriba = Sprites("Assets/personaje/Movimiento arriba.aseprite");
+        // OJO: "Movimiento arriba.aseprite" es una paleta de 16 colores (16x4 px), no una animación.
+        jugador.animaciones.caminarArriba = Sprites("Assets/personaje/Movimiento Espalda1.aseprite");
         jugador.animaciones.caminarDerecha = Sprites("Assets/personaje/Movimiento Derecha.aseprite");
         Sprite[] martillo = Sprites("Assets/personaje/Movimiento martillo.aseprite");
         jugador.animaciones.golpeAbajo = martillo;
@@ -351,7 +352,13 @@ public static class ConstructorPisoCenital
         foreach (Object recurso in AssetDatabase.LoadAllAssetsAtPath(ruta))
         {
             Sprite s = recurso as Sprite;
-            if (s != null) lista.Add(s);
+            if (s == null) continue;
+            if (s.rect.width < AnimacionesCenital.LadoMinimoPx || s.rect.height < AnimacionesCenital.LadoMinimoPx)
+            {
+                Debug.LogWarning("[PisoCenital] " + ruta + " parece una paleta (" + s.rect.width + "x" + s.rect.height + " px): se excluye.");
+                continue;
+            }
+            lista.Add(s);
         }
         if (lista.Count == 0)
         {

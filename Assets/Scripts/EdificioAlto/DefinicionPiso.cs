@@ -61,6 +61,37 @@ public class AnimacionesCenital
     [Header("Otros")]
     [Tooltip("Preparación del lanzamiento (demoledor) o cuadros de daño (jugador).")]
     public Sprite[] especial;
+
+    /// <summary>Menor lado (px) que debe tener un cuadro para considerarse un personaje y no una paleta.</summary>
+    public const float LadoMinimoPx = 12f;
+
+    /// <summary>Vacía las series que tengan algún sprite diminuto (por ejemplo una tira de paleta de colores).</summary>
+    public void QuitarInvalidos()
+    {
+        caminarAbajo = Validos(caminarAbajo, "caminarAbajo");
+        caminarArriba = Validos(caminarArriba, "caminarArriba");
+        caminarDerecha = Validos(caminarDerecha, "caminarDerecha");
+        golpeAbajo = Validos(golpeAbajo, "golpeAbajo");
+        golpeArriba = Validos(golpeArriba, "golpeArriba");
+        golpeDerecha = Validos(golpeDerecha, "golpeDerecha");
+        especial = Validos(especial, "especial");
+    }
+
+    private static Sprite[] Validos(Sprite[] serie, string nombre)
+    {
+        if (serie == null) return null;
+        foreach (Sprite s in serie)
+        {
+            if (s == null || s.rect.width < LadoMinimoPx || s.rect.height < LadoMinimoPx)
+            {
+                Debug.LogWarning("[Cenital] La serie '" + nombre + "' tiene un sprite diminuto o vacío" +
+                                 (s != null ? " (" + s.name + ", " + s.rect.width + "x" + s.rect.height + " px)" : "") +
+                                 ": parece una paleta de colores. Se ignora esa serie.");
+                return null;
+            }
+        }
+        return serie;
+    }
 }
 
 /// <summary>

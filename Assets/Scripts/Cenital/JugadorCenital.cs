@@ -64,6 +64,8 @@ public class JugadorCenital : MonoBehaviour
         // El arte de la definición (si lo hay) reemplaza al de la escena.
         PisoCenital piso = PisoCenital.Actual;
         if (piso != null && piso.Definicion != null) animaciones = Combinar(animaciones, piso.Definicion.jugador);
+        animaciones.QuitarInvalidos();
+        if (animaciones.caminarArriba == null) animaciones.caminarArriba = animaciones.caminarAbajo;
         MostrarQuieto();
     }
 
