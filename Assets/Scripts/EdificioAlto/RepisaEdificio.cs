@@ -88,6 +88,27 @@ public class RepisaEdificio : MonoBehaviour
         Aplicar();
     }
 
+    private Sprite[] spritesOriginales;
+    private bool originalesGuardados;
+
+    /// <summary>
+    /// Cambia el aspecto (modo de pisos). Con 'nuevos' en null o incompleto vuelve a los
+    /// sprites con que se construyó. El tinte se multiplica con el color del sprite.
+    /// </summary>
+    public void AplicarSprites(Sprite[] nuevos, Color tinte)
+    {
+        Preparar();
+        if (!originalesGuardados)
+        {
+            spritesOriginales = sprites != null ? (Sprite[])sprites.Clone() : null;
+            originalesGuardados = true;
+        }
+        bool completos = nuevos != null && nuevos.Length >= 3;
+        sprites = completos ? nuevos : spritesOriginales;
+        if (dibujo != null) dibujo.color = tinte;
+        Aplicar();
+    }
+
     /// <summary>Baja un estado. Devuelve true si la repisa cambió.</summary>
     public bool Danar()
     {

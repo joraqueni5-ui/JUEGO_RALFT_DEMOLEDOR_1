@@ -64,7 +64,16 @@ public class DemoledorAutomatico : MonoBehaviour
     private int seccion;
     private int columnaActual;
 
-    private float Ritmo { get { return 1f + aumentoPorSeccion * Mathf.Max(0, seccion); } }
+    private float Ritmo
+    {
+        get
+        {
+            // Modo de pisos: la dificultad viene de la definición del piso.
+            EdificioPisos pisos = edificio as EdificioPisos;
+            if (pisos != null) return pisos.RitmoDemoledor;
+            return 1f + aumentoPorSeccion * Mathf.Max(0, seccion);
+        }
+    }
 
     private void Awake()
     {
@@ -123,6 +132,13 @@ public class DemoledorAutomatico : MonoBehaviour
 
         while (activo)
         {
+            // Modo de pisos: al completar el último piso no hay terraza, el demoledor se detiene.
+            if (edificio is EdificioPisos && edificio.Terminado)
+            {
+                animador.MostrarCuadroFijo(caminarDerecha, 0);
+                yield break;
+            }
+
             // ¿Se completó la sección? Sube (o, si era la última, va a la terraza).
             if (edificio.SeccionActual != seccion)
             {
@@ -201,7 +217,9 @@ public class DemoledorAutomatico : MonoBehaviour
     {
         if (spriteEscombro == null || edificio == null) return;
 
-        for (int i = 0; i < Mathf.Max(1, escombrosPorGolpe); i++)
+        EdificioPisos pisos = edificio as EdificioPisos;
+        int cantidad = pisos != null ? pisos.EscombrosPorGolpe : escombrosPorGolpe;
+        for (int i = 0; i < Mathf.Max(1, cantidad); i++)
         {
             Vector3 origen = new Vector3(
                 edificio.CentroColumna(columnaActual) + Random.Range(-0.15f, 0.15f),

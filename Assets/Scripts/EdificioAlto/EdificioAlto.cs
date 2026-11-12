@@ -46,7 +46,7 @@ public class EdificioAlto : MonoBehaviour
     public event Action Salvado;
 
     public int SeccionActual { get; private set; }
-    public bool Terminado { get { return SeccionActual >= secciones; } }
+    public virtual bool Terminado { get { return SeccionActual >= secciones; } }
     public int GolpesDados { get; private set; }
     public int Pisos { get { return pisosPorSeccion * secciones; } }
     public int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
@@ -61,13 +61,13 @@ public class EdificioAlto : MonoBehaviour
         }
     }
 
-    private readonly List<VentanaEdificio> ventanas = new List<VentanaEdificio>();
-    private readonly List<RepisaEdificio> repisas = new List<RepisaEdificio>();
+    protected readonly List<VentanaEdificio> ventanas = new List<VentanaEdificio>();
+    protected readonly List<RepisaEdificio> repisas = new List<RepisaEdificio>();
     private VentanaEdificio[,] rejilla;
     private RepisaEdificio[,] rejillaRepisas;
     private bool reiniciando;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         Instancia = this;
         ConstruirRejilla();
@@ -212,7 +212,7 @@ public class EdificioAlto : MonoBehaviour
         return null;
     }
 
-    private int GolpesMinimos(int seccion)
+    protected virtual int GolpesMinimos(int seccion)
     {
         if (golpesMinimosPorSeccion == null || golpesMinimosPorSeccion.Length == 0) return 0;
         return golpesMinimosPorSeccion[Mathf.Clamp(seccion, 0, golpesMinimosPorSeccion.Length - 1)];
@@ -293,11 +293,23 @@ public class EdificioAlto : MonoBehaviour
         if (Cambio != null) Cambio();
     }
 
-    private void Avanzar()
+    protected virtual void Avanzar()
     {
         EmpezarSeccion(SeccionActual + 1);
         if (SeccionCompletada != null) SeccionCompletada(SeccionActual);
         if (Terminado && Salvado != null) Salvado();
+    }
+
+    // Los eventos solo se pueden lanzar desde esta clase: estos métodos
+    // permiten que EdificioPisos (modo de 6 pisos) los dispare.
+    protected void AvisarCambio()
+    {
+        if (Cambio != null) Cambio();
+    }
+
+    protected void AvisarSalvado()
+    {
+        if (Salvado != null) Salvado();
     }
 
     private void AlCambiarVentana(VentanaEdificio ventana)

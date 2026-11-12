@@ -24,6 +24,9 @@ public class VentanaEdificio : MonoBehaviour
     [Tooltip("Sección a la que pertenece (0, 1 o 2).")]
     public int seccion;
 
+    [Tooltip("Tipo de objeto (0 a 3). En el modo de pisos decide cuál de los 4 objetos del piso muestra.")]
+    public int tipo;
+
     [Header("Aspecto")]
     public SpriteRenderer dibujo;
     [Tooltip("Sprites en orden: intacta, rota, destruida.")]
@@ -67,6 +70,27 @@ public class VentanaEdificio : MonoBehaviour
         if (dibujo == null) dibujo = GetComponent<SpriteRenderer>();
         posicionBase = transform.localPosition;
         lista = true;
+        Aplicar();
+    }
+
+    private Sprite[] spritesOriginales;
+    private bool originalesGuardados;
+
+    /// <summary>
+    /// Cambia el aspecto (modo de pisos). Con 'nuevos' en null o incompleto vuelve a los
+    /// sprites con que se construyó. El tinte se multiplica con el color del sprite.
+    /// </summary>
+    public void AplicarSprites(Sprite[] nuevos, Color tinte)
+    {
+        Preparar();
+        if (!originalesGuardados)
+        {
+            spritesOriginales = sprites != null ? (Sprite[])sprites.Clone() : null;
+            originalesGuardados = true;
+        }
+        bool completos = nuevos != null && nuevos.Length >= 3;
+        sprites = completos ? nuevos : spritesOriginales;
+        if (dibujo != null) dibujo.color = tinte;
         Aplicar();
     }
 
