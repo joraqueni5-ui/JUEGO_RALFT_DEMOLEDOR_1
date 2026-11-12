@@ -18,6 +18,9 @@ public class CamaraPisoCenital : MonoBehaviour
     private static float fuerzaTemblor, finTemblor, duracionTemblor;
     private Vector3 baseCentro;
     private float ultimoAspecto;
+    private Canvas canvasFranja;
+    private float alturaFranja;
+    private float fraccionFranja;
 
     private void Awake()
     {
@@ -34,6 +37,27 @@ public class CamaraPisoCenital : MonoBehaviour
         zona = mapa;
         tieneZona = true;
         Ajustar();
+    }
+
+    /// <summary>
+    /// Reserva arriba una franja para el HUD: el mapa se dibuja solo debajo. La altura está en
+    /// píxeles del lienzo de referencia y se convierte a fracción de pantalla en cada cambio de tamaño.
+    /// </summary>
+    public void ReservarFranjaSuperior(Canvas canvas, float alturaEnLienzo)
+    {
+        canvasFranja = canvas;
+        alturaFranja = alturaEnLienzo;
+        ActualizarFranja();
+    }
+
+    private void ActualizarFranja()
+    {
+        if (camara == null || canvasFranja == null || Screen.height <= 0) return;
+        float fraccion = Mathf.Clamp(alturaFranja * canvasFranja.scaleFactor / Screen.height, 0f, 0.4f);
+        if (Mathf.Approximately(fraccion, fraccionFranja) && camara.rect.height > 0f && camara.rect.height < 1f) return;
+        fraccionFranja = fraccion;
+        camara.rect = new Rect(0f, 0f, 1f, 1f - fraccion);
+        if (tieneZona) Ajustar();
     }
 
     public static void Temblar(float fuerza, float duracion)
@@ -57,6 +81,7 @@ public class CamaraPisoCenital : MonoBehaviour
 
     private void LateUpdate()
     {
+        ActualizarFranja();
         if (!tieneZona) return;
         if (!Mathf.Approximately(ultimoAspecto, camara.aspect)) Ajustar();
 

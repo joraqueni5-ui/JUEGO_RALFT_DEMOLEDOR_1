@@ -387,7 +387,7 @@ public class GestorJuego : MonoBehaviour
         if (textoEstado != null && cenital != null)
         {
             textoEstado.text = string.Format(
-                "PUNTOS  {0}\nPISO  1/1\nOBJETOS ROTOS  {1}/{2}",
+                "PUNTOS  {0}      PISO  1/1      OBJETOS ROTOS  {1}/{2}",
                 puntos, edificio.Terminado ? 0 : edificio.DanadasEnSeccion(0), edificio.VentanasPorSeccion);
         }
         else if (textoEstado != null && modoPisos)
@@ -531,6 +531,12 @@ public class GestorJuego : MonoBehaviour
 
         Transform raiz = lienzo.transform;
 
+        if (cenital != null)
+        {
+            CrearFranjaCenital(canvas, raiz);
+        }
+        else
+        {
         // Panel de estado a la izquierda, bajo el botón de pausa (que está en 24, -20 y mide 112 x 96).
         Image panel = CrearImagen(raiz, "PanelEstado", new Color(0.05f, 0.06f, 0.08f, 0.6f),
             new Vector2(0f, 1f), new Vector2(24f, -128f), new Vector2(380f, 196f));
@@ -568,12 +574,72 @@ public class GestorJuego : MonoBehaviour
             corazon.preserveAspect = true;
             corazones[i] = corazon;
         }
+        }
 
         textoMensaje = CrearTexto(raiz, "", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 260f),
             new Vector2(1500f, 100f), TextAnchor.MiddleCenter, 58, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
 
         // --- Menú de pausa (ventana con CONTINUAR / REINICIAR / MENÚ PRINCIPAL) ---
         menuPausa = MenuPausaArcade.Crear(this);
+    }
+
+    /// <summary>Altura (en píxeles del lienzo de referencia) de la franja del HUD del piso cenital.</summary>
+    private const float AlturaFranja = 130f;
+
+    /// <summary>
+    /// HUD del piso visto desde arriba: una franja a todo el ancho, anclada al borde de arriba, que el
+    /// mapa no cubre (la cámara del mapa empieza justo debajo). Los textos se anclan a la izquierda,
+    /// las vidas a la derecha y todo escala con el lienzo, así que se ve completo en 16:9 y en 20:9.
+    /// </summary>
+    private void CrearFranjaCenital(Canvas canvas, Transform raiz)
+    {
+        GameObject fondo = new GameObject("FranjaHud", typeof(RectTransform), typeof(Image));
+        fondo.transform.SetParent(raiz, false);
+        RectTransform rtFondo = (RectTransform)fondo.transform;
+        rtFondo.anchorMin = new Vector2(0f, 1f);
+        rtFondo.anchorMax = new Vector2(1f, 1f);
+        rtFondo.pivot = new Vector2(0.5f, 1f);
+        rtFondo.anchoredPosition = Vector2.zero;
+        rtFondo.sizeDelta = new Vector2(0f, AlturaFranja);
+        Image imagenFondo = fondo.GetComponent<Image>();
+        imagenFondo.color = new Color(0.05f, 0.06f, 0.08f, 1f);
+        imagenFondo.raycastTarget = false;
+        fondo.transform.SetAsFirstSibling();
+
+        // Deja libre el botón de pausa (24..136 de ancho) y empieza el texto a su derecha.
+        const float x0 = 170f;
+        textoEstado = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, -18f),
+            new Vector2(1000f, 44f), TextAnchor.UpperLeft, 30, Color.white, FontStyle.Bold);
+        textoDestrozo = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, -72f),
+            new Vector2(230f, 34f), TextAnchor.UpperLeft, 24, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
+
+        Image fondoBarra = CrearImagen(raiz, "BarraFondo", new Color(0.02f, 0.02f, 0.03f, 0.8f),
+            new Vector2(0f, 1f), new Vector2(x0 + 240f, -76f), new Vector2(AnchoBarra + 8f, 24f));
+        fondoBarra.rectTransform.pivot = new Vector2(0f, 1f);
+        Image relleno = CrearImagen(raiz, "BarraRelleno", new Color(0.95f, 0.75f, 0.2f, 1f),
+            new Vector2(0f, 1f), new Vector2(x0 + 244f, -88f), new Vector2(0f, 16f));
+        rellenoBarra = relleno.rectTransform;
+        rellenoBarra.pivot = new Vector2(0f, 0.5f);
+
+        // Vidas: arriba a la derecha, centradas en la franja. En el celular, a la izquierda del botón REINICIAR.
+        int totalCorazones = Mathf.Max(1, vidasIniciales);
+        corazones = new Image[totalCorazones];
+        const float AnchoCorazon = 60f;
+        const float SeparacionCorazon = 72f;
+        float extra = ControlesTactiles.DebeMostrarse ? 260f : 0f;
+        for (int i = 0; i < totalCorazones; i++)
+        {
+            float x = -(40f + extra + AnchoCorazon * 0.5f + (totalCorazones - 1 - i) * SeparacionCorazon);
+            Image corazon = CrearImagen(raiz, "Vida" + (i + 1), Color.white, new Vector2(1f, 1f),
+                new Vector2(x, -AlturaFranja * 0.5f), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
+            corazon.sprite = SpriteCorazon();
+            corazon.preserveAspect = true;
+            corazones[i] = corazon;
+        }
+
+        // El mapa se dibuja solo debajo de la franja.
+        CamaraPisoCenital camara = Object.FindFirstObjectByType<CamaraPisoCenital>();
+        if (camara != null) camara.ReservarFranjaSuperior(canvas, AlturaFranja);
     }
 
     private static Text CrearTexto(Transform padre, string contenido, Vector2 ancla, Vector2 pivote,
