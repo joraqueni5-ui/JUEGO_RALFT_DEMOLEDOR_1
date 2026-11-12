@@ -18,35 +18,38 @@ MonoBehaviour:
   objetos:
   - nombre: Monitor
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-  - nombre: Teclado
-    sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: e1275cebc5451b54780ae93199c00fa5, type: 3}
+    - {fileID: 21300000, guid: 38ac55d60bad4a64a97470b1b88568b0, type: 3}
+    - {fileID: 21300000, guid: b67387b111ce88c4ab0b05b65789f54f, type: 3}
   - nombre: Servidor
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: d053b5228458e31469e04fd803ddde9a, type: 3}
+    - {fileID: 21300000, guid: c5abba0c6a9c66b46ac353c206b649b5, type: 3}
+    - {fileID: 21300000, guid: df6386993a045134da3a7d8ec5c5aae3, type: 3}
+  - nombre: Computadora
+    sprites:
+    - {fileID: 21300000, guid: 3e117e2e2bec11045829285f8e6f7f91, type: 3}
+    - {fileID: 21300000, guid: 93827f8dba24bf6469ad103bf627c0c3, type: 3}
+    - {fileID: 21300000, guid: 59ab920b539ef2144807740d486ee661, type: 3}
   - nombre: Impresora
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: 24e63918938d08d479696c8302bba217, type: 3}
+    - {fileID: 21300000, guid: dacc11f6c8228194cb17c5c16c34e62b, type: 3}
+    - {fileID: 21300000, guid: 5e428947e536f5543be68179e48ac437, type: 3}
   plataformas:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  fondo: {fileID: 0}
-  tinte: {r: 0.66, g: 0.86, b: 1, a: 1}
+  - {fileID: 21300000, guid: e7809dc01521c6b4c9a1b55a6f3626ec, type: 3}
+  - {fileID: 21300000, guid: 50e9de9bd4192ff4aaa011994d1016a8, type: 3}
+  - {fileID: 21300000, guid: 1031dd085f4eb0a44af76d806d4fe01f, type: 3}
+  fondo: {fileID: 21300000, guid: 5871d9dce5091794ea19ac82e53a417e, type: 3}
+  tinte: {r: 1, g: 1, b: 1, a: 1}
+  colorFondo: {r: 0.08, g: 0.1, b: 0.17, a: 1}
   ritmoDemoledor: 1.1
   golpesMinimos: 10
   limiteDerrumbe: 0.7
   escombrosPorGolpe: 1
   fichaTitulo: "Piso 2 - Inform\xE1tica"
-  fichaDescripcion: Ficha por completar.
-  fichaDatoUtil: Dato por completar.
+  fichaDescripcion: "Aqu\xED se aprende a crear programas, administrar redes y bases
+    de datos, y proteger la informaci\xF3n."
+  fichaDatoUtil: "Haz copias de seguridad de tus archivos importantes: es la mejor
+    defensa contra perder informaci\xF3n."
   fichaIlustracion: {fileID: 0}

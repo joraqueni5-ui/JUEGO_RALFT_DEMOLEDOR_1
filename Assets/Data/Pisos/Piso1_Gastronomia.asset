@@ -18,35 +18,38 @@ MonoBehaviour:
   objetos:
   - nombre: Horno
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: 2f05944a7bd0b01419c03288ee74dde6, type: 3}
+    - {fileID: 21300000, guid: 338f1f8b775a1114ab301cc887beeced, type: 3}
+    - {fileID: 21300000, guid: e45ab03949d06f547bc96fd8158bee34, type: 3}
   - nombre: Refrigerador
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: af1344ac13965f04ab5945c29db2b8e0, type: 3}
+    - {fileID: 21300000, guid: eccc467f5e16bfe4f92125b9d75ba153, type: 3}
+    - {fileID: 21300000, guid: 109761ff5ade4854fb42dd0680c6d5f9, type: 3}
   - nombre: Estufa
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: 946119535258f3c498b72a07836ad9dd, type: 3}
+    - {fileID: 21300000, guid: b384081278a7de847851d27998084792, type: 3}
+    - {fileID: 21300000, guid: f286577293714ab4ebb3e8bd0711c999, type: 3}
   - nombre: Mesa de trabajo
     sprites:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: a9bb30bee2c752241915794ce239cd92, type: 3}
+    - {fileID: 21300000, guid: 921dfebadec179247a0b2e7ea98c2dd5, type: 3}
+    - {fileID: 21300000, guid: feaa26764b28d49429a3181436533262, type: 3}
   plataformas:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  fondo: {fileID: 0}
-  tinte: {r: 1, g: 0.82, b: 0.62, a: 1}
+  - {fileID: 21300000, guid: ba966dbe522906740b92f06c6f5ecb59, type: 3}
+  - {fileID: 21300000, guid: ab4318fbf40388447a0d916a2d185242, type: 3}
+  - {fileID: 21300000, guid: ec62a10be2967c44fa1fa3949d9ffeaa, type: 3}
+  fondo: {fileID: 21300000, guid: 886f1eb099e237e47aa81a3ad16870c7, type: 3}
+  tinte: {r: 1, g: 1, b: 1, a: 1}
+  colorFondo: {r: 0.23, g: 0.2, b: 0.2, a: 1}
   ritmoDemoledor: 1
   golpesMinimos: 8
   limiteDerrumbe: 0.7
   escombrosPorGolpe: 1
   fichaTitulo: "Piso 1 - Gastronom\xEDa"
-  fichaDescripcion: Ficha por completar.
-  fichaDatoUtil: Dato por completar.
+  fichaDescripcion: "Aqu\xED se aprende a cocinar de forma profesional: t\xE9cnicas
+    de cocina, higiene, manejo de alimentos y organizaci\xF3n de una cocina."
+  fichaDatoUtil: En una cocina profesional todo se deja listo antes de empezar. Se
+    llama "mise en place" y evita accidentes.
   fichaIlustracion: {fileID: 0}
