@@ -19,6 +19,8 @@ public class DemoledorCenital : MonoBehaviour
     [Header("Movimiento")]
     [Tooltip("Baldosas por segundo (se multiplica por el ritmo del piso).")]
     public float velocidad = 2.0f;
+    [Tooltip("Radio del collider (baldosas). Debe ser menor que media baldosa (0.5) para pasar por puertas y esquinas.")]
+    [Range(0.1f, 0.45f)] public float radioCuerpo = 0.35f;
     [Tooltip("Distancia del cuerpo al borde de un objeto para poder golpearlo.")]
     public float alcancePunetazo = 0.95f;
 
@@ -26,6 +28,12 @@ public class DemoledorCenital : MonoBehaviour
     public float esperaInicial = 1.2f;
     public float pausaTrasGolpe = 0.5f;
     public float pausaTrasLanzamiento = 0.7f;
+
+    [Header("Diagnóstico (Gizmos y registro)")]
+    [Tooltip("Dibuja la ruta A*, el destino y el objetivo en la vista Scene (y en Game con Gizmos activado).")]
+    public bool dibujarDiagnostico = true;
+    [Tooltip("Escribe en la consola cuándo se atasca, con qué choca y qué hace para salir.")]
+    public bool registrarAtascos = true;
 
     [Header("Dibujo")]
     public float alturaDibujo = 2f;
@@ -59,7 +67,12 @@ public class DemoledorCenital : MonoBehaviour
     private bool golpeando;
     private float finGolpe;
 
-    private Vector2 Centro { get { return (Vector2)transform.position + new Vector2(0f, 0.4f); } }
+    /// <summary>Centro del cuerpo. El collider está centrado en el transform, igual que los puntos del A*.</summary>
+    private Vector2 Centro { get { return transform.position; } }
+
+    private Vector2 destinoAproximacion;
+    private int recalculos;
+    private float proximoRecalculo;
 
     // Parámetros con valores de la definición (o por defecto).
     private float Ritmo { get { return piso != null ? piso.RitmoDemoledor : 1f; } }
@@ -82,6 +95,15 @@ public class DemoledorCenital : MonoBehaviour
         cuerpo.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         cuerpo.interpolation = RigidbodyInterpolation2D.Interpolate;
         colision = GetComponent<Collider2D>();
+
+        // Cuerpo centrado y más chico que una baldosa: el A* mueve este mismo punto por el centro de las
+        // celdas, y así el collider no roza paredes ni objetos de las celdas vecinas.
+        CircleCollider2D circulo = colision as CircleCollider2D;
+        if (circulo != null)
+        {
+            circulo.offset = Vector2.zero;
+            circulo.radius = radioCuerpo;
+        }
 
         dibujo = GetComponentInChildren<SpriteRenderer>();
         if (dibujo == null) dibujo = Provisional.Crear(transform, "Dibujo", null, Color.white, 0);
@@ -272,49 +294,60 @@ public class DemoledorCenital : MonoBehaviour
         {
             float total = 0f;
             foreach (ObjetoReparable o in candidatos) total += o.Estado == EstadoObjeto.Intacto ? 3f : 2f;
-            float r = Random.value * total;
+            float azar = Random.value * total;
             int elegido = candidatos.Count - 1;
             for (int i = 0; i < candidatos.Count; i++)
             {
-                r -= candidatos[i].Estado == EstadoObjeto.Intacto ? 3f : 2f;
-                if (r <= 0f) { elegido = i; break; }
+                azar -= candidatos[i].Estado == EstadoObjeto.Intacto ? 3f : 2f;
+                if (azar <= 0f) { elegido = i; break; }
             }
             orden.Add(candidatos[elegido]);
             candidatos.RemoveAt(elegido);
         }
 
+        // Para cada objeto prueba sus celdas libres de al lado; si ninguna tiene camino, pasa al siguiente.
         foreach (ObjetoReparable o in orden)
         {
-            Vector2 destino;
-            if (!CeldaDeAproximacion(o, out destino)) continue;
-            List<Vector2> r = BuscadorRutas.Buscar(piso.Mapa, transform.position, destino);
-            if (r == null) continue;
+            foreach (Vector2 celda in CeldasDeAproximacion(o, 4))
+            {
+                List<Vector2> r = BuscadorRutas.Buscar(piso.Mapa, transform.position, celda);
+                if (r == null) continue;
 
-            objetivo = o;
-            ruta = r;
-            indiceRuta = 0;
-            atascos = 0;
-            posChequeo = transform.position;
-            proximoChequeo = Time.time + 0.5f;
-            estado = Estado.Caminando;
-            return;
+                objetivo = o;
+                destinoAproximacion = celda;
+                ruta = r;
+                indiceRuta = 0;
+                atascos = 0;
+                recalculos = 0;
+                posChequeo = transform.position;
+                proximoChequeo = Time.time + 0.5f;
+                estado = Estado.Caminando;
+                return;
+            }
+            if (registrarAtascos) Debug.Log("[Demoledor] '" + o.name + "' no tiene un lado accesible: elige otro objeto.");
         }
         finEstado = Time.time + 0.5f;   // ninguno es alcanzable por ahora
     }
 
-    /// <summary>La celda libre junto al objeto que queda más cerca del demoledor.</summary>
-    private bool CeldaDeAproximacion(ObjetoReparable o, out Vector2 mejor)
+    /// <summary>
+    /// Celdas LIBRES pegadas al objeto (nunca la ocupada), las más cercanas al demoledor primero.
+    /// Las que comparten borde con el objeto van antes que las de esquina.
+    /// </summary>
+    private List<Vector2> CeldasDeAproximacion(ObjetoReparable o, int maximo)
     {
-        mejor = Vector2.zero;
-        float mejorD = float.MaxValue;
-        bool hay = false;
+        List<KeyValuePair<float, Vector2>> lista = new List<KeyValuePair<float, Vector2>>();
         foreach (Vector2 c in piso.Mapa.CentrosTransitables)
         {
-            if (Vector2.Distance(c, o.PuntoMasCercano(c)) > 0.8f) continue;
-            float d = (c - (Vector2)transform.position).sqrMagnitude;
-            if (d < mejorD) { mejorD = d; mejor = c; hay = true; }
+            float alBorde = Vector2.Distance(c, o.PuntoMasCercano(c));
+            if (alBorde > 0.8f) continue;
+            float puntaje = (c - (Vector2)transform.position).sqrMagnitude + (alBorde > 0.55f ? 1000f : 0f);
+            lista.Add(new KeyValuePair<float, Vector2>(puntaje, c));
         }
-        return hay;
+        lista.Sort((a, b) => a.Key.CompareTo(b.Key));
+
+        List<Vector2> res = new List<Vector2>();
+        for (int i = 0; i < lista.Count && i < maximo; i++) res.Add(lista[i].Value);
+        return res;
     }
 
     // ------------------------------------------------------------ caminar
@@ -328,20 +361,60 @@ public class DemoledorCenital : MonoBehaviour
         direccion = d.normalized;
         velDeseada = direccion * velocidad * Ritmo;
 
-        // Atascado (por ejemplo el jugador cierra el paso): elige otro objetivo.
+        // Sin avanzar durante ~1 s (se mide cada 0.5 s, dos veces seguidas): primero recalcula la ruta
+        // una vez; si sigue atascado, cambia de objetivo. Nunca se recalcula cuadro a cuadro.
         if (Time.time >= proximoChequeo)
         {
-            if (Vector2.Distance(transform.position, posChequeo) < 0.08f) atascos++; else atascos = 0;
+            if (Vector2.Distance(transform.position, posChequeo) < 0.1f) atascos++;
+            else { atascos = 0; recalculos = 0; }
             posChequeo = transform.position;
             proximoChequeo = Time.time + 0.5f;
+
             if (atascos >= 2)
             {
-                velDeseada = Vector2.zero;
-                ultimoObjetivo = objetivo;
-                estado = Estado.Decidiendo;
-                finEstado = Time.time + 0.3f;
+                atascos = 0;
+                RegistrarAtasco();
+                if (recalculos < 1 && Time.time >= proximoRecalculo && Replanificar()) recalculos++;
+                else CambiarObjetivo();
             }
         }
+    }
+
+    /// <summary>Nueva ruta al mismo destino. Devuelve false si ya no hay camino.</summary>
+    private bool Replanificar()
+    {
+        proximoRecalculo = Time.time + 1f;
+        List<Vector2> r = BuscadorRutas.Buscar(piso.Mapa, transform.position, destinoAproximacion);
+        if (r == null) return false;
+        ruta = r;
+        indiceRuta = 0;
+        if (registrarAtascos) Debug.Log("[Demoledor] Ruta recalculada hacia '" + (objetivo != null ? objetivo.name : "?") + "'.");
+        return true;
+    }
+
+    private void CambiarObjetivo()
+    {
+        if (registrarAtascos) Debug.Log("[Demoledor] Sigue atascado: cambia de objetivo (era '" + (objetivo != null ? objetivo.name : "?") + "').");
+        velDeseada = Vector2.zero;
+        ultimoObjetivo = objetivo;
+        recalculos = 0;
+        estado = Estado.Decidiendo;
+        finEstado = Time.time + 0.2f;
+    }
+
+    /// <summary>Escribe en consola con qué está chocando el demoledor.</summary>
+    private void RegistrarAtasco()
+    {
+        if (!registrarAtascos) return;
+        ContactPoint2D[] contactos = new ContactPoint2D[8];
+        int n = colision.GetContacts(contactos);
+        string con = "";
+        for (int i = 0; i < n; i++)
+            con += (contactos[i].collider != null ? contactos[i].collider.name : "?") + (i < n - 1 ? ", " : "");
+        Vector2 celda = piso.Mapa.CeldaDe(transform.position);
+        Debug.LogWarning("[Demoledor] ATASCADO en " + transform.position + " (celda " + celda + ", transitable: " +
+                         piso.Mapa.EsTransitable(new Vector2Int((int)celda.x, (int)celda.y)) + "). Waypoint " + indiceRuta + "/" +
+                         (ruta != null ? ruta.Count : 0) + ". Choca con: " + (n == 0 ? "nada" : con));
     }
 
     private void LlegoAlDestino()
@@ -533,7 +606,50 @@ public class DemoledorCenital : MonoBehaviour
         if (estado == Estado.PrepLanzamiento) tam.y *= 1.1f;
         dibujo.transform.localScale = tam;
         float signo = dibujo.flipX ? -1f : 1f;
-        dibujo.transform.localPosition = new Vector3(-b.center.x * tam.x * signo, -b.min.y * tam.y, 0f);
-        dibujo.sortingOrder = Provisional.OrdenY(transform.position.y);
+        // El origen del objeto es el centro del cuerpo: los pies del sprite van en la base del collider.
+        dibujo.transform.localPosition = new Vector3(-b.center.x * tam.x * signo, -b.min.y * tam.y - radioCuerpo, 0f);
+        dibujo.sortingOrder = Provisional.OrdenY(transform.position.y - radioCuerpo);
+    }
+
+    // ------------------------------------------------------------ diagnóstico
+    private void OnDrawGizmos()
+    {
+        if (!dibujarDiagnostico) return;
+
+        // Cuerpo (collider real) y alcance del puñetazo.
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireSphere(transform.position, radioCuerpo);
+        Gizmos.color = new Color(1f, 0.4f, 0.2f, 0.6f);
+        Gizmos.DrawWireSphere(transform.position, alcancePunetazo);
+
+        // Objetivo (rojo) y celda de destino a su lado (verde).
+        if (objetivo != null && estado != Estado.Detenido)
+        {
+            Gizmos.color = Color.red;
+            Bounds b = objetivo.Area;
+            Gizmos.DrawWireCube(b.center, b.size);
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(destinoAproximacion, new Vector3(0.9f, 0.9f, 0f));
+            Gizmos.DrawSphere(destinoAproximacion, 0.12f);
+        }
+
+        // Ruta A* actual: tramos celestes, puntos intermedios y el waypoint que sigue en amarillo.
+        if (ruta != null && estado == Estado.Caminando)
+        {
+            Vector2 anterior = transform.position;
+            for (int i = indiceRuta; i < ruta.Count; i++)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(anterior, ruta[i]);
+                Gizmos.color = i == indiceRuta ? Color.yellow : Color.cyan;
+                Gizmos.DrawSphere(ruta[i], i == indiceRuta ? 0.15f : 0.09f);
+                anterior = ruta[i];
+            }
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 1.6f,
+            estado + (estado == Estado.Caminando ? "  atascos " + atascos + "  recalc " + recalculos : ""));
+#endif
     }
 }

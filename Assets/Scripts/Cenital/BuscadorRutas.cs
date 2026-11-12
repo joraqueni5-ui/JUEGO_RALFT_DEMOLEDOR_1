@@ -20,6 +20,12 @@ public static class BuscadorRutas
         new Vector2Int(1, 1), new Vector2Int(1, -1), new Vector2Int(-1, 1), new Vector2Int(-1, -1),
     };
 
+    /// <summary>
+    /// Holgura a cada lado de un tramo recto al suavizar la ruta. Es mayor que el radio del cuerpo del
+    /// demoledor (0.35), así el tramo nunca roza la esquina de una pared o un objeto.
+    /// </summary>
+    private const float MargenLateral = 0.42f;
+
     private static float Octil(Vector2Int a, Vector2Int b)
     {
         float dx = Mathf.Abs(a.x - b.x), dy = Mathf.Abs(a.y - b.y);
@@ -98,7 +104,7 @@ public static class BuscadorRutas
             int lejos = ancla + 1;
             for (int i = ruta.Count - 1; i > ancla + 1; i--)
             {
-                if (mapa.LineaLibre(ruta[ancla], ruta[i], 0.3f)) { lejos = i; break; }
+                if (mapa.LineaLibre(ruta[ancla], ruta[i], MargenLateral)) { lejos = i; break; }
             }
             res.Add(ruta[lejos]);
             ancla = lejos;

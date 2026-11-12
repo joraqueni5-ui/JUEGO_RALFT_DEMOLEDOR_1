@@ -148,6 +148,24 @@ public class MapaCenital : MonoBehaviour
 
     private Tilemap tm0() { return tilemaps[0]; }
 
+    [Header("Diagnóstico")]
+    [Tooltip("Dibuja con Gizmos las celdas que el A* considera libres (verde) y las que no (rojo).")]
+    public bool dibujarCuadricula;
+
+    private void OnDrawGizmos()
+    {
+        if (!dibujarCuadricula || !Application.isPlaying || transitable == null || grid == null) return;
+        for (int x = 0; x < ancho; x++)
+        {
+            for (int y = 0; y < alto; y++)
+            {
+                Vector2 c = CentroDe(new Vector2Int(origen.x + x, origen.y + y));
+                Gizmos.color = transitable[x, y] ? new Color(0f, 1f, 0f, 0.12f) : new Color(1f, 0f, 0f, 0.25f);
+                Gizmos.DrawCube(c, new Vector3(0.9f, 0.9f, 0f));
+            }
+        }
+    }
+
     // ------------------------------------------------------------ consultas de la cuadrícula
     public int Ancho { get { return ancho; } }
     public int Alto { get { return alto; } }

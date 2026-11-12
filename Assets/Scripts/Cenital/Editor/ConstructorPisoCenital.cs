@@ -274,8 +274,8 @@ public static class ConstructorPisoCenital
         dem.transform.position = posDem;
         dem.AddComponent<Rigidbody2D>().gravityScale = 0f;
         CircleCollider2D colD = dem.AddComponent<CircleCollider2D>();
-        colD.radius = 0.4f;
-        colD.offset = new Vector2(0f, 0.4f);
+        colD.radius = 0.35f;            // menor que media baldosa: pasa por puertas y esquinas
+        colD.offset = Vector2.zero;     // centrado, igual que los puntos del A*
         colD.sharedMaterial = sinRoce;
         GameObject dibD = new GameObject("Dibujo");
         dibD.transform.SetParent(dem.transform, false);
