@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43c443ee752c403439c9a27468ae7c2d, type: 3}
+  m_Name: ArteNiveles
+  m_EditorClassIdentifier: Assembly-CSharp::ArteNiveles
+  cuadrado: {fileID: 21300000, guid: faccc1fd85f03f74ab2ef4d04e4ad240, type: 3}
+  circulo: {fileID: 21300000, guid: 9d32fb7116833844381d2448c2b25cc8, type: 3}
+  grietasChica: {fileID: 21300000, guid: 01227e06f40898e49b4613a57ca5bb58, type: 3}
+  grietasMediana: {fileID: 21300000, guid: 9388285879c1d3e43be544a8970b431e, type: 3}
+  grietasGrande: {fileID: 21300000, guid: 3da36fb7bbd0c494185a2ef62415ed4b, type: 3}
+  escombroLadrillo:
+  - {fileID: 21300000, guid: 6f14c15b19bee45458b2c94e017c9c0c, type: 3}
+  - {fileID: 21300000, guid: 4d7ae0cbc0c4c524d89f54dc29d038d5, type: 3}
+  - {fileID: 21300000, guid: 6cdd4bab472b33c4398890f5d6a3c625, type: 3}
+  - {fileID: 21300000, guid: 192657078a031554ab32b3a3155a98f9, type: 3}
+  trozosEscombro:
+  - {fileID: 21300000, guid: db933783f3cafb94fb793b78dc450f6d, type: 3}
+  - {fileID: 21300000, guid: 78c0a8878c0a1c7408a560bbfd218f57, type: 3}
+  - {fileID: 21300000, guid: 3697365960bfc8547986d2fe5f512ac0, type: 3}
+  sombraImpacto:
+  - {fileID: 21300000, guid: a567f75d1a6eb274095299a93a9ef325, type: 3}
+  - {fileID: 21300000, guid: cdad9ec29002bbf4d88d7fbab141e68c, type: 3}
+  - {fileID: 21300000, guid: b981ced4a2c1b0f429f134ac26a456b2, type: 3}
+  - {fileID: 21300000, guid: 30a65756763df644baf7200b81eed374, type: 3}
+  polvoImpacto:
+  - {fileID: 21300000, guid: 2b20b3cabaf817749a3d98a7a12b648f, type: 3}
+  - {fileID: 21300000, guid: 4245a538955e37e4ba5ef0fce054c296, type: 3}
+  - {fileID: 21300000, guid: 3a0d087a964b7034d899918295eb77b0, type: 3}
+  - {fileID: 21300000, guid: a534455924192e541a2f9a39a45adde8, type: 3}
+  golpeEstallido:
+  - {fileID: 21300000, guid: 5c1afb69d30aef343a5efa6b898d4645, type: 3}
+  - {fileID: 21300000, guid: a55f0d820fda21c4dab2389cd55f6366, type: 3}
+  - {fileID: 21300000, guid: d393a901d2e1cdd4a8eb5c6851a56ba9, type: 3}
+  - {fileID: 21300000, guid: 6fd3e4aae05afce4ba2cadb0cd2e03e4, type: 3}
+  chispasReparar:
+  - {fileID: 21300000, guid: bfa0e04b4a7d1b649b3173c36e1089ef, type: 3}
+  - {fileID: 21300000, guid: 58ac6f0a0e7c58740a32797354627c89, type: 3}
+  - {fileID: 21300000, guid: d05c111a46ca0394c818088148f4839a, type: 3}
+  - {fileID: 21300000, guid: da28b595f4ad4524494e61809e11d3d4, type: 3}
+  estrellasAturdido:
+  - {fileID: 21300000, guid: 76f663e307fd7cb4584b6603c03ef431, type: 3}
+  - {fileID: 21300000, guid: 4887a1f581eb4194d9e4c92bb61f6a15, type: 3}
+  - {fileID: 21300000, guid: 884379251873e8348a0865cf978a0796, type: 3}
+  - {fileID: 21300000, guid: b3c4b44c07238534c996cd697713ba71, type: 3}
+  zzDormido:
+  - {fileID: 21300000, guid: 2dc99ee1b19da3746953fc5d0aab2b5d, type: 3}
+  - {fileID: 21300000, guid: ea3c7d5780de0ec468748ee8c881cdd2, type: 3}
+  - {fileID: 21300000, guid: 398509e660be8014791cf8d44df5721f, type: 3}
+  aroPoderDorado:
+  - {fileID: 21300000, guid: c9af3b7a331b2f0478482049f242ea9e, type: 3}
+  - {fileID: 21300000, guid: 12e422d77d99c3c40957110750c8d6e4, type: 3}
+  aroPoderVerde:
+  - {fileID: 21300000, guid: 025845de2982b6f42a18a56b0b4016f0, type: 3}
+  - {fileID: 21300000, guid: fbb24df92b1e13445af95a878392f0d4, type: 3}
+  destelloPoder:
+  - {fileID: 21300000, guid: e3473bb0abf46c74d9d0e96853aa3a7a, type: 3}
+  - {fileID: 21300000, guid: 55135d90b3cd24f489c4bd6648667a39, type: 3}
+  - {fileID: 21300000, guid: 2779175fbb6560149b35fdacc9522d22, type: 3}
+  - {fileID: 21300000, guid: 8f275025e5201914ab821da85235d6a5, type: 3}
+  bloqueEscombroGrande: []
+  rocaLluvia1: []
+  rocaLluvia2: []
+  rocaLluvia3: []
+  sombraImpactoGrande: []
+  polvoImpactoGrande: []
+  avisoLluviaEscombros: []
+  polvoDerrumbe:
+  - {fileID: 21300000, guid: dd28233db9390a047824cc6dd3d88d56, type: 3}
+  - {fileID: 21300000, guid: 1b073cb89b6d81348bd4f625691359bf, type: 3}
+  - {fileID: 21300000, guid: 7fce49d86b43d9043b9bee0fc344cce5, type: 3}
+  - {fileID: 21300000, guid: 3bc6910176576af49a8ae023706b5b6d, type: 3}
+  grietaTerremoto:
+  - {fileID: 21300000, guid: eb8b326adb012284191c42cbd3a353f4, type: 3}
+  - {fileID: 21300000, guid: 4f19f138c54579e44b40f2d8523fbd14, type: 3}
+  - {fileID: 21300000, guid: c5f5732dfce60ac44b801457a49d9605, type: 3}
+  - {fileID: 21300000, guid: 6d32b11df66926e42ad314812b65fd4b, type: 3}
+  avisoPaloma:
+  - {fileID: 21300000, guid: 258cf35352ca79d4785d2ff2e80dd757, type: 3}
+  - {fileID: 21300000, guid: 3f5c5f33db58daa41975a349f3a64a71, type: 3}
+  palomaVuelo:
+  - {fileID: 21300000, guid: 20a98b5bb28ea9b4faf87747b4f564e2, type: 3}
+  - {fileID: 21300000, guid: 0ae5faad4afd2094f8e27b949561fa01, type: 3}
+  vereda: {fileID: 21300000, guid: a16cbcd1c78cdd1419cea83dc1b5e7f2, type: 3}
+  veredaAgrietada: {fileID: 21300000, guid: c2bff6f471cb57c4988bebd1dc2c203f, type: 3}
+  trozosVereda:
+  - {fileID: 21300000, guid: 45a527c2465d54e41af0e2391c76ff83, type: 3}
+  - {fileID: 21300000, guid: d0f77ef0618aad5488333356ba1b1e07, type: 3}
+  - {fileID: 21300000, guid: e7967de4b4c4b0941bf6d48b192c6861, type: 3}
+  canaletaTrepable: {fileID: 21300000, guid: 023266e3e26e4ea4c85cc553387dfabc, type: 3}
+  puntoInfoPendiente: {fileID: 21300000, guid: 674fd3c90dca6b641bee53e01e3de273, type: 3}
+  puntoInfoLeido: {fileID: 21300000, guid: 3114d030c75e5b74bb15b9073d279373, type: 3}
+  estrellaLlena16: {fileID: 21300000, guid: c68319ab5d93e6e4b92a441f826ec3af, type: 3}
+  estrellaLlena32: {fileID: 21300000, guid: 0d2c79fe6c473d244b439f3de3b6b94f, type: 3}
+  estrellaVacia16: {fileID: 21300000, guid: f41e9187c47d03b44b931bf092be61f3, type: 3}
+  estrellaVacia32: {fileID: 21300000, guid: cc730ad38b8c74844b4d8cfd7aa9589d, type: 3}
+  corazonLleno: {fileID: 21300000, guid: 14c7afe2d73af854ab288c1a540fe041, type: 3}
+  corazonVacio: {fileID: 21300000, guid: cfe58a0f57dcf44459fbc3dc62d18e56, type: 3}
+  candado: {fileID: 21300000, guid: 30c598e6b495cae4282956ca54eb3502, type: 3}
+  iconoMartillo: {fileID: 21300000, guid: 1e2ee6a2dbcdf814ebc129a4e50e61b9, type: 3}
+  botonArriba: {fileID: 21300000, guid: dcb2561fd4676cc4bbe92eb33df13cb2, type: 3}
+  botonAbajo: {fileID: 21300000, guid: 9af49e4ce6199694fa31ff96d7f3ffc8, type: 3}
+  botonIzquierda: {fileID: 21300000, guid: d2feac055b5da2c48ae7313437f4bb91, type: 3}
+  botonDerecha: {fileID: 21300000, guid: 933bcc730591359459e786698897edc3, type: 3}
+  botonReparar: {fileID: 21300000, guid: 959255d8f98693b4ca8fd5cd453b146d, type: 3}
+  botonSaltar: {fileID: 21300000, guid: 7f182c284405414418df1012a627b3f8, type: 3}
+  botonPausa: {fileID: 21300000, guid: 1e8d98efe8e2f864cb03e264ffe193c5, type: 3}
+  panelDato: {fileID: 21300000, guid: 230d100b90afef840b3981bdef513bd8, type: 3}
+  etiquetaArea: {fileID: 21300000, guid: 6439b1eb1af7bc744bc6c76707924982, type: 3}
+  iconoFoco: {fileID: 21300000, guid: 9d922d4b34c9d96449ae470baf214ade, type: 3}
+  libroLeido: {fileID: 21300000, guid: 8f7247915bcf92147b8d605307414596, type: 3}
+  libroPendiente: {fileID: 21300000, guid: 667e61a8fb5e27f43961c07ad9e2dd6d, type: 3}
