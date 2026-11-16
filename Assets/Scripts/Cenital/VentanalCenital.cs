@@ -8,6 +8,8 @@ public class VentanalCenital : MonoBehaviour
 {
     public Sprite spriteEntero;
     public Sprite spriteRoto;
+    [Tooltip("Se rompe cuando entra el demoledor (una puerta de vidrio sí; unas escaleras no).")]
+    public bool rompible = true;
 
     private SpriteRenderer dibujo;
     private Collider2D colision;
@@ -27,7 +29,7 @@ public class VentanalCenital : MonoBehaviour
         if (dibujo == null)
         {
             Transform previo = transform.Find("Dibujo");
-            if (previo != null) Destroy(previo.gameObject);
+            if (previo != null) Provisional.Eliminar(previo.gameObject);
             dibujo = Provisional.Crear(transform, "Dibujo", Provisional.Cuadrado, Entero, -140);
             if (colision != null)
             {
@@ -40,6 +42,8 @@ public class VentanalCenital : MonoBehaviour
 
     public void Romper()
     {
+        if (!rompible) return;
+        GestorAudio.Reproducir(Snd.VidrioRoto);
         Roto = true;
         Mostrar();
         CamaraPisoCenital.Temblar(0.25f, 0.4f);

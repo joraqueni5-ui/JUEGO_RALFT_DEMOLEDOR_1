@@ -21,8 +21,50 @@ public class MapaCenital : MonoBehaviour
     [Tooltip("Dentro del piso, justo bajo el ventanal.")]
     public Transform entradaDemoledor;
     public VentanalCenital ventanal;
+    [Tooltip("Ascensor de abajo: se abre cuando el demoledor se rinde y se va.")]
+    public AscensorCenital ascensor;
+
+    [Header("Datos del mapa de texto (los escribe el constructor)")]
+    [Tooltip("Celdas de puerta (huecos en los muros).")]
+    public Vector2Int[] puertas = new Vector2Int[0];
+    [Tooltip("Centros de las celdas 'P': puntos de aparición de poderes 1.")]
+    public Vector2[] puntosPoderP = new Vector2[0];
+    [Tooltip("Centros de las celdas 'Q': puntos de aparición de poderes 2.")]
+    public Vector2[] puntosPoderQ = new Vector2[0];
+    [Tooltip("Celdas de pared que se dibujan como baranda (borde exterior de una terraza).")]
+    public Vector2Int[] barandas = new Vector2Int[0];
+    [Tooltip("Punto '!' desde donde salta el demoledor al rendirse en un piso sin ascensor.")]
+    public Transform puntoSalto;
+    [Tooltip("Hacia dónde salta (hacia fuera del edificio).")]
+    public Vector2 direccionSalto = Vector2.right;
+
+    [Header("Paredes dibujadas en la escena")]
+    [Tooltip("Las paredes delgadas ya están dibujadas y guardadas en el objeto 'ParedesDelgadas' (las deja el menú de escenas). " +
+             "Desmárcalo para que se vuelvan a dibujar al jugar (por ejemplo si pintaste el mapa a mano).")]
+    public bool paredesGuardadas;
 
     public readonly List<ObjetoReparable> objetos = new List<ObjetoReparable>();
+
+    private DibujoParedes dibujoParedes;
+
+    /// <summary>La celda es una puerta del mapa.</summary>
+    public bool EsPuerta(Vector2Int celda)
+    {
+        if (puertas == null) return false;
+        foreach (Vector2Int p in puertas) if (p == celda) return true;
+        return false;
+    }
+
+    /// <summary>Zona del mundo que cubre la franja de la pared de una celda (el resto de la baldosa es suelo).</summary>
+    public Rect FranjaDePared(Vector2Int celda)
+    {
+        return dibujoParedes != null ? dibujoParedes.FranjaDe(celda) : new Rect(celda.x, celda.y, 1f, 1f);
+    }
+
+    private void OnDestroy()
+    {
+        if (dibujoParedes != null) dibujoParedes.Limpiar();
+    }
 
     private Tilemap[] tilemaps;
     private Grid grid;
@@ -47,12 +89,125 @@ public class MapaCenital : MonoBehaviour
         if (entradaDemoledor == null) entradaDemoledor = BuscarHijo("EntradaDemoledor");
         if (ventanal == null) ventanal = GetComponentInChildren<VentanalCenital>();
 
+        if (ascensor == null)
+        {
+            Transform t = BuscarHijo("Ascensor");
+            if (t != null) ascensor = t.GetComponent<AscensorCenital>() ?? t.gameObject.AddComponent<AscensorCenital>();
+        }
+
+        AsegurarColisionDeParedes();
+        DibujarParedes(definicion);
+
         objetos.Clear();
         objetos.AddRange(GetComponentsInChildren<ObjetoReparable>());
         foreach (ObjetoReparable o in objetos) o.Preparar(definicion);
+        foreach (DecoracionCenital d in GetComponentsInChildren<DecoracionCenital>()) d.Preparar(definicion);
         if (ventanal != null) ventanal.Preparar(definicion);
+        if (ascensor != null) ascensor.Preparar(definicion);
 
         Rehacer();
+    }
+
+    /// <summary>
+    /// Las paredes bloquean con la baldosa ENTERA (el dibujo delgado es solo visual). Se asegura que cada Tilemap de paredes tenga su
+    /// cuerpo estático, TilemapCollider2D y CompositeCollider2D activos, se genera su geometría y se avisa si queda vacía.
+    /// </summary>
+    private void AsegurarColisionDeParedes()
+    {
+        Physics2D.SyncTransforms();
+        foreach (Tilemap tm in tilemaps)
+        {
+            if (!EsSolido(tm)) continue;
+
+            Rigidbody2D cuerpo = tm.GetComponent<Rigidbody2D>();
+            if (cuerpo == null) cuerpo = tm.gameObject.AddComponent<Rigidbody2D>();
+            cuerpo.bodyType = RigidbodyType2D.Static;
+
+            TilemapCollider2D tc = tm.GetComponent<TilemapCollider2D>();
+            if (tc == null) tc = tm.gameObject.AddComponent<TilemapCollider2D>();
+            tc.enabled = true;
+            tc.isTrigger = false;
+            tc.compositeOperation = Collider2D.CompositeOperation.Merge;
+
+            CompositeCollider2D cc = tm.GetComponent<CompositeCollider2D>();
+            if (cc == null) cc = tm.gameObject.AddComponent<CompositeCollider2D>();
+            cc.enabled = true;
+            cc.isTrigger = false;
+
+            tc.ProcessTilemapChanges();
+            cc.GenerateGeometry();
+            tm.CompressBounds();
+            int baldosas = 0;
+            foreach (Vector3Int c in tm.cellBounds.allPositionsWithin) if (tm.HasTile(c)) baldosas++;
+            if (baldosas > 0 && cc.pointCount == 0)
+                Debug.LogError("[Mapa] Las paredes de '" + name + "' tienen " + baldosas + " baldosas pero el collider quedó vacío: el jugador las atravesaría. Revisa el Tilemap '" + tm.name + "'.");
+        }
+    }
+
+    /// <summary>Prepara el dibujo de las paredes a partir de los Tilemaps (null si no hay suelo).</summary>
+    private DibujoParedes CrearDibujoParedes(DefinicionPiso definicion)
+    {
+        Tilemap suelo = null, muros = null;
+        foreach (Tilemap tm in tilemaps)
+        {
+            if (EsSolido(tm)) { if (muros == null) muros = tm; }
+            else if (suelo == null || tm.name == "Suelo") suelo = tm;
+        }
+        if (suelo == null) return null;
+
+        Physics2D.SyncTransforms();
+        List<Vector2Int> huecos = new List<Vector2Int>();
+        AgregarCeldas(huecos, ventanal != null ? ventanal.GetComponent<Collider2D>() : null);
+        AgregarCeldas(huecos, ascensor != null ? ascensor.GetComponent<Collider2D>() : null);
+        return new DibujoParedes(suelo, muros, huecos, puertas, definicion, barandas);
+    }
+
+    /// <summary>Pinta las paredes como franjas delgadas (las baldosas de pared quedan solo para la colisión).</summary>
+    private void DibujarParedes(DefinicionPiso definicion)
+    {
+        Transform guardado = transform.Find("ParedesDelgadas");
+        if (dibujoParedes != null) dibujoParedes.Limpiar();
+
+        if (paredesGuardadas && guardado != null)
+        {
+            // Ya están dibujadas en la escena: solo se ocultan las baldosas de pared (quedan para el collider).
+            foreach (Tilemap tm in tilemaps)
+            {
+                if (!EsSolido(tm)) continue;
+                TilemapRenderer tr = tm.GetComponent<TilemapRenderer>();
+                if (tr != null) tr.enabled = false;
+            }
+            dibujoParedes = CrearDibujoParedes(definicion);   // para FranjaDePared
+            return;
+        }
+
+        if (guardado != null) Provisional.Eliminar(guardado.gameObject);
+        dibujoParedes = CrearDibujoParedes(definicion);
+        if (dibujoParedes != null) dibujoParedes.Dibujar(transform);
+    }
+
+    /// <summary>
+    /// Compone las paredes y puertas en una sola textura para guardarlas en la escena (la usa el editor).
+    /// 'origen' es la celda de la esquina inferior izquierda de la textura.
+    /// </summary>
+    public Texture2D ComponerParedes(DefinicionPiso definicion, out Vector2Int origen)
+    {
+        origen = Vector2Int.zero;
+        tilemaps = GetComponentsInChildren<Tilemap>();
+        grid = GetComponentInChildren<Grid>();
+        if (ventanal == null) ventanal = GetComponentInChildren<VentanalCenital>();
+        if (ascensor == null) ascensor = GetComponentInChildren<AscensorCenital>();
+        DibujoParedes d = CrearDibujoParedes(definicion);
+        return d == null ? null : d.Componer(out origen);
+    }
+
+    private static void AgregarCeldas(List<Vector2Int> lista, Collider2D c)
+    {
+        if (c == null) return;
+        Bounds b = c.bounds;
+        for (int x = Mathf.FloorToInt(b.min.x + 0.01f); x < Mathf.CeilToInt(b.max.x - 0.01f); x++)
+            for (int y = Mathf.FloorToInt(b.min.y + 0.01f); y < Mathf.CeilToInt(b.max.y - 0.01f); y++)
+                lista.Add(new Vector2Int(x, y));
     }
 
     private Transform BuscarHijo(string nombre)
@@ -149,11 +304,24 @@ public class MapaCenital : MonoBehaviour
     private Tilemap tm0() { return tilemaps[0]; }
 
     [Header("Diagnóstico")]
+    [Tooltip("Dibuja en el editor las celdas de pared que bloquean (rojo) y los colliders de objetos, ventanal y ascensor (cian).")]
+    public bool mostrarColisiones = true;
     [Tooltip("Dibuja con Gizmos las celdas que el A* considera libres (verde) y las que no (rojo).")]
     public bool dibujarCuadricula;
 
     private void OnDrawGizmos()
     {
+        // Marcas del mapa para el editor: inicio del jugador (verde), entrada del demoledor (rojo), poderes P y Q (azul y violeta).
+        if (spawnJugador != null) { Gizmos.color = new Color(0.2f, 0.9f, 0.3f, 0.9f); Gizmos.DrawWireSphere(spawnJugador.position, 0.4f); }
+        if (spawnDemoledor != null) { Gizmos.color = new Color(0.95f, 0.25f, 0.2f, 0.9f); Gizmos.DrawWireSphere(spawnDemoledor.position, 0.4f); }
+        if (entradaDemoledor != null) { Gizmos.color = new Color(0.95f, 0.5f, 0.2f, 0.9f); Gizmos.DrawWireSphere(entradaDemoledor.position, 0.3f); }
+        Gizmos.color = new Color(0.3f, 0.6f, 1f, 0.9f);
+        if (puntosPoderP != null) foreach (Vector2 p in puntosPoderP) Gizmos.DrawWireCube(p, new Vector3(0.5f, 0.5f, 0f));
+        Gizmos.color = new Color(0.75f, 0.4f, 0.95f, 0.9f);
+        if (puntosPoderQ != null) foreach (Vector2 p in puntosPoderQ) Gizmos.DrawWireCube(p, new Vector3(0.5f, 0.5f, 0f));
+
+        if (mostrarColisiones) DibujarColisiones();
+
         if (!dibujarCuadricula || !Application.isPlaying || transitable == null || grid == null) return;
         for (int x = 0; x < ancho; x++)
         {
@@ -163,6 +331,24 @@ public class MapaCenital : MonoBehaviour
                 Gizmos.color = transitable[x, y] ? new Color(0f, 1f, 0f, 0.12f) : new Color(1f, 0f, 0f, 0.25f);
                 Gizmos.DrawCube(c, new Vector3(0.9f, 0.9f, 0f));
             }
+        }
+    }
+
+    private void DibujarColisiones()
+    {
+        Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.9f);
+        foreach (Tilemap tm in GetComponentsInChildren<Tilemap>())
+        {
+            if (!EsSolido(tm)) continue;
+            BoundsInt b = tm.cellBounds;
+            foreach (Vector3Int c in b.allPositionsWithin)
+                if (tm.HasTile(c)) Gizmos.DrawWireCube(tm.GetCellCenterWorld(c), new Vector3(0.96f, 0.96f, 0f));
+        }
+        Gizmos.color = new Color(0.1f, 0.9f, 0.95f, 0.9f);
+        foreach (Collider2D col in GetComponentsInChildren<Collider2D>())
+        {
+            if (col == null || col.isTrigger || col is TilemapCollider2D || col is CompositeCollider2D) continue;
+            Gizmos.DrawWireCube(col.bounds.center, col.bounds.size);
         }
     }
 
