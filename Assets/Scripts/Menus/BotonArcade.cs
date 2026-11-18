@@ -84,8 +84,16 @@ namespace DemoledorUnifranz.UI.Menus
 
         private void AlHacerClic()
         {
-            ServiciosMenus.Instancia.Clic();
+            ServiciosMenus.Instancia.Clic(EsVolver());
             PreferenciasMenus.VibrarCorto();
+        }
+
+        /// <summary>Botones de volver, cerrar o cancelar suenan con menu_volver.</summary>
+        private bool EsVolver()
+        {
+            Text t = GetComponentInChildren<Text>(true);
+            string s = (t != null ? t.text : gameObject.name).ToUpperInvariant();
+            return s.Contains("VOLVER") || s.Contains("CERRAR") || s.Contains("CANCELAR") || s.Trim() == "NO" || s.Contains("ATRÁS");
         }
 
         public void OnPointerEnter(PointerEventData datos)

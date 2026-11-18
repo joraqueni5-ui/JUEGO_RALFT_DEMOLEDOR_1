@@ -86,17 +86,18 @@ namespace DemoledorUnifranz.UI.Menus
         }
 
         // ------------------------------------------------------------ sonidos
-        public void Hover() { Reproducir(sonidoHover); }
-        public void Clic() { Reproducir(sonidoClic); }
-        public void Panel() { Reproducir(sonidoPanel); }
-        public void Golpe() { Reproducir(sonidoGolpe); }
+        // Los sonidos de la interfaz son los de la BibliotecaSonidos (menu_mover, menu_confirmar, menu_volver).
+        public void Hover() { GestorAudio.Reproducir(Snd.MenuMover); }
+        public void Clic(bool volver = false) { GestorAudio.Reproducir(volver ? Snd.MenuVolver : Snd.MenuConfirmar); }
+        public void Panel() { }
+        public void Golpe() { }
 
         /// <summary>Tic corto (al mover el slider), limitado para que no se amontone.</summary>
         public void Tic()
         {
             if (Time.unscaledTime - ultimoTic < 0.06f) return;
             ultimoTic = Time.unscaledTime;
-            Reproducir(sonidoTic);
+            GestorAudio.Reproducir(Snd.MenuMover, 0.6f);
         }
 
         private void Reproducir(AudioClip clip)

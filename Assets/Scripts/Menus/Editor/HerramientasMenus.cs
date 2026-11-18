@@ -56,20 +56,13 @@ public static class HerramientasMenus
             "OK");
     }
 
-    [MenuItem(RaizMenuTools + "Regenerar Sprites de Menús", false, 40)]
-    public static void MenuRegenerarSprites()
-    {
-        GenerarSprites(true);
-        EditorUtility.DisplayDialog("Demoledor Unifranz", "Sprites regenerados en " + DirSprites + ".", "OK");
-    }
 
-    [MenuItem(RaizMenuTools + "Revisar Build Settings", false, 41)]
     public static void MenuRevisarBuildSettings()
     {
         string faltan = EscenasFaltantes();
         EditorUtility.DisplayDialog("Demoledor Unifranz - Build Settings",
             string.IsNullOrEmpty(faltan)
-                ? "MenuPrincipal, Universidad y FinJuego están en Build Settings."
+                ? "El menú, las 8 escenas de Niveles y FinJuego están en Build Settings."
                 : "Faltan en Build Settings:\n" + faltan + "\nAgrégalas en File → Build Profiles → Scene List " +
                   "(MenuPrincipal primero). Esta herramienta no lo cambia sola.",
             "OK");
@@ -125,7 +118,11 @@ public static class HerramientasMenus
             if (e.enabled) presentes.Add(Path.GetFileNameWithoutExtension(e.path));
 
         string faltan = "";
-        foreach (string nombre in new[] { Escenas.MenuPrincipal, Escenas.Nivel1, Escenas.FinJuego })
+        // Las escenas que necesita el flujo: menú, las 8 de Niveles (7 pisos y el nivel final) y la pantalla de fin.
+        List<string> necesarias = new List<string> { Escenas.MenuPrincipal };
+        for (int i = 0; i < DefinicionPiso.EscenasPorDefecto.Length; i++) necesarias.Add(DefinicionPiso.EscenasPorDefecto[i]);
+        necesarias.Add(Escenas.FinJuego);
+        foreach (string nombre in necesarias)
             if (!presentes.Contains(nombre) && !faltan.Contains("• " + nombre + "\n")) faltan += "• " + nombre + "\n";
         return faltan;
     }

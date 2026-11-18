@@ -19,7 +19,7 @@ namespace DemoledorUnifranz.UI.Menus
         private const float EsperaAntesDeAceptarTecla = 0.6f;
 
         private PanelAnimado panel;
-        private Text textoPiso, textoNombre, textoFichaTitulo, textoDescripcion, textoDatoTitulo, textoDato;
+        private Text tituloVentana, textoPiso, textoNombre, textoFichaTitulo, textoDescripcion, textoDatoTitulo, textoDato;
         private Image ilustracion;
         private float horaApertura;
 
@@ -39,13 +39,17 @@ namespace DemoledorUnifranz.UI.Menus
         }
 
         /// <summary>Muestra la ficha del piso al que se va a subir.</summary>
-        public void Mostrar(DefinicionPiso piso)
+        public void Mostrar(DefinicionPiso piso, string titulo = null, string cabecera = null)
         {
             if (piso == null) return;
 
-            textoPiso.text = "PISO " + piso.numero;
-            textoNombre.text = piso.nombre.ToUpperInvariant();
-            textoFichaTitulo.text = string.IsNullOrEmpty(piso.fichaTitulo) ? piso.TituloCompleto : piso.fichaTitulo;
+            if (tituloVentana != null) tituloVentana.text = string.IsNullOrEmpty(titulo) ? "¡SUBIENDO!" : titulo;
+            // Se usa el nombre del área, no el número del piso ("SUBIENDO A LABORATORIOS DE INFORMÁTICA").
+            textoPiso.text = !string.IsNullOrEmpty(cabecera) ? cabecera : piso.numero == 0 ? "BIENVENIDO A" : "SUBIENDO A";
+            textoNombre.text = piso.NombreArea;
+            textoNombre.fontSize = piso.NombreArea.Length > 22 ? 38 : piso.NombreArea.Length > 14 ? 46 : 52;
+            textoFichaTitulo.text = piso.numero >= 1 && piso.numero <= 6 ? "Subiendo a " + piso.NombreArea
+                : string.IsNullOrEmpty(piso.fichaTitulo) ? piso.NombreArea : piso.fichaTitulo;
             textoDescripcion.text = piso.fichaDescripcion;
             bool hayDato = !string.IsNullOrEmpty(piso.fichaDatoUtil);
             textoDatoTitulo.gameObject.SetActive(hayDato);
@@ -131,6 +135,9 @@ namespace DemoledorUnifranz.UI.Menus
             Text ayuda = FabricaUIArcade.CrearTexto(caja, "Ayuda", PreferenciasMenus.EsCelular ? "" : "ENTER  PARA CONTINUAR", 22,
                 new Color(0.8f, 0.85f, 1f), TextAnchor.MiddleCenter, Px * 0.5f, 0f);
             FabricaUIArcade.Colocar(ayuda.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 38f), new Vector2(700f, 32f));
+
+            foreach (Text t in GetComponentsInChildren<Text>(true))
+                if (t.text == "¡SUBIENDO!") { tituloVentana = t; break; }
 
             panel.OcultarInmediato();
         }

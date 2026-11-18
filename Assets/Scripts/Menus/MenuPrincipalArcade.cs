@@ -12,7 +12,7 @@ namespace DemoledorUnifranz.UI.Menus
     /// Menú principal de DEMOLEDOR UNIFRANZ.
     /// - Pantalla de inicio "TOCA PARA EMPEZAR" (solo la primera vez que se abre el juego).
     /// - Botones JUGAR, OPCIONES, CÓMO JUGAR, RÉCORDS y SALIR, y CRÉDITOS.
-    /// - JUGAR carga la misma escena de siempre (Escenas.Nivel1 → "Universidad").
+    /// - JUGAR empieza en la planta baja, en vista cenital (Escenas.ParaPiso(0) → "PisoCenital").
     /// - Escape cierra la ventana abierta.
     /// </summary>
     public class MenuPrincipalArcade : MonoBehaviour
@@ -73,11 +73,16 @@ namespace DemoledorUnifranz.UI.Menus
             if (textoEmpezar != null)
                 textoEmpezar.text = PreferenciasMenus.EsCelular ? "TOCA PARA EMPEZAR" : "PRESIONA ENTER O HAZ CLIC";
 
+            // Tras el nivel final: directo a los créditos (y luego a la tabla de récords).
+            if (GameSession.FlujoFinal) inicioVisto = true;
+
             if (!inicioVisto && pantallaInicio != null) MostrarInicio();
             else MostrarMenu(false);
 
-            if (!NavegadorEscenas.Disponible(Escenas.Nivel1))
-                Debug.LogWarning("[Menus] JUGAR carga la escena '" + Escenas.Nivel1 + "', pero no está en Build Settings.");
+            if (GameSession.FlujoFinal) AbrirCreditos();
+
+            if (!NavegadorEscenas.Disponible(Escenas.ParaPiso(0)))
+                Debug.LogWarning("[Menus] JUGAR carga la escena '" + Escenas.ParaPiso(0) + "', pero no está en Build Settings.");
         }
 
         private void Update()
@@ -171,8 +176,10 @@ namespace DemoledorUnifranz.UI.Menus
         // ------------------------------------------------------------ botones
         public void Jugar()
         {
-            GameSession.NuevaPartida();   // modo de pisos: una partida nueva empieza en el Piso 1
-            NavegadorEscenas.Cargar(Escenas.Nivel1);
+            // JUGAR empieza una partida nueva en la planta baja (vista cenital).
+            GameSession.SeleccionarNivel(true, 0);
+            string escena = Escenas.ParaPiso(0);
+            NavegadorEscenas.Cargar(escena);
         }
 
         public void AbrirNiveles() { Abrir(panelNiveles); }
@@ -182,7 +189,15 @@ namespace DemoledorUnifranz.UI.Menus
         public void AbrirComoJugar() { Abrir(panelComoJugar); }
         public void CerrarComoJugar() { Cerrar(panelComoJugar); }
         public void AbrirCreditos() { Abrir(panelCreditos); }
-        public void CerrarCreditos() { Cerrar(panelCreditos); }
+        public void CerrarCreditos()
+        {
+            Cerrar(panelCreditos);
+            if (GameSession.FlujoFinal)
+            {
+                GameSession.FlujoFinal = false;
+                NavegadorEscenas.Cargar(Escenas.FinJuego);   // pantalla de fin con la tabla de récords
+            }
+        }
 
         public void AbrirRecords()
         {

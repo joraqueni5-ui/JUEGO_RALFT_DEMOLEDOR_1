@@ -83,6 +83,7 @@ namespace DemoledorUnifranz.UI.Menus
         public IEnumerator Cerrar()
         {
             bloqueo.gameObject.SetActive(true);
+            GestorAudio.Reproducir(Snd.TransicionLadrillos);
             PrepararFranjas();
             float alto = zona.rect.height;
             int n = ActivasCount();
@@ -112,7 +113,7 @@ namespace DemoledorUnifranz.UI.Menus
                         y = destino[i];
                         llego[i] = true;
                         listas++;
-                        if (i % 2 == 0 && ServiciosMenus.Existe) ServiciosMenus.Instancia.Golpe();
+                        if (i % 2 == 0 && ServiciosMenus.Existe) ServiciosMenus.Instancia.Golpe();   // sin sonido por ladrillo: suena transicion_ladrillos una vez
                     }
                     franjas[i].anchoredPosition = new Vector2(0f, y);
                 }
