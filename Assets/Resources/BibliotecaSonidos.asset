@@ -1,0 +1,298 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7569ed30669284c94bd2b2a68ffda6, type: 3}
+  m_Name: BibliotecaSonidos
+  m_EditorClassIdentifier: Assembly-CSharp::BibliotecaSonidos
+  mezcla: {fileID: 24100000, guid: d9c143ca006928c4482f30e25a509227, type: 2}
+  variacionTono: 0.06
+  separacionMinima: 0.05
+  fuentesDeEfectos: 20
+  fundidoMusica: 0.8
+  musicaEnPausa: 0.4
+  efectos:
+  - nombre: agotado
+    clip: {fileID: 8300000, guid: d301ebfdcc218d14c87d15be75c33e56, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: ascensor_abre
+    clip: {fileID: 8300000, guid: 0316c9416494036459086b703531128e, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: aturdido_bucle
+    clip: {fileID: 8300000, guid: 6363be4da56daa04985494b72d298ee1, type: 3}
+    volumen: 0.55
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: aviso_lluvia_escombros
+    clip: {fileID: 8300000, guid: 6078b8b20c0427a4e977f6dee959c4ad, type: 3}
+    volumen: 0.85
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: bloqueo_salvado
+    clip: {fileID: 8300000, guid: 70ac5ecbdd07052438eda5ede6eea6ec, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: caida_final
+    clip: {fileID: 8300000, guid: 73e0d6ed4c04fb848a51c242e30bb5ff, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: caida_vacio
+    clip: {fileID: 8300000, guid: 67c49d3ce8dc0454eba168c70a838b4d, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: derrumbe_vereda
+    clip: {fileID: 8300000, guid: cb0612c3a8c82e24688d7e7af56d9fca, type: 3}
+    volumen: 0.95
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: estrella_1
+    clip: {fileID: 8300000, guid: 7f9ea043494ed044688488bba1e8a90b, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: estrella_2
+    clip: {fileID: 8300000, guid: 0758f83ddc2f0fc4d80e7d7c08ef1601, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: estrella_3
+    clip: {fileID: 8300000, guid: 556389a5197c69a449041ebca8fa7cf0, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: furia
+    clip: {fileID: 8300000, guid: ee38df18d59d9954d806fd5fd5bed823, type: 3}
+    volumen: 0.8
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: golpe_objeto
+    clip: {fileID: 8300000, guid: 14ef11fec55653746b47144618af560f, type: 3}
+    volumen: 0.85
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: impacto_escombro
+    clip: {fileID: 8300000, guid: 274fa81d5325bb6428c57f74f555a971, type: 3}
+    volumen: 0.95
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: lanzar
+    clip: {fileID: 8300000, guid: 350964fc5cce9d4449f81722365734ce, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: leer_punto_info
+    clip: {fileID: 8300000, guid: a0ea7cc130acb0a44834f72b5fd51c05, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: levantar_bloque
+    clip: {fileID: 8300000, guid: 1a1358ace8ef8684a9aed7e23a4baede, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: martillazo_reparar
+    clip: {fileID: 8300000, guid: 3d172e71b40013f4e9d5037586d429ae, type: 3}
+    volumen: 0.8
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: me_rindo
+    clip: {fileID: 8300000, guid: 0710cec9602e7ec48884ede8f5e5c34c, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: menu_confirmar
+    clip: {fileID: 8300000, guid: 642244ef5103e1a458ad51db7eef42d2, type: 3}
+    volumen: 0.8
+    variarTono: 0
+    bus: 1
+    maximoSimultaneos: 3
+  - nombre: menu_mover
+    clip: {fileID: 8300000, guid: 848ac2046bd13a84a9f2562e5fcbed11, type: 3}
+    volumen: 0.6
+    variarTono: 0
+    bus: 1
+    maximoSimultaneos: 3
+  - nombre: menu_volver
+    clip: {fileID: 8300000, guid: ccf4301c702ee2845a4a5653247a56ac, type: 3}
+    volumen: 0.8
+    variarTono: 0
+    bus: 1
+    maximoSimultaneos: 3
+  - nombre: objeto_reparado
+    clip: {fileID: 8300000, guid: c068dd23e2fe08f468384098850c73ef, type: 3}
+    volumen: 0.8
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: objeto_roto_alerta
+    clip: {fileID: 8300000, guid: 781e029153177e74a85c6c2033fba5cf, type: 3}
+    volumen: 0.7
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: paloma
+    clip: {fileID: 8300000, guid: 8bc2aa0096db9bc4bbe021e1a1cddf0e, type: 3}
+    volumen: 0.6
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: paso_1
+    clip: {fileID: 8300000, guid: b793eadaf6a7ef74084652f5c1f02263, type: 3}
+    volumen: 0.3
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 2
+  - nombre: paso_2
+    clip: {fileID: 8300000, guid: 8f5d2d2107eb9d84dbd9809dd89361cf, type: 3}
+    volumen: 0.3
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 2
+  - nombre: pausa
+    clip: {fileID: 8300000, guid: 2c0a5d0ffc70f3d4dbae6c5ea104a0c6, type: 3}
+    volumen: 0.8
+    variarTono: 0
+    bus: 1
+    maximoSimultaneos: 3
+  - nombre: poder_activo_bucle
+    clip: {fileID: 8300000, guid: ded454e7add14564480b721a11223354, type: 3}
+    volumen: 0.25
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: poder_aparece
+    clip: {fileID: 8300000, guid: 744a1843c3b9d7640b0482ee78daeee7, type: 3}
+    volumen: 0.7
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: poder_recoger
+    clip: {fileID: 8300000, guid: 1b0edf475ed29174c9306cf45129a09b, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: punetazo
+    clip: {fileID: 8300000, guid: bcdca6203d6f32e4aac654e18255ea08, type: 3}
+    volumen: 0.85
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: recibir_dano
+    clip: {fileID: 8300000, guid: 33caacff5c9ca8d45a1a0bdda53db87a, type: 3}
+    volumen: 0.9
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: roca_cayendo
+    clip: {fileID: 8300000, guid: 73c2d741e014580469261d6c735fa9e2, type: 3}
+    volumen: 0.8
+    variarTono: 1
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: salto
+    clip: {fileID: 8300000, guid: e4efa11de2540024a903355186912e2f, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: salto_terraza
+    clip: {fileID: 8300000, guid: cb85ce62d6107da43bd6812cdea6e8e7, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: terremoto
+    clip: {fileID: 8300000, guid: 752182f7f33216144b46048bdbeab45a, type: 3}
+    volumen: 0.95
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: transicion_ladrillos
+    clip: {fileID: 8300000, guid: a18bcb06d30e23c4dbc163449bbc8405, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 1
+    maximoSimultaneos: 3
+  - nombre: trepar
+    clip: {fileID: 8300000, guid: 6c86c3785ab1cb34db08cd0bbdca25af, type: 3}
+    volumen: 0.45
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  - nombre: vidrio_roto
+    clip: {fileID: 8300000, guid: 6d08384bf76be5a42a9024c53c5897c3, type: 3}
+    volumen: 1
+    variarTono: 0
+    bus: 0
+    maximoSimultaneos: 3
+  musica:
+  - nombre: jingle_derrota
+    clip: {fileID: 8300000, guid: c77b27676b64a5a458c6cf9c81740ff3, type: 3}
+    volumen: 0.85
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3
+  - nombre: jingle_victoria
+    clip: {fileID: 8300000, guid: 9254068c0d687a044ae1911e51f36921, type: 3}
+    volumen: 0.85
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3
+  - nombre: musica_menu_bucle
+    clip: {fileID: 8300000, guid: 38523e1542a743a4eb6bfa0cf98ed517, type: 3}
+    volumen: 0.7
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3
+  - nombre: musica_nivel_final_bucle
+    clip: {fileID: 8300000, guid: dc2350001aeeb554dbf2bb944f02d8c3, type: 3}
+    volumen: 0.65
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3
+  - nombre: musica_pisos_bucle
+    clip: {fileID: 8300000, guid: 44838154dd18f444a907d3071fa394be, type: 3}
+    volumen: 0.6
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3
+  - nombre: musica_tension_bucle
+    clip: {fileID: 8300000, guid: 4504800901537d149b347a7b91026b1b, type: 3}
+    volumen: 0.65
+    variarTono: 0
+    bus: 2
+    maximoSimultaneos: 3

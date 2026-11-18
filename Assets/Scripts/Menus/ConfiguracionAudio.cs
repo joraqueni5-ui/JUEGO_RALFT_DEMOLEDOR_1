@@ -3,14 +3,26 @@ using UnityEngine;
 namespace DemoledorUnifranz.UI.Menus
 {
     /// <summary>
-    /// Volumen general y sonido activado/desactivado, guardados con PlayerPrefs.
-    /// Se aplica sobre AudioListener.volume, así que afecta a todo el audio del juego
-    /// (los sonidos de los menús y cualquier sonido que se agregue después).
+    /// Volúmenes de Música y de Efectos (0 a 1) y sonido activado/desactivado, guardados con PlayerPrefs.
+    /// 'Volumen' es el de la música; los efectos (juego e interfaz) usan 'VolumenEfectos'. GestorAudio los aplica.
+    /// El interruptor SONIDO silencia todo mediante AudioListener.volume.
     /// </summary>
     public static class ConfiguracionAudio
     {
         private const string ClaveVolumen = "ralft.volumen";
         private const string ClaveSonido = "ralft.sonido";
+        private const string ClaveEfectos = "ralft.volumenEfectos";
+
+        /// <summary>Volumen de los efectos del juego y de la interfaz (0 a 1).</summary>
+        public static float VolumenEfectos
+        {
+            get { return PlayerPrefs.GetFloat(ClaveEfectos, 0.8f); }
+            set
+            {
+                PlayerPrefs.SetFloat(ClaveEfectos, Mathf.Clamp01(value));
+                PlayerPrefs.Save();
+            }
+        }
 
         public static float Volumen
         {
@@ -34,10 +46,10 @@ namespace DemoledorUnifranz.UI.Menus
             }
         }
 
-        /// <summary>Pone el volumen guardado en el AudioListener.</summary>
+        /// <summary>Aplica el interruptor de sonido (los volúmenes los aplica GestorAudio).</summary>
         public static void Aplicar()
         {
-            AudioListener.volume = SonidoActivado ? Volumen : 0f;
+            AudioListener.volume = SonidoActivado ? 1f : 0f;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
