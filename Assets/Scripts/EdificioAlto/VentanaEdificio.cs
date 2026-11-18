@@ -100,6 +100,7 @@ public class VentanaEdificio : MonoBehaviour
         if (Estado == EstadoVentana.Destruida) return false;
 
         Estado = Estado + 1;
+        if (Estado == EstadoVentana.Destruida) GestorAudio.Reproducir(Snd.VidrioRoto);
         Aplicar();
         SoltarTrozos(Estado == EstadoVentana.Destruida ? 4 : 2);
         Animar(Sacudir());
@@ -113,6 +114,7 @@ public class VentanaEdificio : MonoBehaviour
         if (Estado == EstadoVentana.Intacta) return false;
 
         Estado = Estado - 1;
+        if (Estado == EstadoVentana.Intacta) GestorAudio.Reproducir(Snd.ObjetoReparado);
         Aplicar();
         Animar(Rebotar());
         if (CambioEstado != null) CambioEstado(this);

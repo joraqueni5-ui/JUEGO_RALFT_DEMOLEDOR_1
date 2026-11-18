@@ -21,6 +21,8 @@ public class EdificioAlto : MonoBehaviour
     public int columnas = 5;
     public int pisosPorSeccion = 3;
     public int secciones = 3;
+    [Tooltip("Pisos de cada sección, de abajo hacia arriba (por ejemplo 3, 2, 2). Si está vacío se usan 'Pisos Por Seccion' y 'Secciones'.")]
+    public int[] pisosEnSeccion = new int[0];
 
     [Header("Geometría (en unidades, relativa a este objeto)")]
     [Tooltip("Zona de la fachada del edificio.")]
@@ -31,6 +33,20 @@ public class EdificioAlto : MonoBehaviour
     public float[] centroColumnas = { 0.89f, 2.13f, 3.57f, 4.81f, 6.05f };
     [Tooltip("Inicio y fin de la terraza verde del techo.")]
     public Vector2 terraza = new Vector2(4.82f, 6.8f);
+
+    [Header("Dificultad por sección (vacío = la del demoledor)")]
+    [Tooltip("Multiplica la velocidad del demoledor en cada sección.")]
+    public float[] ritmoPorSeccion = new float[0];
+    [Tooltip("Escombros que suelta cada golpe en cada sección.")]
+    public int[] escombrosPorSeccion = new int[0];
+    [Tooltip("Marca esta fachada como el nivel final del juego (cambia el HUD y el final).")]
+    public bool esNivelFinal;
+    [Tooltip("Las repisas nunca se dañan (ni visualmente) y siempre se pueden pisar: solo se rompen las ventanas (nivel final). " +
+             "Desmarcado: las repisas se dañan y una destruida deja un hueco, como en el edificio alto antiguo.")]
+    public bool repisasIndestructibles;
+    [Tooltip("Con repisas indestructibles: probabilidad (0 a 1) de que un escombro que cae sobre una repisa se deshaga en polvo. " +
+             "Con 1 los escombros solo llegan a la fila de ventanas de arriba de cada columna.")]
+    [Range(0f, 1f)] public float probabilidadPolvoEnRepisa = 1f;
 
     [Header("Reglas")]
     [Tooltip("Golpes que da el demoledor en cada sección antes de que se pueda completar.")]
@@ -45,11 +61,54 @@ public class EdificioAlto : MonoBehaviour
     /// <summary>Se completaron todas las secciones.</summary>
     public event Action Salvado;
 
+    /// <summary>La vereda de la planta baja es suelo firme: caer desde una repisa no quita vida.</summary>
+    public bool VeredaFirme { get; set; }
+
     public int SeccionActual { get; private set; }
     public virtual bool Terminado { get { return SeccionActual >= secciones; } }
     public int GolpesDados { get; private set; }
-    public int Pisos { get { return pisosPorSeccion * secciones; } }
-    public virtual int VentanasPorSeccion { get { return pisosPorSeccion * columnas; } }
+    public int Pisos
+    {
+        get
+        {
+            if (pisosEnSeccion == null || pisosEnSeccion.Length == 0) return pisosPorSeccion * secciones;
+            int n = 0;
+            foreach (int p in pisosEnSeccion) n += Mathf.Max(0, p);
+            return n;
+        }
+    }
+
+    /// <summary>Cuántos pisos tiene una sección.</summary>
+    public int PisosDeSeccion(int seccion)
+    {
+        if (pisosEnSeccion == null || pisosEnSeccion.Length == 0) return pisosPorSeccion;
+        return seccion >= 0 && seccion < pisosEnSeccion.Length ? Mathf.Max(0, pisosEnSeccion[seccion]) : 0;
+    }
+
+    /// <summary>Índice (desde abajo) del primer piso de una sección.</summary>
+    public int PrimerPisoDeSeccion(int seccion)
+    {
+        if (pisosEnSeccion == null || pisosEnSeccion.Length == 0) return seccion * pisosPorSeccion;
+        int n = 0;
+        for (int i = 0; i < seccion && i < pisosEnSeccion.Length; i++) n += Mathf.Max(0, pisosEnSeccion[i]);
+        return n;
+    }
+
+    public virtual int VentanasPorSeccion { get { return PisosDeSeccion(Mathf.Min(SeccionActual, Mathf.Max(0, secciones - 1))) * columnas; } }
+
+    /// <summary>Ritmo del demoledor en una sección (o 'porDefecto' si no hay valor propio).</summary>
+    public float RitmoDeSeccion(int seccion, float porDefecto)
+    {
+        if (ritmoPorSeccion == null || ritmoPorSeccion.Length == 0) return porDefecto;
+        return Mathf.Max(0.1f, ritmoPorSeccion[Mathf.Clamp(seccion, 0, ritmoPorSeccion.Length - 1)]);
+    }
+
+    /// <summary>Escombros por golpe en una sección (o 'porDefecto').</summary>
+    public int EscombrosDeSeccion(int seccion, int porDefecto)
+    {
+        if (escombrosPorSeccion == null || escombrosPorSeccion.Length == 0) return porDefecto;
+        return Mathf.Max(1, escombrosPorSeccion[Mathf.Clamp(seccion, 0, escombrosPorSeccion.Length - 1)]);
+    }
 
     /// <summary>Zona de la fachada en coordenadas de mundo.</summary>
     public Rect Limites
@@ -69,6 +128,7 @@ public class EdificioAlto : MonoBehaviour
 
     protected virtual void Awake()
     {
+        if (pisosEnSeccion != null && pisosEnSeccion.Length > 0) secciones = pisosEnSeccion.Length;
         Instancia = this;
         ConstruirRejilla();
         EmpezarSeccion(0);
@@ -108,6 +168,7 @@ public class EdificioAlto : MonoBehaviour
         foreach (RepisaEdificio r in repisas)
         {
             if (r == null) continue;
+            r.indestructible = repisasIndestructibles;
             r.Preparar();
             r.CambioEstado += AlCambiarRepisa;
             if (r.piso >= 0 && r.piso < Pisos && r.columna >= 0 && r.columna < columnas)
@@ -185,7 +246,7 @@ public class EdificioAlto : MonoBehaviour
     public float PisoSeccion(int seccion)
     {
         int s = Mathf.Clamp(seccion, 0, secciones - 1);
-        RepisaEdificio r = RepisaEn(s * pisosPorSeccion, 0);
+        RepisaEdificio r = RepisaEn(PrimerPisoDeSeccion(s), 0);
         return r != null ? r.Superficie : transform.position.y;
     }
 
@@ -196,7 +257,7 @@ public class EdificioAlto : MonoBehaviour
     public RepisaEdificio RepisaSegura(int seccion, float x)
     {
         int s = Mathf.Clamp(seccion, 0, secciones - 1);
-        for (int p = s * pisosPorSeccion; p < (s + 1) * pisosPorSeccion; p++)
+        for (int p = PrimerPisoDeSeccion(s); p < PrimerPisoDeSeccion(s) + PisosDeSeccion(s); p++)
         {
             RepisaEdificio mejor = null;
             float distancia = float.MaxValue;
@@ -255,7 +316,7 @@ public class EdificioAlto : MonoBehaviour
         mejorDistancia = radio + 0.15f;
         foreach (RepisaEdificio r in repisas)
         {
-            if (r == null || r.Estado != EstadoRepisa.Agrietada) continue;
+            if (r == null || !r.Reparable) continue;
             float d = Vector2.Distance(pecho, r.Area.center);
             if (d > mejorDistancia) continue;
             mejorDistancia = d;
@@ -269,6 +330,25 @@ public class EdificioAlto : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// La repisa pisable más cercana a 'pos' (a lo sumo 'alcanceX' de lado) cuya superficie esté a lo sumo
+    /// 'margenY' sobre 'pos.y': sirve para dejar al muñeco sobre una repisa al soltarse de una zona trepable.
+    /// </summary>
+    public RepisaEdificio RepisaMasCercana(Vector2 pos, float alcanceX, float margenY)
+    {
+        RepisaEdificio mejor = null;
+        float mejorPuntaje = float.MaxValue;
+        foreach (RepisaEdificio r in repisas)
+        {
+            if (r == null || !r.SePuedePisar) continue;
+            float dx = Mathf.Abs(r.CentroX - pos.x);
+            if (dx > alcanceX || r.Superficie > pos.y + margenY) continue;
+            float puntaje = Mathf.Abs(pos.y - r.Superficie) + dx * 0.25f;
+            if (puntaje < mejorPuntaje) { mejorPuntaje = puntaje; mejor = r; }
+        }
+        return mejor;
     }
 
     /// <summary>Todo intacto, primera sección y golpes a cero.</summary>
@@ -302,6 +382,16 @@ public class EdificioAlto : MonoBehaviour
 
     // Los eventos solo se pueden lanzar desde esta clase: estos métodos
     // permiten que EdificioPisos (modo de 6 pisos) los dispare.
+#if UNITY_EDITOR
+    /// <summary>Solo en el editor: da el nivel por completado (para probar el final).</summary>
+    public void DepurarTerminar()
+    {
+        SeccionActual = secciones;
+        AvisarCambio();
+        AvisarSalvado();
+    }
+#endif
+
     protected void AvisarCambio()
     {
         if (Cambio != null) Cambio();

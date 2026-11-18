@@ -29,7 +29,9 @@ public class EscombroCayendo : MonoBehaviour
     private int siguiente;
     private int impactos;
     private float velocidad;
-    private float aceleracion = 4f;
+    /// <summary>Aceleración de caída (la usa la ulti para calcular cuándo llega la roca a su sombra).</summary>
+    public const float AceleracionBase = 4f;
+    private float aceleracion = AceleracionBase;
     private float giro;
 
     // Caja del muñeco (desde sus pies) para saber si le cae encima.
@@ -44,7 +46,7 @@ public class EscombroCayendo : MonoBehaviour
     /// probabilidad de cada impacto (por ejemplo 0.5, 0.35, 0.2: hasta 3 impactos).
     /// </summary>
     public static EscombroCayendo Crear(Sprite sprite, Vector3 posicion, int columna, float velocidadInicial,
-        float[] probabilidades, int orden)
+        float[] probabilidades, int orden, Sprite[] serieEspecial = null)
     {
         GameObject objeto = new GameObject("EscombroCayendo");
         objeto.transform.position = posicion;
@@ -60,6 +62,31 @@ public class EscombroCayendo : MonoBehaviour
         e.velocidad = velocidadInicial;
         e.giro = Random.Range(-260f, 260f);
         e.probabilidades = probabilidades != null && probabilidades.Length > 0 ? probabilidades : new float[] { 0.5f };
+
+        // Con arte: el ladrillo gira por sus 4 cuadros y los trozos que quedan al romperse son los de trozos_escombro.
+        Sprite[] ladrillo = serieEspecial != null ? serieEspecial : ArteNiveles.De(a => a.escombroLadrillo);
+        if (sprite == null && ladrillo == null)
+        {
+            // Sin arte: un cuadrado gris (la roca de la ulti sin sprite).
+            sr.sprite = Provisional.Cuadrado;
+            sr.color = new Color(0.5f, 0.47f, 0.43f);
+            objeto.transform.localScale = new Vector3(0.3f, 0.3f, 1f);
+        }
+        if (ladrillo != null)
+        {
+            sr.sprite = ladrillo[0];
+            objeto.transform.rotation = Quaternion.identity;
+            float escalaArte = serieEspecial != null ? 1f : 0.7f;
+            objeto.transform.localScale = new Vector3(escalaArte, escalaArte, 1f);
+            AnimadorSprite an = objeto.AddComponent<AnimadorSprite>();
+            an.cuadros = ladrillo;
+            an.cuadrosPorSegundo = 12f;
+            an.bucle = true;
+            an.destruirAlTerminar = false;
+            e.giro = 0f;
+        }
+        Sprite[] trozos = ArteNiveles.De(a => a.trozosEscombro);
+        if (trozos != null) e.sprite = trozos[Random.Range(0, trozos.Length)];
         e.edificio = EdificioAlto.Instancia;
         e.muneco = Object.FindFirstObjectByType<Muneco>();
         e.ArmarCamino(columna);
@@ -87,13 +114,14 @@ public class EscombroCayendo : MonoBehaviour
         siguiente = 0;
         if (edificio == null || edificio.Terminado) return;
 
-        int primero = edificio.SeccionActual * edificio.pisosPorSeccion;
+        int primero = edificio.PrimerPisoDeSeccion(edificio.SeccionActual);
         float y = transform.position.y;
-        for (int p = primero + edificio.pisosPorSeccion - 1; p >= primero; p--)
+        for (int p = primero + edificio.PisosDeSeccion(edificio.SeccionActual) - 1; p >= primero; p--)
         {
             VentanaEdificio v = edificio.VentanaEn(p, columna);
             if (v != null && v.Centro.y < y) camino.Add(new Obstaculo { altura = v.Centro.y, ventana = v });
 
+            // Una repisa indestructible no es blanco: el escombro solo se deshace en polvo si cae sobre ella.
             RepisaEdificio r = edificio.RepisaEn(p, columna);
             if (r != null && r.Superficie < y) camino.Add(new Obstaculo { altura = r.Superficie, repisa = r });
         }
@@ -137,6 +165,14 @@ public class EscombroCayendo : MonoBehaviour
     private bool IntentarImpacto(Obstaculo o)
     {
         if (edificio == null || impactos >= probabilidades.Length) return false;
+
+        // Repisa indestructible: no se elige como blanco, el escombro se rompe en polvo sin dañarla.
+        if (o.repisa != null && o.repisa.indestructible)
+        {
+            if (Random.value >= edificio.probabilidadPolvoEnRepisa) return false;
+            Romperse(3);
+            return true;
+        }
 
         // Solo se dañan cosas de la sección donde está el demoledor.
         int seccion = o.ventana != null ? o.ventana.seccion : (o.repisa != null ? o.repisa.seccion : -1);

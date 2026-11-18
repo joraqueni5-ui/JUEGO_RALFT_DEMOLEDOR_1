@@ -61,6 +61,22 @@ public class Muneco : PersonajeBase
     /// <summary>Perdió una vida (escombro o caída). El gestor descuenta la vida.</summary>
     public event System.Action Golpeado;
 
+    [Header("Trepar (zonas trepables de la fachada)")]
+    [Tooltip("Unidades por segundo al subir o bajar trepando (más lento que caminar).")]
+    public float velocidadTrepar = 1.6f;
+    [Tooltip("Impulso (lado, altura) al soltarse trepando con el salto.")]
+    public Vector2 impulsoSoltarse = new Vector2(3.5f, 5f);
+    [Tooltip("Cuadros por segundo de la animación de trepar.")]
+    public float cuadrosTrepar = 6f;
+    [Tooltip("Animación de trepar (2 a 4 cuadros). Vacía: usa el sprite de espaldas alternando el volteo horizontal.")]
+    public Sprite[] animacionTrepar;
+    [Tooltip("Segundos entre volteos del sprite de espaldas mientras se mueve trepando.")]
+    public float segundosPorVolteo = 0.18f;
+    [Tooltip("Distancia horizontal máxima a la repisa donde queda al soltarse arriba o abajo.")]
+    public float alcanceRepisaAlSoltar = 1.6f;
+    [Tooltip("Segundos sin poder agarrarse de nuevo después de soltarse.")]
+    public float esperaParaAgarrar = 0.3f;
+
     [Header("Controles")]
     public Key teclaIzquierda = Key.A;
     public Key teclaDerecha = Key.D;
@@ -83,6 +99,14 @@ public class Muneco : PersonajeBase
     private float colgandoDesde = -1f;
     private DemoledorAutomatico demoledor;
     private float empujeHorizontal;
+    private bool trepando;
+    private ZonaTrepable zonaTrepada;
+    private float noAgarrarHasta;
+    private float proximoVolteo;
+    private bool volteoTrepar;
+
+    /// <summary>Está agarrado a una zona trepable de la fachada.</summary>
+    public bool Trepando { get { return trepando; } }
 
     /// <summary>La sección más alta a la que ya llegó: de ahí para abajo no puede volver.</summary>
     public int SeccionAlcanzada { get; private set; }
@@ -121,8 +145,12 @@ public class Muneco : PersonajeBase
 
         // Se leen siempre, para que un toque no quede guardado para después.
         bool repararAhora = Pulsada(teclaReparar) | ControlesTactiles.RepararPulsado();
-        bool saltarAhora = Pulsada(teclaSaltar) | Pulsada(teclaSubir) |
-                           ControlesTactiles.SaltarPulsado() | ControlesTactiles.ArribaPulsado();
+        // Dentro de una zona trepable, arriba (o abajo) agarra en vez de saltar.
+        ZonaTrepable zonaCerca = colisionador != null ? ZonaTrepable.En(colisionador.bounds.center) : null;
+        bool soltarAhora = Pulsada(teclaSaltar) | ControlesTactiles.SaltarPulsado();
+        bool saltarAhora = soltarAhora | (zonaCerca == null && (Pulsada(teclaSubir) | ControlesTactiles.ArribaPulsado()));
+        bool arribaMantenida = Mantenida(teclaSubir) || ControlesTactiles.Arriba;
+        bool abajoMantenida = Mantenida(teclaBajarRepisa) || ControlesTactiles.Abajo;
         bool abajoTactil = ControlesTactiles.Abajo;
         bool bajarAhora = Pulsada(teclaBajarRepisa) || (abajoTactil && !abajoTactilAntes);
         abajoTactilAntes = abajoTactil;
@@ -132,22 +160,148 @@ public class Muneco : PersonajeBase
             // Aturdido: no se mueve ni martilla un instante (solo lo lleva el empujón).
             entradaHorizontal = empujeHorizontal;
         }
-        else
+        else if (trepando)
         {
-            Moverse(saltarAhora, bajarAhora);
+            ActualizarTrepar(arribaMantenida, abajoMantenida, soltarAhora);
 
             if (repararAhora && !reparando && Time.time >= siguienteReparacion)
             {
                 StartCoroutine(RutinaMartillar());
             }
         }
+        else
+        {
+            if (zonaCerca != null && !reparando && Time.time >= noAgarrarHasta && (arribaMantenida || abajoMantenida))
+                Agarrarse(zonaCerca, arribaMantenida, abajoMantenida);
 
+            if (!trepando)
+            {
+                Moverse(saltarAhora, bajarAhora);
+
+                if (repararAhora && !reparando && Time.time >= siguienteReparacion)
+                {
+                    StartCoroutine(RutinaMartillar());
+                }
+            }
+        }
+
+        GestorAudio.Bucle("poder_muneco", Snd.PoderActivoBucle, Time.time < finPoderSonido);
+        GestorAudio.Bucle("aturdido_muneco", Snd.AturdidoBucle, Time.time < finAturdido);
         RevisarRepisaPisada();
         RevisarBorde();
         RevisarChoqueConDemoledor();
         RevisarCaida();
         ActualizarAnimacion();
         ActualizarParpadeo();
+    }
+
+    // ------------------------------------------------------------ trepar
+    /// <summary>Hasta dónde puede subir una zona: no más arriba de la cornisa del demoledor.</summary>
+    private float TopeTrepar(Bounds zona)
+    {
+        float tope = zona.max.y;
+        if (edificio != null) tope = Mathf.Min(tope, edificio.AlturaCornisa(edificio.SeccionActual) - 0.1f);
+        return tope;
+    }
+
+    private void Agarrarse(ZonaTrepable zona, bool arriba, bool abajo)
+    {
+        Bounds zb = zona.Area.bounds;
+        float pies = colisionador.bounds.min.y;
+        bool puedeSubir = pies < TopeTrepar(zb) - 0.15f;
+        bool puedeBajar = pies > zb.min.y + 0.15f;
+        if (!((arriba && puedeSubir) || (abajo && puedeBajar))) return;
+
+        trepando = true;
+        zonaTrepada = zona;
+        usaGravedad = false;
+        enSuelo = false;
+        entradaHorizontal = 0f;
+        cuerpo.gravityScale = 0f;
+        cuerpo.linearVelocity = Vector2.zero;
+        DejarDeAtravesar();
+        colisionador.excludeLayers = capaSuelo;   // trepando no choca con repisas ni suelo
+
+        Vector3 p = new Vector3(zona.PuntoAgarreX, transform.position.y, transform.position.z);
+        transform.position = p;
+        cuerpo.position = p;
+        volteoTrepar = false;
+        proximoVolteo = Time.time + segundosPorVolteo;
+    }
+
+    private void ActualizarTrepar(bool arriba, bool abajo, bool soltar)
+    {
+        if (zonaTrepada == null || zonaTrepada.Area == null || !zonaTrepada.isActiveAndEnabled) { TerminarTrepar(); return; }
+
+        // Salto: se suelta hacia el costado.
+        if (soltar && !reparando)
+        {
+            float lado = 0f;
+            if (Mantenida(teclaIzquierda) || ControlesTactiles.Izquierda) lado -= 1f;
+            if (Mantenida(teclaDerecha) || ControlesTactiles.Derecha) lado += 1f;
+            if (lado == 0f) lado = mirandoDerecha ? 1f : -1f;
+            mirandoDerecha = lado > 0f;
+            TerminarTrepar();
+            cuerpo.linearVelocity = new Vector2(lado * impulsoSoltarse.x, impulsoSoltarse.y);
+            return;
+        }
+
+        Bounds zb = zonaTrepada.Area.bounds;
+        float v = 0f;
+        if (arriba) v += 1f;
+        if (abajo) v -= 1f;
+        if (reparando) v = 0f;
+
+        float pies = colisionador.bounds.min.y;
+        if (v > 0f && pies >= TopeTrepar(zb) - 0.02f) { SoltarEnRepisa(true, zb); return; }
+        if (v < 0f && pies <= zb.min.y + 0.02f) { SoltarEnRepisa(false, zb); return; }
+
+        cuerpo.linearVelocity = new Vector2(0f, v * velocidadTrepar);
+        if (v != 0f && Time.time >= proximoPasoSonido)
+        {
+            GestorAudio.Reproducir(Snd.Trepar);
+            proximoPasoSonido = Time.time + 0.3f;
+        }
+    }
+
+    private float proximoPasoSonido, finPoderSonido;
+    private bool pasoAlternoSonido;
+
+    /// <summary>Al llegar arriba o abajo de la zona queda sobre la repisa cercana (o sobre la vereda abajo).</summary>
+    private void SoltarEnRepisa(bool arriba, Bounds zona)
+    {
+        Vector2 pos = transform.position;
+        RepisaEdificio r = edificio != null ? edificio.RepisaMasCercana(pos, alcanceRepisaAlSoltar, arriba ? 0.4f : 0.1f) : null;
+        Vector3 destino = transform.position;
+        if (r != null) destino = new Vector3(r.CentroX, r.Superficie + 0.03f, transform.position.z);
+        else if (!arriba) destino = new Vector3(transform.position.x, zona.min.y + 0.03f, transform.position.z);
+
+        TerminarTrepar();
+        Colocar(destino);
+    }
+
+    private void TerminarTrepar()
+    {
+        if (!trepando) return;
+        trepando = false;
+        zonaTrepada = null;
+        usaGravedad = true;
+        if (colisionador != null) colisionador.excludeLayers = 0;
+        if (cuerpo != null)
+        {
+            cuerpo.gravityScale = gravedadBase;
+            cuerpo.linearVelocity = Vector2.zero;
+        }
+        noAgarrarHasta = Time.time + esperaParaAgarrar;
+    }
+
+    /// <summary>Se acabó el suelo bajo sus pies (la vereda se derrumbó): cae al vacío y pierde una vida.</summary>
+    public void CaerAlVacioForzado()
+    {
+        GestorAudio.Reproducir(Snd.CaidaVacio);
+        TerminarTrepar();
+        rebotando = true;
+        finInvulnerable = 0f;
     }
 
     // ------------------------------------------------------------ movimiento
@@ -161,10 +315,18 @@ public class Muneco : PersonajeBase
         // Martillando en una repisa se queda quieto; en el aire sigue su salto.
         entradaHorizontal = reparando && enSuelo ? 0f : direccion;
 
+        // Pasos mientras camina por una repisa.
+        if (enSuelo && !reparando && direccion != 0f && Time.time >= proximoPasoSonido)
+        {
+            GestorAudio.Reproducir(pasoAlternoSonido ? Snd.Paso2 : Snd.Paso1);
+            pasoAlternoSonido = !pasoAlternoSonido;
+            proximoPasoSonido = Time.time + 0.28f;
+        }
+
         if (reparando) return;
 
         // Solo salta si está parado (no mientras atraviesa una repisa subiendo).
-        if (saltar && cuerpo.linearVelocity.y <= 0.5f) Saltar();
+        if (saltar && cuerpo.linearVelocity.y <= 0.5f) { if (Saltar()) GestorAudio.Reproducir(Snd.Salto); }
         else if (bajar && enSuelo) AtravesarRepisa();
     }
 
@@ -173,7 +335,7 @@ public class Muneco : PersonajeBase
     {
         RepisaEdificio repisa = RepisaBajoLosPies();
         if (repisa == null || repisa.colision == null || colisionador == null) return;
-        if (edificio != null && repisa.piso == SeccionAlcanzada * edificio.pisosPorSeccion) return;
+        if (edificio != null && repisa.piso == edificio.PrimerPisoDeSeccion(SeccionAlcanzada)) return;
 
         StartCoroutine(RutinaAtravesar(repisa.colision));
     }
@@ -211,6 +373,7 @@ public class Muneco : PersonajeBase
     /// </summary>
     private void RevisarBorde()
     {
+        if (trepando) { colgandoDesde = -1f; return; }
         bool apoyado = !enSuelo && Mathf.Abs(cuerpo.linearVelocity.y) < 0.05f;
         if (!apoyado)
         {
@@ -294,6 +457,9 @@ public class Muneco : PersonajeBase
     {
         if (edificio == null || cuerpo == null) return;
 
+        // Con la vereda firme, caer no cuesta una vida: aterriza en la vereda. Trepando tampoco se cae.
+        if (trepando || edificio.VeredaFirme) { rebotando = false; return; }
+
         float piso = edificio.PisoSeccion(SeccionAlcanzada);
         if (transform.position.y >= piso - margenCaida || cuerpo.linearVelocity.y > 0f) return;
 
@@ -325,6 +491,7 @@ public class Muneco : PersonajeBase
 
     private void PerderVidaPorCaida()
     {
+        GestorAudio.Reproducir(Snd.CaidaVacio);
         rebotando = false;
         finInvulnerable = Time.time + tiempoInvulnerable;
         if (Golpeado != null) Golpeado();
@@ -338,14 +505,26 @@ public class Muneco : PersonajeBase
     }
 
     // ------------------------------------------------------------ golpes
+    /// <summary>Lo vuelve invulnerable 'segundos' (poder): parpadea y no recibe golpes.</summary>
+    public void DarInvulnerabilidad(float segundos)
+    {
+        finInvulnerable = Mathf.Max(finInvulnerable, Time.time + Mathf.Max(0f, segundos));
+        finPoderSonido = Mathf.Max(finPoderSonido, Time.time + Mathf.Max(0f, segundos));
+    }
+
+    /// <summary>Centro del cuerpo, para detectar contactos (palomas, poderes).</summary>
+    public Vector2 CentroCuerpo { get { return (Vector2)transform.position + Vector2.up * 0.5f; } }
+
     /// <summary>Le cae un escombro: avisa al gestor, queda aturdido y parpadea un rato.</summary>
     public void RecibirGolpe()
     {
         if (!PuedeRecibirGolpe) return;
+        if (trepando) TerminarTrepar();   // un golpe lo suelta
 
         finInvulnerable = Time.time + tiempoInvulnerable;
         finAturdido = Time.time + tiempoAturdido;
         empujeHorizontal = 0f;
+        GestorAudio.Reproducir(Snd.RecibirDano);
         if (Golpeado != null) Golpeado();
     }
 
@@ -353,6 +532,7 @@ public class Muneco : PersonajeBase
     public void Reaparecer(Vector3 posicion)
     {
         StopAllCoroutines();
+        TerminarTrepar();
         DejarDeAtravesar();
         reparando = false;
         rebotando = false;
@@ -389,6 +569,7 @@ public class Muneco : PersonajeBase
         finDeReparacion = Time.time + duracionReparacion;
 
         yield return new WaitForSeconds(momentoDeReparacion);
+        GestorAudio.Reproducir(Snd.Martillazo);
 
         if (edificio == null) edificio = EdificioAlto.Instancia;
         if (edificio != null)
@@ -407,6 +588,29 @@ public class Muneco : PersonajeBase
         {
             dibujo.flipX = false;
             animador.Reproducir(martillo, cuadrosPorSegundoMartillo, false, false);
+            return;
+        }
+
+        if (trepando)
+        {
+            bool mueve = Mathf.Abs(cuerpo.linearVelocity.y) > 0.05f;
+            if (animacionTrepar != null && animacionTrepar.Length > 1)
+            {
+                dibujo.flipX = false;
+                if (mueve) animador.Reproducir(animacionTrepar, cuadrosTrepar, true, false);
+                else animador.MostrarCuadroFijo(animacionTrepar, 0);
+            }
+            else if (caminarEspaldas != null && caminarEspaldas.Length > 0)
+            {
+                // De espaldas contra la fachada: alterna el volteo mientras se mueve y queda quieto si no.
+                animador.MostrarCuadroFijo(caminarEspaldas, 0);
+                if (mueve && Time.time >= proximoVolteo)
+                {
+                    volteoTrepar = !volteoTrepar;
+                    proximoVolteo = Time.time + segundosPorVolteo;
+                }
+                dibujo.flipX = volteoTrepar;
+            }
             return;
         }
 

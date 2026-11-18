@@ -37,12 +37,19 @@ public class RepisaEdificio : MonoBehaviour
 
     public BoxCollider2D colision;
 
+    [Tooltip("La repisa nunca se daña (ni visualmente): Danar() no hace nada, se dibuja siempre intacta y siempre se puede pisar. " +
+             "Lo marca EdificioAlto.repisasIndestructibles (nivel final).")]
+    public bool indestructible;
+
     public event Action<RepisaEdificio> CambioEstado;
 
     public EstadoRepisa Estado { get; private set; }
 
-    /// <summary>True si no está destruida.</summary>
-    public bool SePuedePisar { get { return Estado != EstadoRepisa.Destruida; } }
+    /// <summary>True si no está destruida (una indestructible siempre se puede pisar).</summary>
+    public bool SePuedePisar { get { return indestructible || Estado != EstadoRepisa.Destruida; } }
+
+    /// <summary>Se puede reparar con el martillo: solo la agrietada (una indestructible nunca se daña).</summary>
+    public bool Reparable { get { return !indestructible && Estado == EstadoRepisa.Agrietada; } }
 
     /// <summary>False mientras su sección todavía no se habilitó (el demoledor no llegó).</summary>
     public bool Habilitada
@@ -112,7 +119,7 @@ public class RepisaEdificio : MonoBehaviour
     /// <summary>Baja un estado. Devuelve true si la repisa cambió.</summary>
     public bool Danar()
     {
-        if (Estado == EstadoRepisa.Destruida) return false;
+        if (indestructible || Estado == EstadoRepisa.Destruida) return false;
 
         Estado = Estado + 1;
         Aplicar();
@@ -124,7 +131,7 @@ public class RepisaEdificio : MonoBehaviour
     /// <summary>Repara una repisa agrietada. Una destruida ya no se puede reparar.</summary>
     public bool Reparar()
     {
-        if (Estado != EstadoRepisa.Agrietada) return false;
+        if (!Reparable) return false;
 
         Estado = EstadoRepisa.Intacta;
         Aplicar();
@@ -142,7 +149,7 @@ public class RepisaEdificio : MonoBehaviour
 
     private void Aplicar()
     {
-        int i = (int)Estado;
+        int i = indestructible ? 0 : (int)Estado;   // una indestructible se dibuja siempre intacta
         if (dibujo != null && sprites != null && i < sprites.Length && sprites[i] != null) dibujo.sprite = sprites[i];
         if (colision != null) colision.enabled = SePuedePisar && habilitada;
     }

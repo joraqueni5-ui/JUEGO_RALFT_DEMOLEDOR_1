@@ -18,7 +18,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class ConstructorEdificioAlto
 {
-    private const string RutaEscena = "Assets/Scenes/Universidad.unity";
+    private const string RutaEscena = "Assets/Scenes/_Antiguas/Universidad.unity";
     private const string RutaFachada = "Assets/Sprites/Edificio/edificio_alto.png";
     private const string RutaEscombro = "Assets/Sprites/Edificio/escombro.png";
     private const string RutaVentanas = "Assets/Sprites/Ventanas/ventana_{0}_{1}.png";

@@ -63,6 +63,10 @@ public class DemoledorAutomatico : MonoBehaviour
     private float duracionGolpe = 0.43f;
     private int seccion;
     private int columnaActual;
+    private Vector3 escalaDibujo = Vector3.one;
+
+    /// <summary>Ya llegó a la terraza del techo (después de completar la última sección).</summary>
+    public bool EnTerraza { get; private set; }
 
     private float Ritmo
     {
@@ -71,7 +75,8 @@ public class DemoledorAutomatico : MonoBehaviour
             // Modo de pisos: la dificultad viene de la definición del piso.
             EdificioPisos pisos = edificio as EdificioPisos;
             if (pisos != null) return pisos.RitmoDemoledor;
-            return 1f + aumentoPorSeccion * Mathf.Max(0, seccion);
+            float porDefecto = 1f + aumentoPorSeccion * Mathf.Max(0, seccion);
+            return edificio != null ? edificio.RitmoDeSeccion(seccion, porDefecto) : porDefecto;
         }
     }
 
@@ -79,6 +84,7 @@ public class DemoledorAutomatico : MonoBehaviour
     {
         dibujo = GetComponentInChildren<SpriteRenderer>();
         animador = new AnimadorSprites(dibujo);
+        if (dibujo != null) escalaDibujo = dibujo.transform.localScale;
 
         if (golpe != null && golpe.Length > 0)
         {
@@ -102,14 +108,103 @@ public class DemoledorAutomatico : MonoBehaviour
     {
         activo = false;
         StopAllCoroutines();
+        RestaurarEscala();
         animador.MostrarCuadroFijo(caminarDerecha, 0);
         if (dibujo != null) dibujo.flipX = false;
+    }
+
+    private bool conservarPosicion;
+
+    /// <summary>Se detiene un momento (sin terminar la partida): por ejemplo durante el terremoto.</summary>
+    public void Pausar()
+    {
+        StopAllCoroutines();
+        RestaurarEscala();
+        if (animador != null) animador.MostrarCuadroFijo(caminarDerecha, 0);
+        if (dibujo != null) dibujo.flipX = false;
+    }
+
+    /// <summary>Sigue atacando desde donde estaba (después de Pausar).</summary>
+    public void Reanudar()
+    {
+        StopAllCoroutines();
+        RestaurarEscala();
+        activo = true;
+        conservarPosicion = true;
+        StartCoroutine(RutinaDemoler());
+    }
+
+    /// <summary>Golpea el techo con los dos puños durante 'segundos' (animación simple: el golpe en bucle y pequeños saltos).</summary>
+    public IEnumerator GolpeDoble(float segundos)
+    {
+        Vector3 baseP = transform.position;
+        if (dibujo != null) dibujo.flipX = animacionGolpeMiraDerecha != true;
+        animador.Reproducir(golpe, cuadrosPorSegundoGolpe * 1.4f, true, true);
+
+        float t = 0f;
+        while (t < segundos)
+        {
+            t += Time.deltaTime;
+            transform.position = baseP + Vector3.up * Mathf.Abs(Mathf.Sin(t * 10f)) * 0.12f;
+            yield return null;
+        }
+        transform.position = baseP;
+        animador.MostrarCuadroFijo(caminarDerecha, 0);
+        if (dibujo != null) dibujo.flipX = false;
+    }
+
+    private Coroutine aplastando;
+
+    /// <summary>
+    /// Un golpe contra el suelo (el techo, visto desde el muñeco) con los dos puños: animación de golpe, aplastamiento rápido del sprite,
+    /// temblor corto de cámara, polvo a sus pies y el sonido del golpe. Úsalo después de Pausar().
+    /// </summary>
+    public void GolpeAlTecho(float aplastamiento = 0.2f)
+    {
+        if (dibujo != null) dibujo.flipX = animacionGolpeMiraDerecha != true;
+        animador.Reproducir(golpe, cuadrosPorSegundoGolpe * 1.4f, false, true);
+        CamaraSeguimiento.Temblar(0.08f, 0.12f);
+        EfectoSprite.Reproducir(ArteNiveles.De(a => a.polvoImpacto), transform.position + Vector3.up * 0.05f, 399, 1f, 12f);
+        GestorAudio.Reproducir(Snd.GolpeObjeto);
+        if (aplastando != null) StopCoroutine(aplastando);
+        aplastando = StartCoroutine(Aplastar(aplastamiento));
+    }
+
+    private IEnumerator Aplastar(float cantidad)
+    {
+        if (dibujo == null) yield break;
+        Vector3 b = escalaDibujo;
+        float t = 0f;
+        while (t < 0.18f)
+        {
+            t += Time.deltaTime;
+            float k = 1f - Mathf.Clamp01(t / 0.18f);
+            dibujo.transform.localScale = new Vector3(b.x * (1f + cantidad * 0.6f * k), b.y * (1f - cantidad * k), b.z);
+            yield return null;
+        }
+        dibujo.transform.localScale = b;
+        aplastando = null;
+    }
+
+    private void RestaurarEscala()
+    {
+        aplastando = null;
+        if (dibujo != null) dibujo.transform.localScale = escalaDibujo;
+    }
+
+    /// <summary>Deja el sprite y la animación en reposo (termina la serie de golpes).</summary>
+    public void TerminarGolpes()
+    {
+        if (aplastando != null) { StopCoroutine(aplastando); aplastando = null; }
+        if (dibujo != null) { dibujo.transform.localScale = escalaDibujo; dibujo.flipX = false; }
+        animador.MostrarCuadroFijo(caminarDerecha, 0);
     }
 
     /// <summary>Vuelve a empezar desde la primera sección.</summary>
     public void Reiniciar()
     {
         StopAllCoroutines();
+        RestaurarEscala();
         activo = true;
         if (dibujo != null) dibujo.flipX = false;
         edificio = EdificioAlto.Instancia;
@@ -126,8 +221,12 @@ public class DemoledorAutomatico : MonoBehaviour
         }
 
         seccion = Mathf.Min(edificio.SeccionActual, edificio.secciones - 1);
-        columnaActual = 0;
-        transform.position = new Vector3(edificio.CentroColumna(columnaActual), edificio.AlturaCornisa(seccion), transform.position.z);
+        if (conservarPosicion) conservarPosicion = false;   // después de una pausa sigue donde estaba
+        else
+        {
+            columnaActual = 0;
+            transform.position = new Vector3(edificio.CentroColumna(columnaActual), edificio.AlturaCornisa(seccion), transform.position.z);
+        }
         animador.MostrarCuadroFijo(caminarDerecha, 0);
 
         while (activo)
@@ -199,6 +298,7 @@ public class DemoledorAutomatico : MonoBehaviour
         animador.Reproducir(golpe, cuadrosPorSegundoGolpe, false, true);
 
         yield return new WaitForSeconds(momentoDeImpacto);
+        GestorAudio.Reproducir(Snd.Punetazo);
 
         if (activo && conEscombros && edificio != null && edificio.SeccionActual == seccion)
         {
@@ -218,7 +318,7 @@ public class DemoledorAutomatico : MonoBehaviour
         if (spriteEscombro == null || edificio == null) return;
 
         EdificioPisos pisos = edificio as EdificioPisos;
-        int cantidad = pisos != null ? pisos.EscombrosPorGolpe : escombrosPorGolpe;
+        int cantidad = pisos != null ? pisos.EscombrosPorGolpe : edificio.EscombrosDeSeccion(seccion, escombrosPorGolpe);
         for (int i = 0; i < Mathf.Max(1, cantidad); i++)
         {
             Vector3 origen = new Vector3(
@@ -261,6 +361,7 @@ public class DemoledorAutomatico : MonoBehaviour
     {
         seccion = edificio.secciones - 1;
         yield return CaminarHasta(edificio.CentroTerraza);
+        EnTerraza = true;
 
         // Se queda en la terraza golpeando el piso, enojado.
         while (activo)
