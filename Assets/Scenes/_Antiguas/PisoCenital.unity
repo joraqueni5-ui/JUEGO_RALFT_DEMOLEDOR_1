@@ -914,10 +914,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DemoledorCenital
   velocidad: 2
+  radioCuerpo: 0.35
   alcancePunetazo: 0.95
   esperaInicial: 1.2
   pausaTrasGolpe: 0.5
   pausaTrasLanzamiento: 0.7
+  dibujarDiagnostico: 1
+  registrarAtascos: 1
   alturaDibujo: 2
   cuadrosCaminar: 8
   cuadrosPorSegundoGolpe: 14
@@ -1079,6 +1082,11 @@ MonoBehaviour:
   vidasIniciales: 3
   tiempoEsperaFin: 1.5
   tiempoEsperaVictoria: 3
+  pisosDelJuego: []
+  alturaFranja: 130
+  margenSuperiorHud: 16
+  tamanoLetraHud: 30
+  paddingFijoSuperior: 14
 --- !u!4 &773967206
 Transform:
   m_ObjectHideFlags: 0
@@ -1301,6 +1309,7 @@ MonoBehaviour:
   columnas: 5
   pisosPorSeccion: 3
   secciones: 3
+  pisosEnSeccion: 
   fachada:
     serializedVersion: 2
     x: 0
@@ -1318,10 +1327,24 @@ MonoBehaviour:
   - 4.81
   - 6.05
   terraza: {x: 4.82, y: 6.8}
+  ritmoPorSeccion: []
+  escombrosPorSeccion: 
+  esNivelFinal: 0
+  repisasIndestructibles: 0
+  probabilidadPolvoEnRepisa: 1
   golpesMinimosPorSeccion: 080000000a0000000c000000
   definicion: {fileID: 11400000, guid: bff27a481e82b134ea693e61debb1434, type: 2}
+  pisos:
+  - {fileID: 11400000, guid: c5b6c1bd7afbeb74d8789d39aa414126, type: 2}
+  - {fileID: 11400000, guid: bff27a481e82b134ea693e61debb1434, type: 2}
+  - {fileID: 11400000, guid: 248ca263a36c3414b8247e3a9693dcd3, type: 2}
+  - {fileID: 11400000, guid: ff7ebd3d676a8bf48beb64759609e310, type: 2}
+  - {fileID: 11400000, guid: d49dc529baa04864aa64ade9d0b3c0ff, type: 2}
+  - {fileID: 11400000, guid: cd8897b00ceebcb4b87d0e7657cee606, type: 2}
+  - {fileID: 11400000, guid: 290ad99a68614594288dfd20753d508c, type: 2}
   mapa: {fileID: 483238122}
   camara: {fileID: 44803478}
+  mostrarMarcasEstado: 0
 --- !u!4 &1903456064
 Transform:
   m_ObjectHideFlags: 0
@@ -1376,6 +1399,15 @@ MonoBehaviour:
   cuadrosCaminar: 8
   cuadrosPorSegundoMartillo: 12
   tiempoInvulnerable: 1
+  duracionEmpuje: 0.15
+  numeroEstrellas: 3
+  radioEstrellas: 0.4
+  velocidadEstrellas: 420
+  tamanoEstrella: 0.3
+  alturaEstrellas: 1.45
+  tamanoAro: {x: 1.1, y: 1.6}
+  alturaAro: 0.65
+  pulsoAro: 6
   alturaDibujo: 1.25
   animaciones:
     caminarAbajo:

@@ -9,14 +9,32 @@ EditorBuildSettings:
     path: Assets/Scenes/MenuPrincipal.unity
     guid: 070206502bc391c4ca203723956e429a
   - enabled: 1
-    path: Assets/Scenes/Universidad.unity
-    guid: b89e587d37b685b114351c8bb0826d26
+    path: Assets/Scenes/Niveles/Piso0_PlantaBaja.unity
+    guid: a05e5e0ba0a2f9d46ba97986f057016b
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso1_GastronomiaEnfermeria.unity
+    guid: 2725c038cee3f284baf7aa5f1f664df2
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso2_Informatica.unity
+    guid: 418dbd6862e1adf44a50f76315b41974
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso3_Aulas300.unity
+    guid: 6ed778a30c5129e48a6f5a140aa411ad
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso4_Aulas400.unity
+    guid: 03457bb8b7b955849b82ed08ffb5e52d
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso5_Aulas500.unity
+    guid: 6585416bc5af638408a5b80118341d6d
+  - enabled: 1
+    path: Assets/Scenes/Niveles/Piso6_TerrazaBiblioteca.unity
+    guid: a1a91f5c16450d14290d909782b7298f
+  - enabled: 1
+    path: Assets/Scenes/Niveles/NivelFinal_Fachada.unity
+    guid: 071bacc4cd0c47645bdda2166a2c6c20
   - enabled: 1
     path: Assets/Scenes/FinJuego.unity
     guid: 339b91464480910468a09f5e586308a9
-  - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
