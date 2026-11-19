@@ -14,6 +14,20 @@ namespace DemoledorUnifranz.Game
         /// <summary>Nivel que se carga cuando el jugador pulsa "Reintentar".</summary>
         public static string NivelActual = Escenas.Nivel1;
 
+        // ---- Nivel final (la fachada del edificio alto).
+        /// <summary>Se está jugando (o se va a repetir) el nivel final.</summary>
+        public static bool EnNivelFinal;
+        /// <summary>Tras el nivel final: mostrar los créditos y luego los récords.</summary>
+        public static bool FlujoFinal;
+        private const string ClaveNivelFinal = "DemoledorNivelFinalDesbloqueado";
+
+        /// <summary>El nivel final se desbloquea al superar el piso 6 y se guarda con el resto del progreso.</summary>
+        public static bool NivelFinalDesbloqueado
+        {
+            get { return PlayerPrefs.GetInt(ClaveNivelFinal, 0) == 1; }
+            set { PlayerPrefs.SetInt(ClaveNivelFinal, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
+
         public static int Puntaje;
         public static int Vidas;
         public static int Ladrillos;
@@ -71,8 +85,47 @@ namespace DemoledorUnifranz.Game
             NivelActual = nivel;
         }
 
+        // ---- Estrellas: la mejor cantidad (0 a 3) lograda en cada piso. Se guarda también entre sesiones.
+        public const int TotalPisosEstrellas = 7;   // 0 = planta baja, 1 a 6
+        private const string ClaveEstrellas = "DemoledorEstrellasP";
+
+        /// <summary>Borra todo el progreso guardado (estrellas de cada piso) y la partida en curso. No toca los récords.</summary>
+        public static void BorrarProgreso()
+        {
+            for (int i = 0; i < TotalPisosEstrellas; i++) PlayerPrefs.DeleteKey(ClaveEstrellas + i);
+            PlayerPrefs.DeleteKey(ClaveNivelFinal);
+            PlayerPrefs.Save();
+            NuevaPartida();
+        }
+
+        /// <summary>Suma de las mejores estrellas de todos los pisos.</summary>
+        public static int EstrellasTotales()
+        {
+            int n = 0;
+            for (int i = 0; i < TotalPisosEstrellas; i++) n += EstrellasDe(i);
+            return n;
+        }
+
+        /// <summary>Mejor cantidad de estrellas del piso (0 = planta baja).</summary>
+        public static int EstrellasDe(int piso)
+        {
+            if (piso < 0 || piso >= TotalPisosEstrellas) return 0;
+            return Mathf.Clamp(PlayerPrefs.GetInt(ClaveEstrellas + piso, 0), 0, 3);
+        }
+
+        /// <summary>Guarda las estrellas del piso solo si superan a la mejor marca. Devuelve true si es un récord.</summary>
+        public static bool GuardarEstrellas(int piso, int estrellas)
+        {
+            if (piso < 0 || piso >= TotalPisosEstrellas) return false;
+            estrellas = Mathf.Clamp(estrellas, 0, 3);
+            if (estrellas <= EstrellasDe(piso)) return false;
+            PlayerPrefs.SetInt(ClaveEstrellas + piso, estrellas);
+            PlayerPrefs.Save();
+            return true;
+        }
+
         // ---- Modo de 6 pisos (EdificioPisos). El modo original no usa estos datos.
-        /// <summary>Piso en curso (0 = Piso 1). Al perder se continúa desde aquí.</summary>
+        /// <summary>Piso en curso (0 = planta baja, 1 = Piso 1...). Al perder se continúa desde aquí.</summary>
         public static int PisoActual;
         /// <summary>Piso más alto alcanzado en la partida.</summary>
         public static int PisoMaximo;
@@ -87,7 +140,7 @@ namespace DemoledorUnifranz.Game
 
         /// <summary>
         /// Elige un nivel desde el menú NIVELES: el edificio original completo o un piso concreto
-        /// (0 = Piso 1). Al perder, el jugador sigue en ese modo y ese piso.
+        /// (0 = planta baja). Al perder, el jugador sigue en ese modo y ese piso.
         /// </summary>
         public static void SeleccionarNivel(bool modoPisos, int piso)
         {
@@ -98,10 +151,11 @@ namespace DemoledorUnifranz.Game
             PisoMaximo = PisoActual;
         }
 
-        /// <summary>Partida nueva del modo de pisos: vuelve al Piso 1 con todo en cero.</summary>
+        /// <summary>Partida nueva del modo de pisos: vuelve a la planta baja con todo en cero.</summary>
         public static void NuevaPartida()
         {
             ModoSeleccionado = ModoElegido.SegunEscena;
+            EnNivelFinal = false;
             PisoActual = 0;
             PisoMaximo = 0;
             PuntosAcumulados = 0;

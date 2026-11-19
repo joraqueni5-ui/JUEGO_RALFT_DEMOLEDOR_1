@@ -8,23 +8,25 @@ namespace DemoledorUnifranz.Game
     public static class Escenas
     {
         public const string MenuPrincipal = "MenuPrincipal";
-        public const string Nivel1 = "Universidad"; // Redirige todas las llamadas de Nivel1 a tu escena Universidad
-        public const string Universidad = "Universidad";
+        public const string Nivel1 = "Piso0_PlantaBaja"; // Los scripts del modo anterior que pedían Nivel1 ahora cargan la planta baja
+        public const string Universidad = "Piso0_PlantaBaja";
         public const string FinJuego = "FinJuego";
-        /// <summary>Piso 1 visto desde arriba (Gastronomía y Medicina).</summary>
+        /// <summary>Escena de prueba anterior con los 7 pisos en una sola escena (ya no está en el build).</summary>
         public const string PisoCenital = "PisoCenital";
+        /// <summary>El nivel final: la fachada de Unifranz vista de costado.</summary>
+        public const string NivelFinal = "NivelFinal_Fachada";
 
-        /// <summary>Escena que se carga para jugar el piso elegido (el piso 1 es el cenital).</summary>
+        /// <summary>Escena de un piso (0 a 6): cada piso tiene la suya en Assets/Scenes/Niveles.</summary>
         public static string ParaPiso(int piso)
         {
-            return piso == 0 ? PisoCenital : Nivel1;
+            return DefinicionPiso.NombreEscenaDe(piso);
         }
 
-        /// <summary>Escena de juego según la selección actual (para volver a intentar).</summary>
+        /// <summary>Escena de juego para volver a intentar: la del piso en curso (o el nivel final).</summary>
         public static string EscenaDeJuego()
         {
-            bool cenital = GameSession.ModoSeleccionado == GameSession.ModoElegido.Pisos && GameSession.PisoActual == 0;
-            return cenital ? PisoCenital : Nivel1;
+            if (GameSession.EnNivelFinal) return NivelFinal;
+            return ParaPiso(GameSession.PisoActual);
         }
     }
 }

@@ -37,6 +37,14 @@ public class GestorJuego : MonoBehaviour
     private DemoledorCenital demoledorC;
     private PisoCenital cenital;
 
+    // Nivel final: la fachada del edificio alto (vista lateral) con palomas, poderes y el final del juego.
+    [Header("Nivel final")]
+    [Tooltip("Los pisos del juego (de la planta baja al 6), para mostrar sus estrellas en la pantalla final.")]
+    public DefinicionPiso[] pisosDelJuego = new DefinicionPiso[0];
+    private bool nivelFinal;
+    private PeligrosFachada peligros;
+    private EnergiaDemoledorFachada energiaFachada;
+
     private Text textoEstado;
     private Text textoDestrozo;
     private Text textoMensaje;
@@ -109,6 +117,15 @@ public class GestorJuego : MonoBehaviour
 
         edificio = EdificioAlto.Instancia != null ? EdificioAlto.Instancia : Object.FindFirstObjectByType<EdificioAlto>();
 
+        // Piso cenital: el jugador empieza (y reaparece) en el SpawnJugador del mapa, no donde esté en la escena.
+        PisoCenital pisoActual = PisoCenital.Actual;
+        if (jugadorC != null && pisoActual != null && pisoActual.Mapa != null && pisoActual.Mapa.spawnJugador != null)
+        {
+            inicioMuneco = pisoActual.Mapa.spawnJugador.position;
+            jugadorC.transform.position = inicioMuneco;
+            Physics2D.SyncTransforms();
+        }
+
         if (edificio != null)
         {
             edificio.Cambio += Refrescar;
@@ -121,12 +138,48 @@ public class GestorJuego : MonoBehaviour
 
         cenital = edificio as PisoCenital;
         pisos = edificio as EdificioPisos;
+
+        // Nivel final: se juega con 3 vidas y el puntaje se suma al de la partida.
+        nivelFinal = cenital == null && edificio != null && edificio.esNivelFinal;
+        if (nivelFinal)
+        {
+            GameSession.EnNivelFinal = true;
+            GameSession.NivelActual = SceneManager.GetActiveScene().name;
+            puntos = GameSession.PuntosAcumulados;
+            vidas = vidasIniciales;
+            puntosInicioPiso = puntos;
+            vidasInicioPiso = vidas;
+            reparacionesInicioPiso = 0;
+            peligros = Object.FindFirstObjectByType<PeligrosFachada>();
+            energiaFachada = Object.FindFirstObjectByType<EnergiaDemoledorFachada>();
+        }
+
+        // Esta escena es el modo cenital: "volver a jugar" regresa al mismo piso, nunca al mapa lateral.
+        bool partidaNueva = false;
+        if (cenital != null)
+        {
+            DefinicionPiso defPiso = cenital.Definicion;
+            GameSession.ModoSeleccionado = GameSession.ModoElegido.Pisos;
+            GameSession.NivelActual = SceneManager.GetActiveScene().name;
+            if (defPiso != null) GameSession.PisoActual = defPiso.numero;
+
+            // Los puntos y las vidas con que empezó el piso (los de la partida en curso o, al reintentar, los del inicio).
+            partidaNueva = GameSession.VidasAlEmpezarPiso <= 0;
+            puntos = GameSession.PuntosAcumulados;
+            vidas = GameSession.VidasAlEmpezarPiso > 0 ? Mathf.Min(GameSession.VidasAlEmpezarPiso, vidasIniciales) : vidasIniciales;
+            puntosInicioPiso = puntos;
+            vidasInicioPiso = vidas;
+            reparacionesInicioPiso = 0;
+            GameSession.GuardarInicioPiso(GameSession.PisoActual, puntos, vidas);
+        }
         modoPisos = SelectorModoJuego.ModoPisosActivo && pisos != null;
         if (modoPisos) IniciarModoPisos();
 
         CrearHud();
         Refrescar();
         if (modoPisos) MostrarAviso(NombrePisoActual(), 2.5f);
+        if (cenital != null && partidaNueva && cenital.Definicion != null && cenital.Definicion.mostrarFichaAlEmpezar)
+            StartCoroutine(FichaInicial(cenital.Definicion));
 
         // ControlesTactiles se crea automáticamente solo en la primera escena que abre el juego.
         // Ahora el juego arranca en MenuPrincipal, así que aquí se asegura que existan.
@@ -154,6 +207,13 @@ public class GestorJuego : MonoBehaviour
 
     private void Update()
     {
+        // Poderes activos del jugador (tiempo restante).
+        if (textoPoder != null && jugadorC != null)
+        {
+            string poderes = jugadorC.TextoPoderes();
+            if (textoPoder.text != poderes) textoPoder.text = poderes;
+        }
+
         // Mientras se muestra la ficha del piso siguiente no hay pausa ni reinicio.
         if (enTransicion) return;
 
@@ -163,7 +223,8 @@ public class GestorJuego : MonoBehaviour
 
         // Pausa con Escape (solo si la partida no ha terminado).
         // En Android sin teclado Keyboard.current es null: se revisa antes de usarlo.
-        if (teclado != null && teclado[Key.Escape].wasPressedThisFrame && !partidaTerminada)
+        bool pausaTactil = ControlesTactiles.PausaPulsada();
+        if (((teclado != null && teclado[Key.Escape].wasPressedThisFrame) || pausaTactil) && !partidaTerminada)
         {
             AlternarPausa();
         }
@@ -202,6 +263,8 @@ public class GestorJuego : MonoBehaviour
     {
         if (estaEnPausa || partidaTerminada || enTransicion) return;
         estaEnPausa = true;
+        GestorAudio.Pausar(true);
+        GestorAudio.Reproducir(Snd.Pausa);
 
         // Congela la física y el movimiento del juego.
         Time.timeScale = 0f;
@@ -222,6 +285,8 @@ public class GestorJuego : MonoBehaviour
     {
         if (!estaEnPausa) return;
         estaEnPausa = false;
+        GestorAudio.Pausar(false);
+        GestorAudio.Reproducir(Snd.Pausa);
         Time.timeScale = 1f;
         reactivarMuneco = true;
 
@@ -241,6 +306,26 @@ public class GestorJuego : MonoBehaviour
         reparaciones++;
         puntos += puntosPorReparacion;
         Refrescar();
+    }
+
+    /// <summary>Suma vidas sin pasar de 'maximo' ni de los corazones del HUD. Devuelve false si ya estaba al tope.</summary>
+    public bool GanarVida(int cantidad, int maximo)
+    {
+        if (partidaTerminada) return false;
+        int tope = Mathf.Max(1, maximo);
+        if (corazones != null && corazones.Length > 0) tope = Mathf.Min(tope, corazones.Length);
+        if (vidas >= tope) return false;
+        vidas = Mathf.Min(tope, vidas + Mathf.Max(1, cantidad));
+        Refrescar();
+        return true;
+    }
+
+    /// <summary>Puntos por bloquear un golpe del demoledor (el aviso flotante lo muestra el jugador).</summary>
+    public void RegistrarBloqueo(int puntosExtra)
+    {
+        if (partidaTerminada) return;
+        puntos += Mathf.Max(0, puntosExtra);
+        MostrarAviso("¡SALVADO!  +" + puntosExtra, 1.5f);
     }
 
     private void AlGolpearMuneco()
@@ -353,9 +438,204 @@ public class GestorJuego : MonoBehaviour
         MostrarAviso(NombrePisoActual(), 2.5f);
     }
 
+    private static string NombreCorto(DefinicionPiso d)
+    {
+        return d == null ? "" : d.NombreArea;
+    }
+
+    /// <summary>Ficha de bienvenida al empezar una partida nueva (por ejemplo la planta baja): el juego espera a CONTINUAR.</summary>
+    private IEnumerator FichaInicial(DefinicionPiso def)
+    {
+        yield return null;
+        enTransicion = true;
+        ActivarJugador(false);
+        Time.timeScale = 0f;
+        if (transicion == null) transicion = TransicionPiso.Crear(transform);
+
+        bool cerrada = false;
+        System.Action alCerrar = () => cerrada = true;
+        transicion.Cerrada += alCerrar;
+        transicion.Mostrar(def, string.IsNullOrEmpty(def.tituloVentanaFicha) ? "¡BIENVENIDO!" : def.tituloVentanaFicha);
+        while (!cerrada) yield return null;
+        transicion.Cerrada -= alCerrar;
+        yield return new WaitForSecondsRealtime(0.25f);
+
+        Time.timeScale = 1f;
+        enTransicion = false;
+        // El jugador se reactiva un cuadro después: el ENTER que cerró la ficha no cuenta como martillazo.
+        munecoActivoAntesDePausa = true;
+        reactivarMuneco = true;
+    }
+
+    // ------------------------------------------------------------ piso cenital superado
+    /// <summary>Mensaje temporal en el centro de la pantalla.</summary>
+    /// <summary>Hay un mensaje grande temporal en pantalla (por ejemplo "¡SÍGUELO!").</summary>
+    public bool AvisoGrandeActivo { get { return Time.time < finMensajeTemporal && !string.IsNullOrEmpty(mensajeTemporal); } }
+
+    public void Aviso(string texto, float segundos)
+    {
+        MostrarAviso(texto, segundos);
+    }
+
+    /// <summary>Suma puntos sueltos (por ejemplo los de un punto de información).</summary>
+    public void SumarPuntos(int cantidad, string aviso)
+    {
+        if (partidaTerminada || cantidad <= 0) return;
+        puntos += cantidad;
+        Refrescar();
+    }
+
+    /// <summary>
+    /// El jugador llegó al ascensor: pantalla de estrellas, ficha del piso siguiente y carga de su escena.
+    /// Sin piso siguiente en la definición, la partida termina con la pantalla de victoria.
+    /// </summary>
+    private IEnumerator FinPisoCenital()
+    {
+        enTransicion = true;
+        partidaTerminada = true;
+        ActivarJugador(false);
+        if (demoledorC != null) demoledorC.Detener();
+        Refrescar();
+
+        DefinicionPiso def = cenital.Definicion;
+        int indicePiso = def != null ? Mathf.Max(0, def.numero) : 0;
+        bool[] cumplidas = cenital.CondicionesEstrellas();
+        int estrellas = cenital.Estrellas;
+        bool record = GameSession.GuardarEstrellas(indicePiso, estrellas);
+
+        float maximo = def != null ? def.destrozoMaximoEstrella : 0.3f;
+        string[] textos =
+        {
+            "Vencer al demoledor",
+            "Destrozo menor a " + Mathf.RoundToInt(maximo * 100f) + " % al rendirse (fue " +
+                Mathf.RoundToInt(cenital.DestrozoAlRendirse * 100f) + " %)",
+            "Leer los " + cenital.InfoTotal + " puntos \"?\" (" + cenital.InfoLeidasCuenta + "/" + cenital.InfoTotal + ")",
+        };
+
+        Time.timeScale = 0f;
+        PantallaEstrellas pantalla = PantallaEstrellas.Crear(transform);
+        bool cerrada = false;
+        System.Action alCerrar = () => cerrada = true;
+        pantalla.Cerrada += alCerrar;
+        pantalla.Mostrar(puntos, cumplidas, textos, record, def != null ? def.NombreArea : "");
+        while (!cerrada) yield return null;
+        pantalla.Cerrada -= alCerrar;
+        yield return new WaitForSecondsRealtime(0.25f);
+
+        DefinicionPiso siguiente = cenital.Siguiente;
+        if (siguiente == null)
+        {
+            // Último piso: el demoledor escapó a la fachada. Se desbloquea el nivel final, se muestra su ficha y se carga.
+            GameSession.NivelFinalDesbloqueado = true;
+
+            DefinicionPiso ficha = ScriptableObject.CreateInstance<DefinicionPiso>();
+            ficha.numero = 7;
+            ficha.nombre = "Fachada de Unifranz";
+            ficha.nombreArea = DefinicionPiso.NombreNivelFinal;
+            ficha.fichaTitulo = "¡El demoledor escapó a la fachada! - NIVEL FINAL";
+            ficha.fichaDescripcion = "Sube por la fachada reparando las ventanas antes de que se derrumbe, y cuidado con las palomas.";
+            ficha.fichaDatoUtil = "Es el nivel más difícil: tienes 3 vidas.";
+            if (transicion == null) transicion = TransicionPiso.Crear(transform);
+            bool fichaFinal = false;
+            System.Action alCerrarFinal = () => fichaFinal = true;
+            transicion.Cerrada += alCerrarFinal;
+            transicion.Mostrar(ficha, "¡NIVEL FINAL!", "NIVEL FINAL");
+            while (!fichaFinal) yield return null;
+            transicion.Cerrada -= alCerrarFinal;
+            yield return new WaitForSecondsRealtime(0.25f);
+
+            int acumulados = puntos;
+            GameSession.NuevaPartida();
+            GameSession.PuntosAcumulados = acumulados;
+            GameSession.EnNivelFinal = true;
+            Time.timeScale = 1f;
+            string escenaFinal = def != null ? def.EscenaSiguiente : Escenas.NivelFinal;
+            if (!NavegadorEscenas.Disponible(escenaFinal)) escenaFinal = Escenas.NivelFinal;
+            if (!NavegadorEscenas.Cargar(escenaFinal)) SceneManager.LoadScene(escenaFinal);
+            yield break;
+        }
+
+        // Ficha "Subiendo al piso N" y carga del piso siguiente.
+        if (transicion == null) transicion = TransicionPiso.Crear(transform);
+        bool fichaCerrada = false;
+        System.Action alCerrarFicha = () => fichaCerrada = true;
+        transicion.Cerrada += alCerrarFicha;
+        transicion.Mostrar(siguiente);
+        while (!fichaCerrada) yield return null;
+        transicion.Cerrada -= alCerrarFicha;
+        yield return new WaitForSecondsRealtime(0.25f);
+
+        int indiceSiguiente = Mathf.Max(0, siguiente.numero);
+        GameSession.SeleccionarNivel(true, indiceSiguiente);
+        GameSession.GuardarInicioPiso(indiceSiguiente, puntos, vidas);
+        Time.timeScale = 1f;
+        // La definición del piso que se acaba de superar guarda el nombre de la escena que sigue.
+        string escena = def != null ? def.EscenaSiguiente : Escenas.ParaPiso(indiceSiguiente);
+        if (!NavegadorEscenas.Disponible(escena)) escena = Escenas.ParaPiso(indiceSiguiente);
+        if (!NavegadorEscenas.Disponible(escena)) escena = Escenas.Nivel1;
+        if (!NavegadorEscenas.Cargar(escena)) SceneManager.LoadScene(escena);
+    }
+
+    private string[] NombresDeLosPisos()
+    {
+        System.Collections.Generic.List<string> lista = new System.Collections.Generic.List<string>();
+        DefinicionPiso[] origen = cenital != null && cenital.pisos != null ? cenital.pisos : pisosDelJuego;
+        if (origen != null)
+        {
+            foreach (DefinicionPiso d in origen)
+                if (d != null && d.disponible) lista.Add(d.NombreArea);
+        }
+        return lista.ToArray();
+    }
+
+    /// <summary>
+    /// Final del nivel final: el demoledor, en la terraza, es levantado y lanzado por los estudiantes. Luego la
+    /// pantalla "¡UNIVERSIDAD SALVADA!" con el sello, los créditos y la tabla de récords.
+    /// </summary>
+    private IEnumerator FinNivelFinal()
+    {
+        partidaTerminada = true;
+        enTransicion = true;
+        ActivarJugador(false);
+        if (peligros != null) peligros.enabled = false;
+        Refrescar();
+
+        FinalFachada escena = new GameObject("FinalFachada").AddComponent<FinalFachada>();
+        yield return escena.Reproducir(demoledor, edificio, Object.FindFirstObjectByType<CamaraSeguimiento>());
+
+        Time.timeScale = 0f;
+        PantallaFinal pantalla = PantallaFinal.Crear(transform, NombresDeLosPisos(), true);
+        bool cerrada = false;
+        System.Action alCerrar = () => cerrada = true;
+        pantalla.Cerrada += alCerrar;
+        pantalla.Mostrar(puntos);
+        while (!cerrada) yield return null;
+        pantalla.Cerrada -= alCerrar;
+        yield return new WaitForSecondsRealtime(0.25f);
+
+        mensajeFinal = "¡UNIVERSIDAD SALVADA!";
+        Time.timeScale = 1f;
+        GameSession.RegistrarVictoria(puntos, reparaciones, SceneManager.GetActiveScene().name);
+        GameSession.NuevaPartida();         // la próxima partida empieza en la planta baja
+        GameSession.FlujoFinal = true;      // créditos y luego récords
+        Refrescar();
+        enTransicion = false;
+        if (!NavegadorEscenas.Cargar(Escenas.MenuPrincipal)) SceneManager.LoadScene(Escenas.FinJuego);
+    }
+
     private void AlSalvarEdificio()
     {
         if (partidaTerminada) return;
+        if (cenital != null)
+        {
+            StartCoroutine(FinPisoCenital());
+            return;
+        }
+        if (nivelFinal)
+        {
+            StartCoroutine(FinNivelFinal());
+            return;
+        }
         partidaTerminada = true;
         mensajeFinal = "¡EDIFICIO SALVADO!";
 
@@ -387,8 +667,18 @@ public class GestorJuego : MonoBehaviour
         if (textoEstado != null && cenital != null)
         {
             textoEstado.text = string.Format(
-                "PUNTOS  {0}      PISO  1/1      OBJETOS ROTOS  {1}/{2}",
-                puntos, edificio.Terminado ? 0 : edificio.DanadasEnSeccion(0), edificio.VentanasPorSeccion);
+                "PUNTOS  {0}      {1}      OBJETOS ROTOS  {2}/{3}",
+                puntos, NombreCorto(cenital.Definicion), edificio.Terminado ? 0 : cenital.ObjetosRotos, edificio.VentanasPorSeccion);
+            textoEstado.horizontalOverflow = HorizontalWrapMode.Overflow;
+            textoEstado.verticalOverflow = VerticalWrapMode.Overflow;
+        }
+        else if (textoEstado != null && nivelFinal)
+        {
+            textoEstado.text = string.Format(
+                "PUNTOS  {0}      NIVEL FINAL      SECCIÓN  {1}/{2}",
+                puntos, seccionVisible, edificio.secciones);
+            textoEstado.horizontalOverflow = HorizontalWrapMode.Overflow;
+            textoEstado.verticalOverflow = VerticalWrapMode.Overflow;
         }
         else if (textoEstado != null && modoPisos)
         {
@@ -406,12 +696,29 @@ public class GestorJuego : MonoBehaviour
         }
         if (textoDestrozo != null) textoDestrozo.text = "DESTROZO  " + Mathf.RoundToInt(destrozo * 100f) + "%";
 
+        float energiaDemoledor = cenital != null ? cenital.Energia : energiaFachada != null ? energiaFachada.Energia : -1f;
+        if (energiaDemoledor >= 0f && textoEnergia != null)
+        {
+            textoEnergia.text = "DEMOLEDOR  " + Mathf.CeilToInt(energiaDemoledor * 100f) + "%";
+            if (rellenoEnergia != null) rellenoEnergia.sizeDelta = new Vector2(energiaDemoledor * AnchoBarra, 16f);
+        }
+
         if (corazones != null)
         {
             for (int i = 0; i < corazones.Length; i++)
             {
                 if (corazones[i] == null) continue;
-                corazones[i].color = i < vidas ? new Color(0.92f, 0.2f, 0.24f, 1f) : new Color(0.25f, 0.25f, 0.3f, 0.6f);
+                ArteNiveles arte = ArteNiveles.Actual;
+                if (arte != null && arte.corazonLleno != null && arte.corazonVacio != null)
+                {
+                    // Corazones del arte: lleno o vacío, sin teñir.
+                    corazones[i].sprite = i < vidas ? arte.corazonLleno : arte.corazonVacio;
+                    corazones[i].color = Color.white;
+                }
+                else
+                {
+                    corazones[i].color = i < vidas ? new Color(0.92f, 0.2f, 0.24f, 1f) : new Color(0.25f, 0.25f, 0.3f, 0.6f);
+                }
             }
         }
 
@@ -493,9 +800,10 @@ public class GestorJuego : MonoBehaviour
         if (estabaEnPausa) ControlesTactiles.ReiniciarPulsado();
 
         // Modo pisos: R reinicia solo el piso en curso, con los puntos y las vidas con que empezó.
-        puntos = modoPisos ? puntosInicioPiso : 0;
-        reparaciones = modoPisos ? reparacionesInicioPiso : 0;
-        vidas = modoPisos ? vidasInicioPiso : vidasIniciales;
+        bool porPiso = modoPisos || cenital != null || nivelFinal;
+        puntos = porPiso ? puntosInicioPiso : 0;
+        reparaciones = porPiso ? reparacionesInicioPiso : 0;
+        vidas = porPiso ? vidasInicioPiso : vidasIniciales;
         mensajeFinal = "";
         mensajeTemporal = "";
 
@@ -508,6 +816,7 @@ public class GestorJuego : MonoBehaviour
 
         ActivarJugador(true);
         ReaparecerJugador();
+        if (peligros != null) peligros.Reiniciar();
         if (demoledor != null) demoledor.Reiniciar();
         if (demoledorC != null) demoledorC.Reiniciar();
 
@@ -531,7 +840,7 @@ public class GestorJuego : MonoBehaviour
 
         Transform raiz = lienzo.transform;
 
-        if (cenital != null)
+        if (cenital != null || nivelFinal)
         {
             CrearFranjaCenital(canvas, raiz);
         }
@@ -583,8 +892,31 @@ public class GestorJuego : MonoBehaviour
         menuPausa = MenuPausaArcade.Crear(this);
     }
 
-    /// <summary>Altura (en píxeles del lienzo de referencia) de la franja del HUD del piso cenital.</summary>
-    private const float AlturaFranja = 130f;
+    [Header("HUD del piso cenital (píxeles del lienzo de referencia 1920 x 1080)")]
+    [Tooltip("Altura de la franja del HUD, sin contar el área no segura de la pantalla (muesca, esquinas redondeadas).")]
+    public float alturaFranja = 130f;
+    [Tooltip("Espacio entre el borde seguro de arriba y la primera línea de texto.")]
+    public float margenSuperiorHud = 16f;
+    [Tooltip("Tamaño de letra de la primera línea (puntos, piso, objetos rotos).")]
+    public int tamanoLetraHud = 30;
+    [Tooltip("Separación mínima fija (en píxeles de pantalla del lienzo) entre lo más alto del HUD y el borde de arriba. " +
+             "Si algo sobresale, el HUD baja solo lo necesario.")]
+    public float paddingFijoSuperior = 14f;
+
+    private Text textoPoder, textoEnergia;
+    private RectTransform rellenoEnergia;
+    private static readonly Color ColorEnergia = new Color(0.35f, 0.8f, 1f, 1f);
+    private Canvas canvasHud;
+    private RectTransform franjaHud, contenidoHud;
+    private float alturaFranjaBase;
+
+    /// <summary>Escala que aplica el CanvasScaler (1920 x 1080, ajuste 0,5) al tamaño actual de la pantalla.</summary>
+    private static float EscalaLienzo()
+    {
+        float w = Mathf.Max(0.1f, Screen.width / 1920f);
+        float h = Mathf.Max(0.1f, Screen.height / 1080f);
+        return Mathf.Exp(Mathf.Lerp(Mathf.Log(w), Mathf.Log(h), 0.5f));
+    }
 
     /// <summary>
     /// HUD del piso visto desde arriba: una franja a todo el ancho, anclada al borde de arriba, que el
@@ -593,6 +925,15 @@ public class GestorJuego : MonoBehaviour
     /// </summary>
     private void CrearFranjaCenital(Canvas canvas, Transform raiz)
     {
+        // Áreas no seguras (muesca, barra de estado, esquinas): el texto se desplaza para no quedar bajo ellas
+        // y la franja crece lo mismo, así el mapa sigue empezando justo debajo.
+        float escala = EscalaLienzo();
+        Rect segura = Screen.safeArea;
+        float insetArriba = Mathf.Max(0f, (Screen.height - segura.yMax) / escala);
+        float insetIzq = Mathf.Max(0f, segura.xMin / escala);
+        float insetDer = Mathf.Max(0f, (Screen.width - segura.xMax) / escala);
+        float altura = alturaFranja + insetArriba;
+
         GameObject fondo = new GameObject("FranjaHud", typeof(RectTransform), typeof(Image));
         fondo.transform.SetParent(raiz, false);
         RectTransform rtFondo = (RectTransform)fondo.transform;
@@ -600,24 +941,55 @@ public class GestorJuego : MonoBehaviour
         rtFondo.anchorMax = new Vector2(1f, 1f);
         rtFondo.pivot = new Vector2(0.5f, 1f);
         rtFondo.anchoredPosition = Vector2.zero;
-        rtFondo.sizeDelta = new Vector2(0f, AlturaFranja);
+        rtFondo.sizeDelta = new Vector2(0f, altura);
         Image imagenFondo = fondo.GetComponent<Image>();
         imagenFondo.color = new Color(0.05f, 0.06f, 0.08f, 1f);
         imagenFondo.raycastTarget = false;
         fondo.transform.SetAsFirstSibling();
+        canvasHud = canvas;
+        franjaHud = rtFondo;
+        alturaFranjaBase = altura;
+
+        // Todo el contenido cuelga de un contenedor que ocupa el lienzo entero: así se puede bajar de una vez.
+        GameObject cont = new GameObject("ContenidoHud", typeof(RectTransform));
+        cont.transform.SetParent(raiz, false);
+        contenidoHud = (RectTransform)cont.transform;
+        contenidoHud.anchorMin = Vector2.zero;
+        contenidoHud.anchorMax = Vector2.one;
+        contenidoHud.offsetMin = Vector2.zero;
+        contenidoHud.offsetMax = Vector2.zero;
+        raiz = contenidoHud;
 
         // Deja libre el botón de pausa (24..136 de ancho) y empieza el texto a su derecha.
-        const float x0 = 170f;
-        textoEstado = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, -18f),
-            new Vector2(1000f, 44f), TextAnchor.UpperLeft, 30, Color.white, FontStyle.Bold);
-        textoDestrozo = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, -72f),
+        float x0 = 170f + insetIzq;
+        float linea1 = -(insetArriba + margenSuperiorHud);
+        float linea2 = linea1 - (tamanoLetraHud + 28f);
+        textoEstado = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, linea1),
+            new Vector2(1000f, tamanoLetraHud + 22f), TextAnchor.MiddleLeft, tamanoLetraHud, Color.white, FontStyle.Bold);
+        textoDestrozo = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x0, linea2),
             new Vector2(230f, 34f), TextAnchor.UpperLeft, 24, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
 
+        // Energía del demoledor (celeste), a la derecha de la barra de destrozo.
+        float xEnergia = x0 + 240f + AnchoBarra + 40f;
+        textoEnergia = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(xEnergia, linea2),
+            new Vector2(230f, 34f), TextAnchor.UpperLeft, 24, ColorEnergia, FontStyle.Bold);
+        Image fondoEnergia = CrearImagen(raiz, "EnergiaFondo", new Color(0.02f, 0.02f, 0.03f, 0.8f),
+            new Vector2(0f, 1f), new Vector2(xEnergia + 240f, linea2 - 4f), new Vector2(AnchoBarra + 8f, 24f));
+        fondoEnergia.rectTransform.pivot = new Vector2(0f, 1f);
+        Image rellenoE = CrearImagen(raiz, "EnergiaRelleno", ColorEnergia,
+            new Vector2(0f, 1f), new Vector2(xEnergia + 244f, linea2 - 16f), new Vector2(AnchoBarra, 16f));
+        rellenoEnergia = rellenoE.rectTransform;
+        rellenoEnergia.pivot = new Vector2(0f, 0.5f);
+
+        // Poder activo y su tiempo restante, a la derecha de la barra de energía.
+        textoPoder = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(xEnergia + 240f + AnchoBarra + 36f, linea2),
+            new Vector2(500f, 34f), TextAnchor.UpperLeft, 24, new Color(0.5f, 1f, 0.6f, 1f), FontStyle.Bold);
+
         Image fondoBarra = CrearImagen(raiz, "BarraFondo", new Color(0.02f, 0.02f, 0.03f, 0.8f),
-            new Vector2(0f, 1f), new Vector2(x0 + 240f, -76f), new Vector2(AnchoBarra + 8f, 24f));
+            new Vector2(0f, 1f), new Vector2(x0 + 240f, linea2 - 4f), new Vector2(AnchoBarra + 8f, 24f));
         fondoBarra.rectTransform.pivot = new Vector2(0f, 1f);
         Image relleno = CrearImagen(raiz, "BarraRelleno", new Color(0.95f, 0.75f, 0.2f, 1f),
-            new Vector2(0f, 1f), new Vector2(x0 + 244f, -88f), new Vector2(0f, 16f));
+            new Vector2(0f, 1f), new Vector2(x0 + 244f, linea2 - 16f), new Vector2(0f, 16f));
         rellenoBarra = relleno.rectTransform;
         rellenoBarra.pivot = new Vector2(0f, 0.5f);
 
@@ -629,17 +1001,79 @@ public class GestorJuego : MonoBehaviour
         float extra = ControlesTactiles.DebeMostrarse ? 260f : 0f;
         for (int i = 0; i < totalCorazones; i++)
         {
-            float x = -(40f + extra + AnchoCorazon * 0.5f + (totalCorazones - 1 - i) * SeparacionCorazon);
+            float x = -(40f + insetDer + extra + AnchoCorazon * 0.5f + (totalCorazones - 1 - i) * SeparacionCorazon);
             Image corazon = CrearImagen(raiz, "Vida" + (i + 1), Color.white, new Vector2(1f, 1f),
-                new Vector2(x, -AlturaFranja * 0.5f), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
+                new Vector2(x, -(insetArriba + alturaFranja * 0.5f)), new Vector2(AnchoCorazon, AnchoCorazon * 8f / 9f));
             corazon.sprite = SpriteCorazon();
             corazon.preserveAspect = true;
             corazones[i] = corazon;
         }
 
         // El mapa se dibuja solo debajo de la franja.
-        CamaraPisoCenital camara = Object.FindFirstObjectByType<CamaraPisoCenital>();
-        if (camara != null) camara.ReservarFranjaSuperior(canvas, AlturaFranja);
+        ReservarCamara(canvas, altura);
+        StartCoroutine(VigilarHud());
+    }
+
+    /// <summary>La cámara (cenital o la de la fachada) deja libre la franja de arriba para el HUD.</summary>
+    private static void ReservarCamara(Canvas canvas, float altura)
+    {
+        CamaraPisoCenital cenitalCam = Object.FindFirstObjectByType<CamaraPisoCenital>();
+        if (cenitalCam != null) cenitalCam.ReservarFranjaSuperior(canvas, altura);
+        CamaraSeguimiento lateralCam = Object.FindFirstObjectByType<CamaraSeguimiento>();
+        if (lateralCam != null) lateralCam.ReservarFranjaSuperior(canvas, altura);
+    }
+
+    /// <summary>Vuelve a medir el HUD cada vez que cambia el tamaño de la ventana.</summary>
+    private IEnumerator VigilarHud()
+    {
+        Vector2Int ultima = new Vector2Int(-1, -1);
+        while (true)
+        {
+            if (Screen.width != ultima.x || Screen.height != ultima.y)
+            {
+                yield return null;
+                yield return null;   // deja que el CanvasScaler aplique el tamaño nuevo
+                ultima = new Vector2Int(Screen.width, Screen.height);
+                AjustarHud();
+            }
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Mide en pantalla lo más alto del HUD (textos y corazones). Si queda a menos de 'paddingFijoSuperior'
+    /// del borde de arriba, baja el contenido lo que falte y agranda la franja y la reserva de la cámara.
+    /// </summary>
+    private void AjustarHud()
+    {
+        if (contenidoHud == null || franjaHud == null || canvasHud == null) return;
+
+        contenidoHud.anchoredPosition = Vector2.zero;
+        Canvas.ForceUpdateCanvases();
+
+        float escala = Mathf.Max(0.01f, canvasHud.scaleFactor);
+        float tope = float.MinValue;
+        Vector3[] esq = new Vector3[4];
+        System.Action<RectTransform> medir = rt =>
+        {
+            if (rt == null) return;
+            rt.GetWorldCorners(esq);
+            for (int i = 0; i < 4; i++) tope = Mathf.Max(tope, esq[i].y);
+        };
+        if (textoEstado != null) medir(textoEstado.rectTransform);
+        if (textoDestrozo != null) medir(textoDestrozo.rectTransform);
+        if (corazones != null) foreach (Image c in corazones) if (c != null) medir(c.rectTransform);
+
+        float limite = Screen.height - paddingFijoSuperior * escala;
+        float bajar = tope > limite ? (tope - limite) / escala : 0f;
+
+        contenidoHud.anchoredPosition = new Vector2(0f, -bajar);
+        franjaHud.sizeDelta = new Vector2(0f, alturaFranjaBase + bajar);
+        ReservarCamara(canvasHud, alturaFranjaBase + bajar);
+
+        Debug.Log(string.Format("[HUD] pantalla {0}x{1}, escala {2:F2}, área segura (y máx) {3:F0}, parte más alta del HUD {4:F0} px, " +
+                                "límite {5:F0} px, se baja {6:F1} unidades.",
+                                Screen.width, Screen.height, escala, Screen.safeArea.yMax, tope, limite, bajar));
     }
 
     private static Text CrearTexto(Transform padre, string contenido, Vector2 ancla, Vector2 pivote,
