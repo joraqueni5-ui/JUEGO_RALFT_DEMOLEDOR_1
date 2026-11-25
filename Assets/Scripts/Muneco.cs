@@ -325,16 +325,45 @@ public class Muneco : PersonajeBase
 
         if (reparando) return;
 
-        // Solo salta si está parado (no mientras atraviesa una repisa subiendo).
-        if (saltar && cuerpo.linearVelocity.y <= 0.5f) { if (Saltar()) GestorAudio.Reproducir(Snd.Salto); }
+        // Salto cómodo de plataformas: vale apretar un instante antes de caer en la repisa (buffer)
+        // y un instante después de salir del borde (coyote). No salta mientras atraviesa una repisa subiendo.
+        if (enSuelo) ultimoEnSuelo = Time.time;
+        if (saltar) pedidoSalto = Time.time;
+        bool pidio = Time.time - pedidoSalto <= bufferSalto;
+        bool puede = (enSuelo || Time.time - ultimoEnSuelo <= tiempoCoyote) && cuerpo.linearVelocity.y <= 0.5f;
+        if (pidio && puede)
+        {
+            cuerpo.linearVelocity = new Vector2(cuerpo.linearVelocity.x, fuerzaSalto);
+            enSuelo = false;
+            pedidoSalto = -10f;
+            ultimoEnSuelo = -10f;
+            GestorAudio.Reproducir(Snd.Salto);
+        }
         else if (bajar && enSuelo) AtravesarRepisa();
     }
+
+    [Header("Salto de plataformas")]
+    [Tooltip("Segundos después de salir de un borde en los que todavía se puede saltar.")]
+    public float tiempoCoyote = 0.1f;
+    [Tooltip("Segundos que se guarda el salto si se aprieta justo antes de aterrizar.")]
+    public float bufferSalto = 0.13f;
+    private float ultimoEnSuelo = -10f, pedidoSalto = -10f;
 
     /// <summary>Se deja caer a través de la repisa que pisa (no la primera fila de su sección).</summary>
     private void AtravesarRepisa()
     {
+        if (colisionador == null) return;
         RepisaEdificio repisa = RepisaBajoLosPies();
-        if (repisa == null || repisa.colision == null || colisionador == null) return;
+        if (repisa == null || repisa.colision == null)
+        {
+            // Andamio entre repisas o escalón de la planta baja.
+            Bounds caja = colisionador.bounds;
+            PlataformaFachada plat = PlataformasFachada.Bajo(new Vector2(caja.center.x, caja.min.y + 0.02f), margenSuelo + 0.05f, capaSuelo);
+            if (plat == null || plat.caja == null) return;
+            if (plat.piso >= 0 && edificio != null && plat.piso == edificio.PrimerPisoDeSeccion(SeccionAlcanzada)) return;
+            StartCoroutine(RutinaAtravesar(plat.caja));
+            return;
+        }
         if (edificio != null && repisa.piso == edificio.PrimerPisoDeSeccion(SeccionAlcanzada)) return;
 
         StartCoroutine(RutinaAtravesar(repisa.colision));
@@ -390,7 +419,7 @@ public class Muneco : PersonajeBase
         bool resbalo = false;
         for (int i = 0; i < tocadas.Length; i++)
         {
-            if (tocadas[i] == null || tocadas[i].GetComponent<RepisaEdificio>() == null) continue;
+            if (tocadas[i] == null || (tocadas[i].GetComponent<RepisaEdificio>() == null && tocadas[i].GetComponent<PlataformaFachada>() == null)) continue;
             Ignorar(tocadas[i]);
             resbalo = true;
         }

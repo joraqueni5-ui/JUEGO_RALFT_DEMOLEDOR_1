@@ -310,8 +310,11 @@ public class ControlesTactiles : MonoBehaviour
         Derecha = activo && n.x > 0.38f;
         if (palanca.fachada)
         {
-            // En la fachada hace falta inclinar más para trepar o bajar: caminar en diagonal no baja de la repisa sin querer.
-            Arriba = activo && n.y > 0.55f;
+            // En la fachada (plataformas) inclinar hacia arriba salta y hacia abajo baja de la repisa.
+            // Hace falta inclinar más que en el piso: caminar en diagonal no salta ni baja sin querer.
+            bool arribaF = activo && n.y > 0.6f;
+            if (arribaF && !Arriba) arribaPendiente = true;
+            Arriba = arribaF;
             Abajo = activo && n.y < -0.62f;
             return;
         }

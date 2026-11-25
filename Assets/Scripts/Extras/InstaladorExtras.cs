@@ -91,6 +91,7 @@ public static class InstaladorExtras
             jefe.AddComponent<JefeFinal>();
             jefe.AddComponent<FuriaFachada>();     // la furia del estudiante también en la fachada
             jefe.AddComponent<IndicadorSubir>();   // si te caes: flecha "¡vuelve a subir!"
+            jefe.AddComponent<PlataformasFachada>();   // sin tubos: andamios entre repisas y escalones en la planta baja
             jefe.AddComponent<IntroFinalJefe>();   // cinemática de entrada: la cámara sube, el demoledor ruge y la pantalla VS
             Muneco m = Object.FindAnyObjectByType<Muneco>();
             if (m != null) AccesorioJugador.Poner(m.gameObject);
