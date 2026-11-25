@@ -1,0 +1,69 @@
+archivo,texto,lista,voz
+vamos_a_resolver,¡Vamos a resolver!,Inicio,personaje
+otro_dia_otro_edificio_que_salvar,"Otro día, otro edificio que salvar.",Inicio,personaje
+hoy_no_se_cae_nada_bueno_casi_nada,Hoy no se cae nada. Bueno... casi nada.,Inicio,personaje
+alguien_pidio_una_reparacion_express,¿Alguien pidió una reparación express?,Inicio,personaje
+respira_tienes_un_martillo_todo_va_a_salir_bien,Respira. Tienes un martillo. Todo va a salir bien.,Inicio,personaje
+modo_heroe_activado_modo_tarea_postergado,Modo héroe: activado. Modo tarea: postergado.,Inicio,personaje
+si_me_ves_sudar_es_parte_del_personaje,"Si me ves sudar, es parte del personaje.",Inicio,personaje
+este_piso_no_se_repara_solo_creeme_ya_lo_intente,"Este piso no se repara solo. Créeme, ya lo intenté.",Inicio,personaje
+que_alguien_avise_al_jefe_de_mantenimiento_ah_so,"Que alguien avise al jefe de mantenimiento... ah, soy yo.",Inicio,personaje
+como_nuevo,¡Como nuevo!,Reparar,personaje
+arreglado_no_pregunten_como,Arreglado. No pregunten cómo.,Reparar,personaje
+cinta_fe_y_un_martillo,"Cinta, fe y un martillo.",Reparar,personaje
+y_esto_ninos_es_ingenieria,"Y esto, niños, es ingeniería.",Reparar,personaje
+listo_ni_el_demoledor_lo_nota,¡Listo! Ni el demoledor lo nota.,Reparar,personaje
+reparado_con_amor_y_mucha_prisa,Reparado con amor... y mucha prisa.,Reparar,personaje
+pum_arte_contemporaneo,¡Pum! Arte contemporáneo.,Reparar,personaje
+garantia_de_por_vida_vida_corta_eso_si,"Garantía de por vida. Vida corta, eso sí.",Reparar,personaje
+mis_papas_estarian_orgullosos_creo,Mis papás estarían orgullosos. Creo.,Reparar,personaje
+otro_mas_para_el_portafolio,Otro más para el portafolio.,Reparar,personaje
+viste_eso_camara_viste_eso,"¿Viste eso, cámara? ¡Viste eso!",Reparar,personaje
+si_esto_fuera_un_examen_ya_aprobe,"Si esto fuera un examen, ya aprobé.",Reparar,personaje
+hoy_no_grandote,"¡Hoy no, grandote!",Bloqueo,personaje
+bloqueado_toma_eso,¡Bloqueado! Toma eso.,Bloqueo,personaje
+llegue_justo_a_tiempo_como_en_las_peliculas,"Llegué justo a tiempo, como en las películas.",Bloqueo,personaje
+ese_pupitre_esta_bajo_mi_proteccion,¡Ese pupitre está bajo mi protección!,Bloqueo,personaje
+ni_lo_intentes_ya_lo_arregle,"Ni lo intentes, ya lo arreglé.",Bloqueo,personaje
+reflejos_de_estudiante_en_semana_de_parciales,¡Reflejos de estudiante en semana de parciales!,Bloqueo,personaje
+auch_eso_va_a_dejar_marca,¡Auch! Eso va a dejar marca.,Golpeado,personaje
+okey_eso_dolio_en_la_autoestima,"Okey, eso dolió en la autoestima.",Golpeado,personaje
+oye_sin_empujar_que_hay_fila,"¡Oye! Sin empujar, que hay fila.",Golpeado,personaje
+nota_mental_no_abrazar_al_demoledor,Nota mental: no abrazar al demoledor.,Golpeado,personaje
+estoy_bien_totalmente_bien_solo_veo_estrellitas,Estoy bien. Totalmente bien. Solo veo estrellitas.,Golpeado,personaje
+eso_cuenta_como_clase_de_educacion_fisica,¿Eso cuenta como clase de educación física?,Golpeado,personaje
+mi_peinado_no,¡Mi peinado no!,Golpeado,personaje
+poder_me_siento_invencible_por_unos_segundos,¡Poder! Me siento invencible... por unos segundos.,Poder,personaje
+esto_si_es_una_beca,¡Esto sí es una beca!,Poder,personaje
+gracias_guionista,"Gracias, guionista.",Poder,personaje
+esto_es_legal_bueno_ya_lo_agarre,"¿Esto es legal? Bueno, ya lo agarré.",Poder,personaje
+power_up_siempre_quise_decir_eso,¡Power up! Siempre quise decir eso.,Poder,personaje
+ahi_viene_con_su_cara_de_lunes,Ahí viene... con su cara de lunes.,LlegaDemoledor,personaje
+ese_senor_necesita_un_abrazo_o_una_terapia,Ese señor necesita un abrazo. O una terapia.,LlegaDemoledor,personaje
+tranquilos_tengo_un_plan_mas_o_menos,"Tranquilos, tengo un plan. Más o menos.",LlegaDemoledor,personaje
+por_que_siempre_rompe_lo_que_acabo_de_arreglar,¿Por qué siempre rompe lo que acabo de arreglar?,LlegaDemoledor,personaje
+fuera_de_aqui_mini_yo,"¡Fuera de aquí, mini-yo!",MiniVencido,personaje
+uno_menos_quedan_muchos,Uno menos. Quedan... muchos.,MiniVencido,personaje
+ese_era_el_practicante_no,"Ese era el practicante, ¿no?",MiniVencido,personaje
+despedido,¡Despedido!,MiniVencido,personaje
+hola_sigues_ahi_el_edificio_no_se_arregla_mirand,¿Hola? ¿Sigues ahí? El edificio no se arregla mirándolo.,Ocioso,personaje
+podria_tomarme_un_cafe_pero_el_demoledor_no_desc,Podría tomarme un café... pero el demoledor no descansa.,Ocioso,personaje
+si_me_quedo_quieto_cuenta_como_estrategia,"Si me quedo quieto, ¿cuenta como estrategia?",Ocioso,personaje
+pensando_en_la_vida_y_en_el_ascensor,Pensando en la vida. Y en el ascensor.,Ocioso,personaje
+psst_el_boton_enter_sirve_para_reparar_pasa_la_v,Psst... el botón ENTER sirve para reparar. Pasa la voz.,Ocioso,personaje
+esto_es_incomodo_tu_mirandome_yo_mirandote,"Esto es incómodo. Tú mirándome, yo mirándote.",Ocioso,personaje
+hora_de_demoler,¡HORA DE DEMOLER!,Demoledor,villano
+este_edificio_es_mio,¡Este edificio es mío!,Demoledor,villano
+yo_no_rompo_remodelo,"¡Yo no rompo, remodelo!",Demoledor,villano
+sal_de_mi_camino_estudiante,"¡Sal de mi camino, estudiante!",Demoledor,villano
+reparar_que_palabra_tan_fea,¿Reparar? ¡Qué palabra tan fea!,Demoledor,villano
+mi_martillo_es_mi_mejor_amigo,¡Mi martillo es mi mejor amigo!,Demoledor,villano
+ay_mi_mano,"¡Ay, mi mano!",DemoledorBloqueado,villano
+eso_no_estaba_en_el_plan,¡Eso no estaba en el plan!,DemoledorBloqueado,villano
+tramposo,¡Tramposo!,DemoledorBloqueado,villano
+grrr,¡Grrr!,DemoledorBloqueado,villano
+a_romper,¡A romper!,Mini,mini
+si_jefe,"¡Sí, jefe!",Mini,mini
+je_je_je,¡Je je je!,Mini,mini
+pupitre_a_la_vista,¡Pupitre a la vista!,Mini,mini
+por_el_jefe,¡Por el jefe!,Mini,mini
