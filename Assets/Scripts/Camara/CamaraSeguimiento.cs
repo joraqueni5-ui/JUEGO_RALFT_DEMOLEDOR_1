@@ -141,7 +141,12 @@ public class CamaraSeguimiento : MonoBehaviour
         float minimo = yMinima;
         EdificioAlto edificio = EdificioAlto.Instancia;
         if (edificio != null && muneco != null && muneco.SeccionAlcanzada > 0)
-            minimo = Mathf.Max(yMinima, edificio.PisoSeccion(muneco.SeccionAlcanzada) - margenBajoSeccion + alto);
+        {
+            float pisoSeccion = edificio.PisoSeccion(muneco.SeccionAlcanzada);
+            // Si se cayó por debajo de su sección, la cámara lo sigue hasta abajo (antes se quedaba arriba y lo perdías).
+            if (objetivo.position.y >= pisoSeccion - margenBajoSeccion)
+                minimo = Mathf.Max(yMinima, pisoSeccion - margenBajoSeccion + alto);
+        }
 
         return Mathf.Clamp(y, Mathf.Min(minimo, yMaxima), Mathf.Max(yMinima, yMaxima));
     }

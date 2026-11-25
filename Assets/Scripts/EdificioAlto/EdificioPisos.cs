@@ -105,7 +105,7 @@ public class EdificioPisos : EdificioAlto
     {
         if (fondoExterior != null) fondoExterior.SetActive(false);
 
-        camara = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
+        camara = Camera.main != null ? Camera.main : FindAnyObjectByType<Camera>();
         if (camara == null) return;
 
         CamaraSeguimiento seguir = camara.GetComponent<CamaraSeguimiento>();

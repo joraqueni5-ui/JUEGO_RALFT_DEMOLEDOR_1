@@ -196,7 +196,7 @@ public static class ConstructorEdificioAlto
         edificio.terraza = new Vector2(TerrazaX0 / Ppu, TerrazaX1 / Ppu);
 
         // 3) Demoledor: en la primera cornisa, con sprite de escombro. Sus animaciones no se tocan.
-        DemoledorAutomatico demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>(FindObjectsInactive.Include);
+        DemoledorAutomatico demoledor = Object.FindAnyObjectByType<DemoledorAutomatico>(FindObjectsInactive.Include);
         if (demoledor != null)
         {
             Undo.RecordObject(demoledor, "Construir edificio alto");
@@ -209,7 +209,7 @@ public static class ConstructorEdificioAlto
         }
 
         // 4) Muñeco: empieza parado sobre la primera fila de repisas.
-        Muneco muneco = Object.FindFirstObjectByType<Muneco>(FindObjectsInactive.Include);
+        Muneco muneco = Object.FindAnyObjectByType<Muneco>(FindObjectsInactive.Include);
         if (muneco != null)
         {
             Undo.RecordObject(muneco.transform, "Construir edificio alto");
@@ -221,7 +221,7 @@ public static class ConstructorEdificioAlto
         }
 
         // 5) Cámara que sigue al muñeco y fondo que la acompaña.
-        Camera camara = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
+        Camera camara = Camera.main != null ? Camera.main : Object.FindAnyObjectByType<Camera>();
         float techo = EdificioY + AltoDibujo / Ppu;
         float yMinima = TamanoCamara - 0.6f;
         float yMaxima = techo + 0.4f - TamanoCamara;

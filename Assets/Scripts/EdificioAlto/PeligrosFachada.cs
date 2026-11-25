@@ -57,9 +57,9 @@ public class PeligrosFachada : MonoBehaviour
     {
         edificio = GetComponent<EdificioAlto>();
         if (edificio == null) edificio = EdificioAlto.Instancia;
-        muneco = FindFirstObjectByType<Muneco>();
-        gestor = FindFirstObjectByType<GestorJuego>();
-        camara = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
+        muneco = FindAnyObjectByType<Muneco>();
+        gestor = FindAnyObjectByType<GestorJuego>();
+        camara = Camera.main != null ? Camera.main : FindAnyObjectByType<Camera>();
         Reiniciar();
     }
 
@@ -263,34 +263,62 @@ public class PeligrosFachada : MonoBehaviour
         RepisaEdificio repisa = edificio.RepisaEn(ventana.piso, ventana.columna);
         bool vida = Random.value < 0.4f;
 
-        // El estudiante se asoma por la ventana.
-        GameObject estudiante = CrearEstudiante(ventana.Centro);
+        // Un estudiante de verdad (de los personajes del juego) se asoma por la ventana, saluda y te tira el poder.
+        Personajes.Ficha quien;
+        GameObject estudiante = CrearEstudiante(ventana, out quien);
         activos.Add(estudiante);
+        Transform dibujoEst = estudiante.transform.childCount > 0 ? estudiante.transform.GetChild(0) : estudiante.transform;
+        Vector3 escalaEst = dibujoEst.localScale;
+        SpriteRenderer srEst = dibujoEst.GetComponent<SpriteRenderer>();
+        Sprite[] cuadrosEst = quien != null ? Personajes.SerieFluida(quien, "abajo") : null;
+        string[] frases = vida ? new[] { "¡Toma, un botiquín!", "¡Cúrate, te lo paso!", "¡Aguanta, ahí va!" }
+                               : new[] { "¡Toma, una salteña!", "¡Recién salida del horno!", "¡Con esto no te para nadie!" };
+        bool hablo = false;
         float t = 0f;
-        const float Asomado = 1.5f;
+        const float Asomado = 1.7f;
         while (t < Asomado)
         {
             if (!Quieto)
             {
                 t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / 0.3f) * Mathf.Clamp01((Asomado - t) / 0.3f);
-                estudiante.transform.localScale = Vector3.one * Mathf.Max(0.01f, k);
-                estudiante.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * 9f) * 6f);
+                // Sube desde el alféizar, se queda saludando y vuelve a bajar.
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.3f)) * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Asomado - t) / 0.25f));
+                dibujoEst.localScale = new Vector3(escalaEst.x, escalaEst.y * Mathf.Max(0.05f, k), 1f);
+                dibujoEst.localRotation = Quaternion.Euler(0f, 0f, t > 0.3f ? Mathf.Sin(t * 10f) * 7f : 0f);
+                if (srEst != null && cuadrosEst != null && cuadrosEst.Length > 1) srEst.sprite = cuadrosEst[(int)(t * 7f) % cuadrosEst.Length];
+                if (!hablo && t > 0.3f)
+                {
+                    hablo = true;
+                    Burbuja.Decir(estudiante.transform, frases[Random.Range(0, frases.Length)], quien != null ? quien.Voz : Burbuja.Voz.Hombre, 1.1f);
+                }
             }
             yield return null;
         }
+
+        // Lanza el poder en arco hasta la repisa.
+        if (ventana.Estado != EstadoVentana.Intacta || !repisa.SePuedePisar) { activos.Remove(estudiante); Destroy(estudiante); poderEnCurso = false; yield break; }
+        Vector3 donde = new Vector3(repisa.CentroX, repisa.Superficie + 0.32f, 0f);
+        GameObject poder = CrearPoder(estudiante.transform.position + Vector3.up * 0.3f, vida);
+        activos.Add(poder);
+        Vector3 desdePoder = poder.transform.position;
+        float vuelo = 0f;
+        while (vuelo < 0.45f)
+        {
+            if (!Quieto)
+            {
+                vuelo += Time.deltaTime;
+                float k = Mathf.Clamp01(vuelo / 0.45f);
+                poder.transform.position = Vector3.Lerp(desdePoder, donde, k) + Vector3.up * Mathf.Sin(k * Mathf.PI) * 0.6f;
+                poder.transform.rotation = Quaternion.Euler(0f, 0f, k * 360f);
+            }
+            yield return null;
+        }
+        poder.transform.rotation = Quaternion.identity;
         activos.Remove(estudiante);
         Destroy(estudiante);
-
-        // Deja el poder en la repisa.
-        if (ventana.Estado != EstadoVentana.Intacta || !repisa.SePuedePisar) { poderEnCurso = false; yield break; }
-        Vector3 donde = new Vector3(repisa.CentroX, repisa.Superficie + 0.32f, 0f);
-        TextoFlotante.Mostrar((Vector2)donde + Vector2.up * 0.9f, vida ? "¡Un estudiante dejó un botiquín!" : "¡Un estudiante dejó una salteña!",
+        TextoFlotante.Mostrar((Vector2)donde + Vector2.up * 0.9f, vida ? "¡Un estudiante te tiró un botiquín!" : "¡Un estudiante te tiró una salteña!",
             vida ? new Color(1f, 0.5f, 0.55f) : new Color(1f, 0.85f, 0.2f));
-
-        GameObject poder = CrearPoder(donde, vida);
         GestorAudio.Reproducir(Snd.PoderAparece);
-        activos.Add(poder);
         float vive = 0f;
         while (vive < duracionEnRepisa)
         {
@@ -363,7 +391,35 @@ public class PeligrosFachada : MonoBehaviour
     }
 
     /// <summary>Estudiante provisional: cabeza, cuerpo y un brazo.</summary>
-    private GameObject CrearEstudiante(Vector2 centroVentana)
+    /// <summary>Un estudiante de los personajes del juego (no el que estás usando), del alto de la ventana, parado en el alféizar.</summary>
+    private GameObject CrearEstudiante(VentanaEdificio ventana, out Personajes.Ficha quien)
+    {
+        quien = null;
+        Personajes.Ficha[] todas = Personajes.Todos;
+        Personajes.Ficha yo = Personajes.Actual;
+        if (todas != null && todas.Length > 0)
+        {
+            for (int intento = 0; intento < 8 && quien == null; intento++)
+            {
+                Personajes.Ficha f = todas[Random.Range(0, todas.Length)];
+                if (f != yo) quien = f;
+            }
+        }
+        Sprite[] frente = quien != null ? Personajes.Serie(quien, "abajo") : null;
+        if (frente == null || frente.Length == 0) return CrearEstudianteProvisional(ventana.Centro);
+
+        Rect area = ventana.Area;
+        GameObject g = new GameObject("EstudianteVentana");
+        g.transform.position = new Vector3(area.center.x, area.yMin + 0.04f, 0f);
+        SpriteRenderer sr = Provisional.Crear(g.transform, "Dibujo", frente[0], Color.white, 13);
+        float alto = Mathf.Max(0.01f, frente[0].bounds.size.y);
+        float e = area.height * 0.92f / alto;
+        sr.transform.localScale = new Vector3(e, e, 1f);
+        sr.transform.localPosition = new Vector3(0f, -frente[0].bounds.min.y * e, 0f);   // los pies en el alféizar
+        return g;
+    }
+
+    private GameObject CrearEstudianteProvisional(Vector2 centroVentana)
     {
         GameObject g = new GameObject("EstudianteVentana");
         g.transform.position = new Vector3(centroVentana.x, centroVentana.y - 0.1f, 0f);

@@ -18,7 +18,12 @@ public class EscombroCayendo : MonoBehaviour
         public float altura;
         public VentanaEdificio ventana;
         public RepisaEdificio repisa;
+        public int piso;
     }
+
+    /// <summary>Piso al que va este escombro (elegido al azar entre los de la sección): pasa de largo por los de
+    /// arriba y rompe ese. Antes casi todos pegaban en el piso más alto y los de abajo nunca se dañaban.</summary>
+    private int pisoObjetivo = -1;
 
     private SpriteRenderer dibujo;
     private Sprite sprite;
@@ -88,7 +93,7 @@ public class EscombroCayendo : MonoBehaviour
         Sprite[] trozos = ArteNiveles.De(a => a.trozosEscombro);
         if (trozos != null) e.sprite = trozos[Random.Range(0, trozos.Length)];
         e.edificio = EdificioAlto.Instancia;
-        e.muneco = Object.FindFirstObjectByType<Muneco>();
+        e.muneco = Object.FindAnyObjectByType<Muneco>();
         e.ArmarCamino(columna);
         return e;
     }
@@ -116,15 +121,21 @@ public class EscombroCayendo : MonoBehaviour
 
         int primero = edificio.PrimerPisoDeSeccion(edificio.SeccionActual);
         float y = transform.position.y;
+        List<int> posibles = new List<int>();
         for (int p = primero + edificio.PisosDeSeccion(edificio.SeccionActual) - 1; p >= primero; p--)
         {
             VentanaEdificio v = edificio.VentanaEn(p, columna);
-            if (v != null && v.Centro.y < y) camino.Add(new Obstaculo { altura = v.Centro.y, ventana = v });
+            if (v != null && v.Centro.y < y)
+            {
+                camino.Add(new Obstaculo { altura = v.Centro.y, ventana = v, piso = p });
+                if (v.Estado != EstadoVentana.Destruida) posibles.Add(p);
+            }
 
             // Una repisa indestructible no es blanco: el escombro solo se deshace en polvo si cae sobre ella.
             RepisaEdificio r = edificio.RepisaEn(p, columna);
-            if (r != null && r.Superficie < y) camino.Add(new Obstaculo { altura = r.Superficie, repisa = r });
+            if (r != null && r.Superficie < y) camino.Add(new Obstaculo { altura = r.Superficie, repisa = r, piso = p });
         }
+        pisoObjetivo = posibles.Count > 0 ? posibles[Random.Range(0, posibles.Count)] : -1;
     }
 
     private void Update()
@@ -166,6 +177,10 @@ public class EscombroCayendo : MonoBehaviour
     {
         if (edificio == null || impactos >= probabilidades.Length) return false;
 
+        // Todavía no llegó a su piso: pasa de largo (ni siquiera se hace polvo en las repisas de arriba).
+        if (pisoObjetivo >= 0 && impactos == 0 && o.piso > pisoObjetivo) return false;
+        bool esObjetivo = pisoObjetivo >= 0 && impactos == 0 && o.piso == pisoObjetivo && o.ventana != null;
+
         // Repisa indestructible: no se elige como blanco, el escombro se rompe en polvo sin dañarla.
         if (o.repisa != null && o.repisa.indestructible)
         {
@@ -183,7 +198,8 @@ public class EscombroCayendo : MonoBehaviour
             : (o.repisa != null && o.repisa.Estado != EstadoRepisa.Destruida);
         if (!sePuedeDanar) return false;
 
-        if (Random.value >= probabilidades[impactos]) return false;
+        float prob = esObjetivo ? Mathf.Min(0.9f, probabilidades[impactos] + 0.25f) : probabilidades[impactos];
+        if (Random.value >= prob) return false;
 
         if (o.ventana != null) o.ventana.Danar();
         else o.repisa.Danar();

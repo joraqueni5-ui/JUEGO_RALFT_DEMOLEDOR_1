@@ -44,9 +44,9 @@ public class TerremotoFachada : MonoBehaviour
     {
         edificio = GetComponent<EdificioAlto>();
         energia = GetComponent<EnergiaDemoledorFachada>();
-        demoledor = FindFirstObjectByType<DemoledorAutomatico>();
-        muneco = FindFirstObjectByType<Muneco>();
-        gestor = FindFirstObjectByType<GestorJuego>();
+        demoledor = FindAnyObjectByType<DemoledorAutomatico>();
+        muneco = FindAnyObjectByType<Muneco>();
+        gestor = FindAnyObjectByType<GestorJuego>();
         vereda = GetComponentInChildren<VeredaFachada>();
     }
 

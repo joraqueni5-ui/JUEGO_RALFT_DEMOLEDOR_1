@@ -39,14 +39,16 @@ public class UltiFachada : MonoBehaviour
     private readonly List<GameObject> sombras = new List<GameObject>();
 
     public bool Usada { get { return usada; } }
+    /// <summary>La lluvia de escombros está en curso (el jefe final no ataca mientras tanto).</summary>
+    public bool EnCurso { get { return secuencia != null; } }
 
     private void Start()
     {
         edificio = GetComponent<EdificioAlto>();
         energia = GetComponent<EnergiaDemoledorFachada>();
         terremoto = GetComponent<TerremotoFachada>();
-        demoledor = FindFirstObjectByType<DemoledorAutomatico>();
-        gestor = FindFirstObjectByType<GestorJuego>();
+        demoledor = FindAnyObjectByType<DemoledorAutomatico>();
+        gestor = FindAnyObjectByType<GestorJuego>();
     }
 
     private void Update()

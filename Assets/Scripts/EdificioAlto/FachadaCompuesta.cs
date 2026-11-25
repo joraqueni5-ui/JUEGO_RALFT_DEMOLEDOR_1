@@ -229,7 +229,7 @@ public class FachadaCompuesta : MonoBehaviour
         // 4) Muñeco sobre la primera fila de repisas y límites de la cámara.
         if (colocarMuneco && hayInicioMuneco)
         {
-            Muneco muneco = FindFirstObjectByType<Muneco>(FindObjectsInactive.Include);
+            Muneco muneco = FindAnyObjectByType<Muneco>(FindObjectsInactive.Include);
             if (muneco != null)
             {
                 Vector3 mundo = transform.TransformPoint(inicioMuneco);
@@ -238,7 +238,7 @@ public class FachadaCompuesta : MonoBehaviour
         }
         if (ajustarCamara)
         {
-            CamaraSeguimiento seguir = FindFirstObjectByType<CamaraSeguimiento>();
+            CamaraSeguimiento seguir = FindAnyObjectByType<CamaraSeguimiento>();
             Camera cam = seguir != null ? seguir.GetComponent<Camera>() : null;
             if (seguir != null && cam != null)
             {

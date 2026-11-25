@@ -112,7 +112,7 @@ public class Muneco : PersonajeBase
     public int SeccionAlcanzada { get; private set; }
 
     /// <summary>True si un escombro le puede quitar una vida en este momento.</summary>
-    public bool PuedeRecibirGolpe { get { return enabled && Time.time >= finInvulnerable; } }
+    public bool PuedeRecibirGolpe { get { return enabled && Time.time >= finInvulnerable && !FuriaFachada.Activa && !IntroFinalJefe.EnCurso; } }
 
     protected override void Awake()
     {
@@ -127,7 +127,7 @@ public class Muneco : PersonajeBase
     private void Start()
     {
         edificio = EdificioAlto.Instancia;
-        demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>();
+        demoledor = Object.FindAnyObjectByType<DemoledorAutomatico>();
     }
 
     private void OnDisable()
@@ -557,7 +557,7 @@ public class Muneco : PersonajeBase
     private void ActualizarParpadeo()
     {
         if (dibujo == null) return;
-        bool parpadeando = Time.time < finInvulnerable;
+        bool parpadeando = Time.time < finInvulnerable && !FuriaFachada.Activa;   // con la furia brilla, no parpadea
         dibujo.enabled = !parpadeando || Mathf.FloorToInt(Time.time * 12f) % 2 == 0;
     }
 
@@ -575,7 +575,15 @@ public class Muneco : PersonajeBase
         if (edificio != null)
         {
             Vector2 pecho = (Vector2)transform.position + new Vector2(0f, alturaPecho);
-            edificio.RepararMasCercano(pecho, radioReparacion);
+            if (edificio.RepararMasCercano(pecho, radioReparacion))
+            {
+                Progreso.Sumar("reparaciones");
+                EfectoMartillo.Golpe(pecho + Vector2.up * 0.1f, 60);
+                FuriaFachada.AlReparar();
+                // Con la furia el martillazo arregla de más: termina esa ventana y las de al lado.
+                if (FuriaFachada.Activa)
+                    for (int i = 0; i < 3; i++) edificio.RepararMasCercano(pecho, radioReparacion * 2.4f);
+            }
         }
     }
 

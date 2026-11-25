@@ -104,12 +104,26 @@ public class FinalFachada : MonoBehaviour
         CamaraSeguimiento.Temblar(0.2f, 0.4f);
         yield return Polvo(new Vector3(pos.x, calle + 0.2f, 0f));
 
-        // Los estudiantes celebran un momento.
-        float fiesta = 0f;
-        while (fiesta < 1.2f)
+        // Los estudiantes celebran: saltan, llueve confeti y explotan fuegos artificiales.
+        if (camara != null && estudiantes.Count > 0) camara.objetivo = estudiantes[0].transform;
+        GestorAudio.Reproducir(Snd.JingleVictoria);
+        CelebracionPiso.Confeti(new Vector2(x0, suelo + 0.8f), 40, 3.5f);
+        float fiesta = 0f, proximoFuego = 0f;
+        while (fiesta < 3.2f)
         {
             fiesta += Time.deltaTime;
-            for (int i = 0; i < estudiantes.Count; i++) Rebotito(estudiantes[i], Time.time * 1.6f + i);
+            for (int i = 0; i < estudiantes.Count; i++)
+            {
+                Rebotito(estudiantes[i], Time.time * 1.2f + i * 0.37f, true);
+                EstudianteFinal ef = estudiantes[i] != null ? estudiantes[i].GetComponent<EstudianteFinal>() : null;
+                if (ef != null) ef.sr.transform.localScale = new Vector3(ef.escala, ef.escala, 1f);
+            }
+            if (fiesta >= proximoFuego)
+            {
+                proximoFuego = fiesta + 0.45f;
+                CelebracionPiso.Fuego();
+                CelebracionPiso.ConfetiDelCielo(8);
+            }
             yield return null;
         }
         foreach (GameObject e in estudiantes) if (e != null) Destroy(e);
@@ -118,6 +132,18 @@ public class FinalFachada : MonoBehaviour
 
     private IEnumerator Polvo(Vector3 donde)
     {
+        // Nube de polvo con el humo del juego (si no está, círculos).
+        Sprite[] humo = ArteExtra.Serie("Mejoras/humo_", 4);
+        if (humo != null)
+        {
+            for (int i = 0; i < 9; i++)
+                ParticulaSimple.Crear(humo, donde + new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.1f, 0.3f), 0f),
+                    new Vector2(Random.Range(-0.8f, 0.8f), Random.Range(0.3f, 0.9f)), Random.Range(0.8f, 1.2f), 60,
+                    new Color(0.95f, 0.9f, 0.8f, 0.9f), 0.5f, 1.4f);
+            TrozoVolador.Lanzar(donde, 6);
+            yield return new WaitForSeconds(0.9f);
+            yield break;
+        }
         List<SpriteRenderer> nubes = new List<SpriteRenderer>();
         for (int i = 0; i < 6; i++)
         {
@@ -142,40 +168,67 @@ public class FinalFachada : MonoBehaviour
         foreach (SpriteRenderer s in nubes) Destroy(s.gameObject);
     }
 
+    /// <summary>Un estudiante de verdad (los personajes del juego: estudiantes y personal de la U).</summary>
     private GameObject CrearEstudiante(Vector3 pies, int indice)
+    {
+        Personajes.Ficha[] todas = Personajes.Todos;
+        Personajes.Ficha f = todas != null && todas.Length > 0 ? todas[indice % todas.Length] : null;
+        Sprite[] costado = f != null ? Personajes.SerieFluida(f, "derecha") : null;
+        Sprite[] frente = f != null ? Personajes.SerieFluida(f, "abajo") : null;
+        if (costado == null || frente == null) return CrearEstudianteProvisional(pies, indice);
+
+        GameObject g = new GameObject("EstudianteFinal" + indice);
+        g.transform.position = pies;
+        EstudianteFinal e = g.AddComponent<EstudianteFinal>();
+        e.sr = Provisional.Crear(g.transform, "Dibujo", costado[0], Color.white, 30);
+        e.costado = costado;
+        e.frente = frente;
+        e.escala = 0.85f / Mathf.Max(0.01f, costado[0].bounds.size.y);
+        e.haciaIzquierda = indice % 2 == 1;   // los de la derecha caminan hacia la izquierda
+        e.sr.transform.localScale = new Vector3(e.escala, e.escala, 1f);
+        e.sr.flipX = e.haciaIzquierda;
+        return g;
+    }
+
+    private GameObject CrearEstudianteProvisional(Vector3 pies, int indice)
     {
         Color[] camisas = { new Color(0.25f, 0.45f, 0.8f), new Color(0.8f, 0.3f, 0.3f), new Color(0.3f, 0.7f, 0.4f),
                             new Color(0.9f, 0.7f, 0.2f), new Color(0.6f, 0.4f, 0.8f), new Color(0.3f, 0.7f, 0.75f) };
         GameObject g = new GameObject("EstudianteFinal" + indice);
         g.transform.position = pies;
-        int orden = 30;
-        SpriteRenderer cuerpo = Provisional.Crear(g.transform, "Cuerpo", Provisional.Cuadrado, camisas[indice % camisas.Length], orden);
+        SpriteRenderer cuerpo = Provisional.Crear(g.transform, "Cuerpo", Provisional.Cuadrado, camisas[indice % camisas.Length], 30);
         cuerpo.transform.localScale = new Vector3(0.3f, 0.42f, 1f);
         cuerpo.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-        SpriteRenderer piernas = Provisional.Crear(g.transform, "Piernas", Provisional.Cuadrado, new Color(0.2f, 0.22f, 0.3f), orden);
-        piernas.transform.localScale = new Vector3(0.24f, 0.18f, 1f);
-        piernas.transform.localPosition = new Vector3(0f, 0.09f, 0f);
-        SpriteRenderer cabeza = Provisional.Crear(g.transform, "Cabeza", Provisional.Circulo, new Color(0.95f, 0.78f, 0.62f), orden + 1);
+        SpriteRenderer cabeza = Provisional.Crear(g.transform, "Cabeza", Provisional.Circulo, new Color(0.95f, 0.78f, 0.62f), 31);
         cabeza.transform.localScale = new Vector3(0.26f, 0.26f, 1f);
         cabeza.transform.localPosition = new Vector3(0f, 0.62f, 0f);
-        SpriteRenderer brazos = Provisional.Crear(g.transform, "Brazos", Provisional.Cuadrado, new Color(0.95f, 0.78f, 0.62f), orden + 1);
-        brazos.transform.localScale = new Vector3(0.44f, 0.07f, 1f);
-        brazos.transform.localPosition = new Vector3(0f, 0.38f, 0f);
         return g;
     }
 
-    private static void Rebotito(GameObject e, float fase)
+    /// <summary>Camina (cuadros de costado) o, si 'quieto', mira al frente y rebota.</summary>
+    private static void Rebotito(GameObject g, float fase, bool quieto = false)
     {
-        if (e == null) return;
-        Transform c = e.transform.Find("Cuerpo");
-        if (c != null) c.localScale = new Vector3(0.3f, 0.42f + Mathf.Sin(fase * 12f) * 0.03f, 1f);
+        if (g == null) return;
+        EstudianteFinal e = g.GetComponent<EstudianteFinal>();
+        if (e == null || e.sr == null) return;
+        Sprite[] serie = quieto ? e.frente : e.costado;
+        int n = serie.Length;
+        e.sr.sprite = serie[Mathf.Abs((int)(fase * (n >= 8 ? 16f : 8f))) % n];
+        e.sr.flipX = !quieto && e.haciaIzquierda;
+        float salto = quieto ? Mathf.Abs(Mathf.Sin(fase * 7f)) * 0.18f : 0f;
+        e.sr.transform.localPosition = new Vector3(0f, salto, 0f);
     }
 
-    private static void BrazosArriba(GameObject e, float k)
+    /// <summary>Levantando al demoledor: de frente, estirados (k = cuánto lo subieron).</summary>
+    private static void BrazosArriba(GameObject g, float k)
     {
-        if (e == null) return;
-        Transform b = e.transform.Find("Brazos");
-        if (b == null) return;
-        b.localPosition = new Vector3(0f, Mathf.Lerp(0.38f, 0.74f, k), 0f);
+        if (g == null) return;
+        EstudianteFinal e = g.GetComponent<EstudianteFinal>();
+        if (e == null || e.sr == null) return;
+        e.sr.sprite = e.frente[0];
+        e.sr.flipX = false;
+        float estira = 1f + 0.12f * k + 0.03f * Mathf.Sin(Time.time * 20f);
+        e.sr.transform.localScale = new Vector3(e.escala / Mathf.Sqrt(estira), e.escala * estira, 1f);
+        e.sr.transform.localPosition = Vector3.zero;
     }
 }

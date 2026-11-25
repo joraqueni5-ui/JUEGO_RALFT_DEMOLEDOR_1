@@ -49,7 +49,19 @@ public class ObjetoCenital
 }
 
 /// <summary>Qué hace un poder al recogerlo.</summary>
-public enum TipoPoder { Invulnerabilidad, ReparacionTotal, VidaExtra }
+public enum TipoPoder
+{
+    Invulnerabilidad, ReparacionTotal, VidaExtra,
+    // Potenciadores extra (los reparte GestorPotenciadoresExtra; también se pueden poner en DefinicionPiso.poderes).
+    /// <summary>Zapatillas turbo: corre más rápido.</summary>
+    Velocidad,
+    /// <summary>Martillo dorado: martilla el doble de rápido y con más alcance.</summary>
+    ReparacionRapida,
+    /// <summary>Reloj de hielo: congela al demoledor y a los mini villanos.</summary>
+    CongelarEnemigos,
+    /// <summary>Casco de obra: aguanta el próximo golpe.</summary>
+    Casco
+}
 
 /// <summary>Dónde aparece un poder.</summary>
 public enum OrigenPoder
