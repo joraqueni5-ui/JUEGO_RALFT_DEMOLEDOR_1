@@ -61,9 +61,10 @@ namespace DemoledorUnifranz.UI.Menus
             RectTransform caja = (RectTransform)volver.parent;
             KitSpritesArcade kit = KitSpritesArcade.Actual();
 
-            botonBorrar = FabricaUIArcade.CrearBoton(caja, "BotonBorrarProgreso", "BORRAR PROGRESO", kit.botonRojo, new Vector2(520f, 80f), 30, null, kit);
-            FabricaUIArcade.Colocar((RectTransform)botonBorrar.transform, new Vector2(0.5f, 0f), new Vector2(0f, 216f), new Vector2(520f, 80f));
+            botonBorrar = FabricaUIArcade.CrearBoton(caja, "BotonBorrarProgreso", "BORRAR PROGRESO", kit.botonRojo, new Vector2(430f, 80f), 28, null, kit);
+            FabricaUIArcade.Colocar((RectTransform)botonBorrar.transform, new Vector2(0.5f, 0f), new Vector2(-230f, 216f), new Vector2(430f, 80f));
             botonBorrar.onClick.AddListener(PedirConfirmacion);
+            CrearControles(caja, kit, volver);
 
             // Ventana de confirmación sobre todo el menú.
             Canvas lienzo = GetComponentInParent<Canvas>();
@@ -74,7 +75,7 @@ namespace DemoledorUnifranz.UI.Menus
 
             Image cuadro = FabricaUIArcade.CrearImagen(velo, "Cuadro", null, new Color(0.08f, 0.09f, 0.16f, 1f));
             FabricaUIArcade.Centrar(cuadro.rectTransform, Vector2.zero, new Vector2(900f, 420f));
-            Text pregunta = FabricaUIArcade.CrearTexto(cuadro.transform, "Pregunta", "¿BORRAR TODO EL PROGRESO?\nSe pierden las estrellas de cada piso.", 34,
+            Text pregunta = FabricaUIArcade.CrearTexto(cuadro.transform, "Pregunta", "¿BORRAR TODO EL PROGRESO?\nSe pierden las estrellas, los logros y los premios.", 34,
                 PaletaArcade.Crema, TextAnchor.MiddleCenter, 4f, 0f, true);
             pregunta.horizontalOverflow = HorizontalWrapMode.Wrap;
             FabricaUIArcade.Colocar(pregunta.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 70f), new Vector2(820f, 180f));
@@ -90,6 +91,109 @@ namespace DemoledorUnifranz.UI.Menus
             confirmacion.SetActive(false);
         }
 
+        // ------------------------------------------------------------ controles (celular)
+        private GameObject ventanaControles;
+        private Button botonControles, botonListo;
+        private Slider sliderTamano, sliderSensibilidad;
+        private Text valorTamano, valorSensibilidad, estadoVibrarGolpes, estadoFps;
+        private Toggle toggleVibrarGolpes, toggleFps;
+
+        /// <summary>Botón CONTROLES (al lado de BORRAR PROGRESO) con su ventana: tamaño de los botones táctiles, sensibilidad de
+        /// la palanca y vibración al recibir golpes.</summary>
+        private void CrearControles(RectTransform caja, KitSpritesArcade kit, Transform volver)
+        {
+            botonControles = FabricaUIArcade.CrearBoton(caja, "BotonControles", "CONTROLES", kit.botonAzul, new Vector2(430f, 80f), 28, null, kit);
+            FabricaUIArcade.Colocar((RectTransform)botonControles.transform, new Vector2(0.5f, 0f), new Vector2(230f, 216f), new Vector2(430f, 80f));
+            botonControles.onClick.AddListener(AbrirControles);
+            Button bv = volver != null ? volver.GetComponent<Button>() : null;
+            if (bv != null)
+            {
+                botonBorrar.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnRight = botonControles, selectOnDown = bv, selectOnUp = toggleSonido };
+                botonControles.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnLeft = botonBorrar, selectOnDown = bv, selectOnUp = toggleSonido };
+            }
+
+            Canvas lienzo = GetComponentInParent<Canvas>();
+            Transform raiz = lienzo != null ? lienzo.transform : transform;
+            RectTransform velo = FabricaUIArcade.CrearImagen(raiz, "VentanaControles", null, new Color(0f, 0f, 0f, 0.8f), true).rectTransform;
+            FabricaUIArcade.Estirar(velo);
+            ventanaControles = velo.gameObject;
+            Image cuadro = FabricaUIArcade.CrearImagen(velo, "Cuadro", kit.panel, Color.white);
+            FabricaUIArcade.Centrar(cuadro.rectTransform, Vector2.zero, new Vector2(1060f, 720f));
+            Text titulo = FabricaUIArcade.CrearTexto(cuadro.transform, "Titulo", "CONTROLES", 52, PaletaArcade.Amarillo, TextAnchor.MiddleCenter, 4f, 4f);
+            FabricaUIArcade.Colocar(titulo.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -70f), new Vector2(900f, 70f));
+
+            sliderTamano = FilaSlider(cuadro.transform, kit, "TAMAÑO DE LOS BOTONES", 170f, 0.7f, 1.4f, out valorTamano);
+            sliderSensibilidad = FilaSlider(cuadro.transform, kit, "SENSIBILIDAD DE LA PALANCA", 20f, 0.6f, 1.6f, out valorSensibilidad);
+            Text et = FabricaUIArcade.CrearTexto(cuadro.transform, "EtVibrar", "VIBRAR CON LOS GOLPES", 32, PaletaArcade.Crema, TextAnchor.MiddleLeft, 3f, 0f);
+            FabricaUIArcade.Centrar(et.rectTransform, new Vector2(-150f, -110f), new Vector2(600f, 60f));
+            toggleVibrarGolpes = FabricaUIArcade.CrearToggle(cuadro.transform, "ToggleVibrar", kit, 56f, out estadoVibrarGolpes);
+            FabricaUIArcade.Centrar((RectTransform)toggleVibrarGolpes.transform, new Vector2(330f, -110f), new Vector2(356f, 56f));
+            Text etFps = FabricaUIArcade.CrearTexto(cuadro.transform, "EtFps", "MOSTRAR FPS", 32, PaletaArcade.Crema, TextAnchor.MiddleLeft, 3f, 0f);
+            FabricaUIArcade.Centrar(etFps.rectTransform, new Vector2(-150f, -165f), new Vector2(600f, 56f));
+            toggleFps = FabricaUIArcade.CrearToggle(cuadro.transform, "ToggleFps", kit, 56f, out estadoFps);
+            FabricaUIArcade.Centrar((RectTransform)toggleFps.transform, new Vector2(330f, -165f), new Vector2(356f, 52f));
+            Text nota = FabricaUIArcade.CrearTexto(cuadro.transform, "Nota", "Botones y palanca: para el celular, se aplican al empezar el próximo piso.", 22,
+                new Color(0.8f, 0.84f, 0.95f), TextAnchor.MiddleCenter, 2f, 0f, true);
+            FabricaUIArcade.Centrar(nota.rectTransform, new Vector2(0f, -214f), new Vector2(950f, 30f));
+
+            botonListo = FabricaUIArcade.CrearBoton(cuadro.transform, "BotonListo", "LISTO", kit.botonAmarillo, new Vector2(360f, 90f), 36, null, kit);
+            FabricaUIArcade.Colocar((RectTransform)botonListo.transform, new Vector2(0.5f, 0f), new Vector2(0f, 80f), new Vector2(360f, 90f));
+            botonListo.onClick.AddListener(CerrarControles);
+
+            sliderTamano.onValueChanged.AddListener(v => { if (sincronizando) return; PreferenciasMenus.TamanoBotones = v; RefrescarControles(); ServiciosMenus.Instancia.Tic(); });
+            sliderSensibilidad.onValueChanged.AddListener(v => { if (sincronizando) return; PreferenciasMenus.SensibilidadJoystick = v; RefrescarControles(); ServiciosMenus.Instancia.Tic(); });
+            toggleVibrarGolpes.onValueChanged.AddListener(v => { if (sincronizando) return; PreferenciasMenus.VibracionJuego = v; RefrescarControles(); PreferenciasMenus.Vibrar(90); });
+            toggleFps.onValueChanged.AddListener(v => { if (sincronizando) return; Rendimiento.MostrarFps = v; RefrescarControles(); ServiciosMenus.Instancia.Tic(); });
+            FabricaUIArcade.NavegacionVertical(sliderTamano, sliderSensibilidad, toggleVibrarGolpes, toggleFps, botonListo);
+            ventanaControles.SetActive(false);
+        }
+
+        private Slider FilaSlider(Transform padre, KitSpritesArcade kit, string etiqueta, float y, float min, float max, out Text valor)
+        {
+            Text et = FabricaUIArcade.CrearTexto(padre, "Et" + etiqueta, etiqueta, 32, PaletaArcade.Crema, TextAnchor.MiddleLeft, 3f, 0f);
+            FabricaUIArcade.Centrar(et.rectTransform, new Vector2(-60f, y + 50f), new Vector2(780f, 50f));
+            Slider s = FabricaUIArcade.CrearSlider(padre, "Slider" + etiqueta, kit, new Vector2(640f, 56f));
+            FabricaUIArcade.Centrar((RectTransform)s.transform, new Vector2(-80f, y - 14f), new Vector2(640f, 56f));
+            s.minValue = min;
+            s.maxValue = max;
+            valor = FabricaUIArcade.CrearTexto(padre, "Valor" + etiqueta, "100%", 32, PaletaArcade.Crema, TextAnchor.MiddleRight, 3f, 0f);
+            FabricaUIArcade.Centrar(valor.rectTransform, new Vector2(350f, y - 14f), new Vector2(160f, 56f));
+            return s;
+        }
+
+        private void AbrirControles()
+        {
+            if (ventanaControles == null) return;
+            sincronizando = true;
+            sliderTamano.value = PreferenciasMenus.TamanoBotones;
+            sliderSensibilidad.value = PreferenciasMenus.SensibilidadJoystick;
+            toggleVibrarGolpes.isOn = PreferenciasMenus.VibracionJuego;
+            if (toggleFps != null) toggleFps.isOn = Rendimiento.MostrarFps;
+            sincronizando = false;
+            RefrescarControles();
+            ventanaControles.SetActive(true);
+            ventanaControles.transform.SetAsLastSibling();
+            ServiciosMenus.Instancia.Clic();
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(sliderTamano.gameObject);
+        }
+
+        public void CerrarControles()
+        {
+            if (ventanaControles != null) ventanaControles.SetActive(false);
+            if (botonControles != null && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(botonControles.gameObject);
+        }
+
+        /// <summary>True si la ventana de controles está abierta (ESC la cierra primero).</summary>
+        public bool ControlesAbiertos { get { return ventanaControles != null && ventanaControles.activeSelf; } }
+
+        private void RefrescarControles()
+        {
+            if (valorTamano != null) valorTamano.text = Mathf.RoundToInt(PreferenciasMenus.TamanoBotones * 100f) + "%";
+            if (valorSensibilidad != null) valorSensibilidad.text = Mathf.RoundToInt(PreferenciasMenus.SensibilidadJoystick * 100f) + "%";
+            PonerEstado(estadoVibrarGolpes, PreferenciasMenus.VibracionJuego);
+            if (estadoFps != null) PonerEstado(estadoFps, Rendimiento.MostrarFps);
+        }
+
         private void PedirConfirmacion()
         {
             if (confirmacion == null) return;
@@ -101,6 +205,7 @@ namespace DemoledorUnifranz.UI.Menus
         private void ConfirmarBorrado()
         {
             GameSession.BorrarProgreso();
+            Progreso.Borrar();
             CancelarBorrado();
             ServiciosMenus.Instancia.Clic();
         }

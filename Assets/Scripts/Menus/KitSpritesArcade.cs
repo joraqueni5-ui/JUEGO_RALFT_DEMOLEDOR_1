@@ -57,6 +57,9 @@ namespace DemoledorUnifranz.UI.Menus
         public Sprite medallaPlata;
         public Sprite medallaOro;
 
+        /// <summary>True cuando TemaSerio ya cambió los sprites de este kit.</summary>
+        [NonSerialized] public bool tematizado;
+
         /// <summary>Multiplicador para Image.pixelsPerUnitMultiplier (bordes ×4).</summary>
         public const float MultiplicadorPixel = 1f / GeneradorPixelArt.Escala;
 
@@ -68,8 +71,9 @@ namespace DemoledorUnifranz.UI.Menus
         /// </summary>
         public static KitSpritesArcade Actual()
         {
-            if (RecursosMenus.Kit != null && RecursosMenus.Kit.botonAmarillo != null) return RecursosMenus.Kit;
-            return EnMemoria();
+            KitSpritesArcade k = RecursosMenus.Kit != null && RecursosMenus.Kit.botonAmarillo != null ? RecursosMenus.Kit : EnMemoria();
+            TemaSerio.Parchear(k);   // tema uniforme (Extras/TemaSerio.cs)
+            return k;
         }
 
         /// <summary>Crea en memoria todos los sprites (mismos dibujos que los PNG).</summary>

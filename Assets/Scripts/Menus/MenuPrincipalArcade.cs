@@ -69,6 +69,8 @@ namespace DemoledorUnifranz.UI.Menus
             foreach (PanelAnimado v in ventanas) if (v != null) v.OcultarInmediato();
 
             RefrescarRecord();
+            AgregarBotonMultijugador();
+            AgregarPremiosYVersion();
 
             if (textoEmpezar != null)
                 textoEmpezar.text = PreferenciasMenus.EsCelular ? "TOCA PARA EMPEZAR" : "PRESIONA ENTER O HAZ CLIC";
@@ -94,9 +96,13 @@ namespace DemoledorUnifranz.UI.Menus
             }
 
             Keyboard teclado = Keyboard.current;
-            if (teclado == null || !teclado.escapeKey.wasPressedThisFrame) return;
+            if (teclado == null || !teclado.escapeKey.wasPressedThisFrame || SelectorPersonaje.Abierto || LobbyRed.Abierto) return;
+            if (GameObject.Find("[PantallaHistoria]") != null || SelectorDificultad.Abierto) return;
 
-            if (panelOpciones != null && panelOpciones.Visible) CerrarOpciones();
+            MenuOpcionesArcade opciones = panelOpciones != null ? panelOpciones.GetComponent<MenuOpcionesArcade>() : null;
+            if (opciones != null && opciones.ControlesAbiertos) opciones.CerrarControles();
+            else if (PanelPremios.Abierto && premios != null) premios.Cerrar();
+            else if (panelOpciones != null && panelOpciones.Visible) CerrarOpciones();
             else if (panelComoJugar != null && panelComoJugar.Visible) CerrarComoJugar();
             else if (panelRecords != null && panelRecords.Visible) CerrarRecords();
             else if (panelCreditos != null && panelCreditos.Visible) CerrarCreditos();
@@ -176,10 +182,147 @@ namespace DemoledorUnifranz.UI.Menus
         // ------------------------------------------------------------ botones
         public void Jugar()
         {
-            // JUGAR empieza una partida nueva en la planta baja (vista cenital).
-            GameSession.SeleccionarNivel(true, 0);
-            string escena = Escenas.ParaPiso(0);
-            NavegadorEscenas.Cargar(escena);
+            // Primero el personaje (Extras/SelectorPersonaje), luego la dificultad; al confirmar empieza la partida.
+            SelectorPersonaje.Mostrar(() => SelectorDificultad.Mostrar(JugarConPersonaje, SeleccionarJugar));
+        }
+
+        private void JugarConPersonaje()
+        {
+            // JUGAR empieza una partida nueva en la planta baja (vista cenital). Antes, la historia del personaje elegido.
+            System.Action empezar = () =>
+            {
+                GameSession.SeleccionarNivel(true, 0);
+                NavegadorEscenas.Cargar(Escenas.ParaPiso(0));
+            };
+            // Jugando solo, siempre la historia del personaje elegido (con SALTAR para ir directo).
+            HistoriaJuego.MostrarIntro(empezar);
+        }
+
+        /// <summary>MULTIJUGADOR: crear o unirse a una partida por Wi-Fi.</summary>
+        public void AbrirMultijugador() { LobbyRed.Mostrar(); }
+
+        /// <summary>
+        /// Agrega el botón MULTIJUGADOR debajo de JUGAR (el menú está guardado en la escena con 6 botones): copia el botón
+        /// NIVELES y reparte los 7 en el mismo panel.
+        /// </summary>
+        private void AgregarBotonMultijugador()
+        {
+            if (panelBotones == null || panelBotones.Find("BotonMultijugador") != null) return;
+            Transform molde = panelBotones.Find("BotonNiveles");
+            if (molde == null) return;
+            GameObject copia = Instantiate(molde.gameObject, panelBotones);
+            copia.name = "BotonMultijugador";
+            Button b = copia.GetComponent<Button>();
+            if (b != null)
+            {
+                b.onClick = new Button.ButtonClickedEvent();
+                b.onClick.AddListener(AbrirMultijugador);
+            }
+            Text t = copia.GetComponentInChildren<Text>(true);
+            if (t != null) t.text = "MULTIJUGADOR";
+            KitSpritesArcade kit = KitSpritesArcade.Actual();
+            Image fondo = copia.GetComponent<Image>();
+            if (fondo != null && kit != null && kit.botonMorado != null && fondo.sprite == kit.botonAzul) fondo.sprite = kit.botonMorado;
+
+            Repartir();
+        }
+
+        private static readonly string[] OrdenBotones = { "BotonJugar", "BotonSupervivencia", "BotonMultijugador", "BotonNiveles", "BotonPremios", "BotonOpciones", "BotonComoJugar", "BotonRecords", "BotonSalir" };
+
+        /// <summary>Reparte los botones del menú (8 con MULTIJUGADOR y PREMIOS) en el mismo espacio.</summary>
+        private void Repartir()
+        {
+            List<Selectable> lista = new List<Selectable>();
+            int cuantos = 0;
+            foreach (string n in OrdenBotones) if (panelBotones.Find(n) != null) cuantos++;
+            float paso = cuantos >= 9 ? 69f : cuantos >= 8 ? 78f : 88f, alto = cuantos >= 9 ? 62f : cuantos >= 8 ? 72f : 80f;
+            float y = 285f;
+            for (int i = 0; i < OrdenBotones.Length; i++)
+            {
+                Transform h = panelBotones.Find(OrdenBotones[i]);
+                if (h == null) continue;
+                RectTransform rt = (RectTransform)h;
+                bool primero = OrdenBotones[i] == "BotonJugar";
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, y);
+                rt.sizeDelta = new Vector2(rt.sizeDelta.x, primero ? (cuantos >= 9 ? 84f : 92f) : alto);
+                y -= primero ? (cuantos >= 9 ? 80f : 90f) : paso;
+                Selectable sel = h.GetComponent<Selectable>();
+                if (sel != null) lista.Add(sel);
+            }
+            if (lista.Count > 1) FabricaUIArcade.NavegacionVertical(lista.ToArray());
+        }
+
+        // ------------------------------------------------------------ premios, historia y versión
+        private PanelPremios premios;
+
+        /// <summary>Botón PREMIOS (accesorios, martillos, logros, récords por piso e historia) y el número de versión.</summary>
+        private void AgregarPremiosYVersion()
+        {
+            if (panelBotones == null) return;
+            Canvas lienzo = panelBotones.GetComponentInParent<Canvas>();
+            if (lienzo != null) lienzo = lienzo.rootCanvas;
+            if (lienzo == null) return;
+
+            if (panelBotones.Find("BotonPremios") == null)
+            {
+                Transform molde = panelBotones.Find("BotonNiveles");
+                if (molde != null)
+                {
+                    GameObject copia = Instantiate(molde.gameObject, panelBotones);
+                    copia.name = "BotonPremios";
+                    Button b = copia.GetComponent<Button>();
+                    if (b != null)
+                    {
+                        b.onClick = new Button.ButtonClickedEvent();
+                        b.onClick.AddListener(AbrirPremios);
+                    }
+                    Text t = copia.GetComponentInChildren<Text>(true);
+                    if (t != null) t.text = "PREMIOS";
+                    Repartir();
+                }
+            }
+            if (panelBotones.Find("BotonSupervivencia") == null)
+            {
+                Transform molde = panelBotones.Find("BotonNiveles");
+                if (molde != null)
+                {
+                    GameObject copia = Instantiate(molde.gameObject, panelBotones);
+                    copia.name = "BotonSupervivencia";
+                    Button b = copia.GetComponent<Button>();
+                    if (b != null)
+                    {
+                        b.onClick = new Button.ButtonClickedEvent();
+                        b.onClick.AddListener(Supervivencia);
+                    }
+                    Text t = copia.GetComponentInChildren<Text>(true);
+                    if (t != null) t.text = "SUPERVIVENCIA";
+                    KitSpritesArcade kit = KitSpritesArcade.Actual();
+                    Image fondo = copia.GetComponent<Image>();
+                    if (fondo != null && kit != null && kit.botonRojo != null) fondo.sprite = kit.botonRojo;
+                    Repartir();
+                }
+            }
+            premios = PanelPremios.Crear(lienzo.transform);
+            premios.AlCerrar = SeleccionarJugar;
+
+            Text version = FabricaUIArcade.CrearTexto(lienzo.transform, "Version", "v" + Application.version, 22, new Color(1f, 1f, 1f, 0.55f), TextAnchor.LowerLeft, 2f, 0f);
+            FabricaUIArcade.Colocar(version.rectTransform, new Vector2(0f, 0f), new Vector2(110f, 26f), new Vector2(200f, 30f));
+        }
+
+        /// <summary>SUPERVIVENCIA: personaje, dificultad y al escenario EL GRAN HALL (oleadas de villanos).</summary>
+        public void Supervivencia()
+        {
+            SelectorPersonaje.Mostrar(() => SelectorDificultad.Mostrar(() =>
+            {
+                GameSession.SeleccionarNivel(true, 0);
+                GameSession.Supervivencia = true;
+                NavegadorEscenas.Cargar(Escenas.ParaPiso(0));
+            }, SeleccionarJugar, "SUPERVIVENCIA: aguanta todas las oleadas que puedas"));
+        }
+
+        public void AbrirPremios()
+        {
+            if (premios != null) premios.Abrir();
         }
 
         public void AbrirNiveles() { Abrir(panelNiveles); }

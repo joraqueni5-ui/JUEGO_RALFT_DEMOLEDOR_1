@@ -277,14 +277,22 @@ namespace DemoledorUnifranz.UI.Menus
         {
             if (nivel == NivelFinal)
             {
-                GameSession.NuevaPartida();
-                GameSession.EnNivelFinal = true;
-                NavegadorEscenas.Cargar(Escenas.NivelFinal);
+                SelectorDificultad.Mostrar(() =>
+                {
+                    GameSession.NuevaPartida();
+                    GameSession.Supervivencia = false;
+                    GameSession.EnNivelFinal = true;
+                    NavegadorEscenas.Cargar(Escenas.NivelFinal);
+                });
                 return;
             }
 
-            GameSession.SeleccionarNivel(true, nivel);
-            NavegadorEscenas.Cargar(Escenas.ParaPiso(nivel));
+            // Antes de un piso se elige el personaje (Extras/SelectorPersonaje) y la dificultad.
+            SelectorPersonaje.Mostrar(() => SelectorDificultad.Mostrar(() =>
+            {
+                GameSession.SeleccionarNivel(true, nivel);
+                NavegadorEscenas.Cargar(Escenas.ParaPiso(nivel));
+            }));
         }
     }
 }

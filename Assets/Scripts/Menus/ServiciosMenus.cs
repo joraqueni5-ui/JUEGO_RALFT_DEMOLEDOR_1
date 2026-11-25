@@ -140,7 +140,7 @@ namespace DemoledorUnifranz.UI.Menus
             if (oyente == null) return;
 
             bool hayOtro = false;
-            AudioListener[] oyentes = Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
+            AudioListener[] oyentes = Object.FindObjectsByType<AudioListener>();
             for (int i = 0; i < oyentes.Length; i++)
             {
                 if (oyentes[i] != oyente && oyentes[i].enabled && oyentes[i].gameObject.activeInHierarchy)
