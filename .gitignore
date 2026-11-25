@@ -123,3 +123,7 @@ Tools/out/
 /Assets/_Recovery/
 /Assets/_Recovery.meta
 /EXPORTADO.zip
+
+# Salidas regenerables de las herramientas de arte
+Tools/sprites_out/
+__pycache__/
