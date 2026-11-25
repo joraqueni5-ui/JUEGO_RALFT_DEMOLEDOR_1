@@ -84,6 +84,15 @@ Flechas o mouse para elegir, `ENTER`/`ESPACIO` para aceptar, `ESC` para cerrar o
 - Cada piso tiene su tutorial, puntos de información `?` con datos útiles, estudiantes de
   ambiente (el chef deja poderes) y rocas que caen.
 
+## Novedades (empujón, mini villanos, potenciadores y tema)
+
+- El demoledor **avisa al llegar** (alarma y rugido), se le oyen los pasos y, si te acercas, **te aleja de un manotazo y te quita una vida**.
+- **Mini villanos**: aprendices, termitas robot y mini topadoras que rompen objetos; se vencen a martillazos.
+- **Potenciadores nuevos**: zapatillas turbo, martillo dorado, reloj de hielo y casco de obra.
+- **Sonido ambiente** en cada escena y **menús con un tema uniforme** y fondo nocturno.
+
+Detalles y ajustes en `Documentacion/Mejoras_Villanos_Potenciadores_Tema.md`.
+
 ## Menús y progreso
 
 - **Inicio** con "TOCA PARA EMPEZAR" y menú principal: JUGAR, OPCIONES, CÓMO JUGAR, RÉCORDS

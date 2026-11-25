@@ -34,7 +34,7 @@ public class GestorJuego : MonoBehaviour
     private Muneco muneco;
     // Piso 1 visto desde arriba (escena PisoCenital): reemplaza al muñeco y al demoledor laterales.
     private JugadorCenital jugadorC;
-    private DemoledorCenital demoledorC;
+    private readonly System.Collections.Generic.List<JugadorCenital> otrosJugadores = new System.Collections.Generic.List<JugadorCenital>();
     private PisoCenital cenital;
 
     // Nivel final: la fachada del edificio alto (vista lateral) con palomas, poderes y el final del juego.
@@ -80,7 +80,33 @@ public class GestorJuego : MonoBehaviour
     private int reparacionesInicioPiso;
 
     /// <summary>Destrozo a partir del cual el edificio se cae: el del piso en curso o el general.</summary>
-    private float LimiteActual { get { return modoPisos ? pisos.LimiteDerrumbe : cenital != null ? cenital.LimiteDerrumbe : limiteDerrumbe; } }
+    /// <summary>El edificio se cae recién con el 100 % de destrozo (al 75 % y al 90 % hay avisos).</summary>
+    private float LimiteActual { get { return 0.999f; } }
+    private bool aviso75, aviso90;
+
+    /// <summary>Avisos de peligro antes del derrumbe: al 75 % y al 90 % (se rearman si se repara por debajo).</summary>
+    private void AvisosDerrumbe(float destrozo)
+    {
+        if (destrozo < 0.65f) aviso75 = false;
+        if (destrozo < 0.82f) aviso90 = false;
+        if (!aviso75 && destrozo >= 0.75f)
+        {
+            aviso75 = true;
+            AvisoUlti.Mostrar("¡EL EDIFICIO ESTÁ AL 75 %! ¡CUIDADO!", 2.6f, true, new Color(1f, 0.75f, 0.25f));
+            GestorAudio.Reproducir(SndExtra.AlarmaAparicion);
+            CamaraPisoCenital.Temblar(0.12f, 0.6f);
+            CamaraSeguimiento.Temblar(0.1f, 0.5f);
+            MostrarAviso("¡REPARA RÁPIDO! SI LLEGA AL 100 % SE CAE", 3.5f);
+        }
+        if (!aviso90 && destrozo >= 0.9f)
+        {
+            aviso90 = true;
+            AvisoUlti.Mostrar("¡90 %! ¡A PUNTO DE CAERSE!", 2.4f, true, new Color(1f, 0.35f, 0.3f));
+            GestorAudio.Reproducir(SndExtra.AlarmaAparicion, 1f, 1.2f);
+            CamaraPisoCenital.Temblar(0.2f, 0.8f);
+            CamaraSeguimiento.Temblar(0.15f, 0.6f);
+        }
+    }
 
     // Activar, pausar y reaparecer al jugador, sea el muñeco lateral o el cenital.
     private bool JugadorActivo { get { return muneco != null ? muneco.enabled : jugadorC != null && jugadorC.enabled; } }
@@ -88,11 +114,43 @@ public class GestorJuego : MonoBehaviour
     {
         if (muneco != null) muneco.enabled = activo;
         if (jugadorC != null) jugadorC.enabled = activo;
+        // Multijugador: los dos estudiantes del piso.
+        foreach (JugadorCenital j in JugadorCenital.Todos) if (j != null && j != jugadorC) j.enabled = activo;
     }
     private void ReaparecerJugador()
     {
         if (muneco != null) muneco.Reaparecer(inicioMuneco);
         if (jugadorC != null) jugadorC.Reaparecer(inicioMuneco);
+        foreach (JugadorCenital j in JugadorCenital.Todos)
+            if (j != null && j != jugadorC) j.Reaparecer(inicioMuneco + new Vector3(1f, 0f, 0f));
+    }
+
+    // ------------------------------------------------------------ multijugador
+    /// <summary>Este equipo es el invitado: el HUD muestra lo que manda el anfitrión y no hay reglas locales.</summary>
+    private static bool Espejo { get { return RedJuego.EsInvitadoEnPartida; } }
+    private string poderesEspejo = "";
+
+    /// <summary>Invitado: puntos, vidas, aviso y poderes de su personaje según el anfitrión.</summary>
+    public void FijarEspejo(int nuevosPuntos, int nuevasVidas, string mensaje, string poderes)
+    {
+        bool cambio = nuevosPuntos != puntos || nuevasVidas != vidas || mensaje != mensajeTemporal;
+        puntos = nuevosPuntos;
+        vidas = nuevasVidas;
+        mensajeTemporal = mensaje ?? "";
+        finMensajeTemporal = Time.time + 1f;
+        poderesEspejo = poderes ?? "";
+        if (cambio) Refrescar();
+    }
+
+    /// <summary>Lo que se ve en el centro de la pantalla (para mandárselo al invitado).</summary>
+    public string MensajeVisible
+    {
+        get
+        {
+            if (partidaTerminada && !string.IsNullOrEmpty(mensajeFinal)) return mensajeFinal;
+            if (estaEnPausa) return "PAUSA DEL ANFITRIÓN";
+            return Time.time < finMensajeTemporal ? mensajeTemporal : "";
+        }
     }
 
     private const float AnchoBarra = 300f;
@@ -101,12 +159,12 @@ public class GestorJuego : MonoBehaviour
     {
         Physics2D.queriesStartInColliders = false;
 
-        demoledor = Object.FindFirstObjectByType<DemoledorAutomatico>();
-        muneco = Object.FindFirstObjectByType<Muneco>();
-        jugadorC = Object.FindFirstObjectByType<JugadorCenital>();
-        demoledorC = Object.FindFirstObjectByType<DemoledorCenital>();
+        demoledor = Object.FindAnyObjectByType<DemoledorAutomatico>();
+        muneco = Object.FindAnyObjectByType<Muneco>();
+        jugadorC = Object.FindAnyObjectByType<JugadorCenital>();
         if (muneco != null) inicioMuneco = muneco.transform.position;
         else if (jugadorC != null) inicioMuneco = jugadorC.transform.position;
+        vidasIniciales = Dificultad.Vidas(vidasIniciales);   // FÁCIL 5, NORMAL 3, DIFÍCIL 2
         vidas = vidasIniciales;
     }
 
@@ -114,8 +172,9 @@ public class GestorJuego : MonoBehaviour
     {
         // Aseguramos que el tiempo corra con normalidad al iniciar
         Time.timeScale = 1f;
+        if (Espejo) jugadorC = null;   // en el invitado lo maneja el anfitrión
 
-        edificio = EdificioAlto.Instancia != null ? EdificioAlto.Instancia : Object.FindFirstObjectByType<EdificioAlto>();
+        edificio = EdificioAlto.Instancia != null ? EdificioAlto.Instancia : Object.FindAnyObjectByType<EdificioAlto>();
 
         // Piso cenital: el jugador empieza (y reaparece) en el SpawnJugador del mapa, no donde esté en la escena.
         PisoCenital pisoActual = PisoCenital.Actual;
@@ -135,6 +194,8 @@ public class GestorJuego : MonoBehaviour
         }
         if (muneco != null) muneco.Golpeado += AlGolpearMuneco;
         if (jugadorC != null) jugadorC.Golpeado += AlGolpearMuneco;
+        foreach (JugadorCenital j in JugadorCenital.Todos)
+            if (j != null && j != jugadorC) { j.Golpeado += AlGolpearMuneco; otrosJugadores.Add(j); }
 
         cenital = edificio as PisoCenital;
         pisos = edificio as EdificioPisos;
@@ -150,8 +211,8 @@ public class GestorJuego : MonoBehaviour
             puntosInicioPiso = puntos;
             vidasInicioPiso = vidas;
             reparacionesInicioPiso = 0;
-            peligros = Object.FindFirstObjectByType<PeligrosFachada>();
-            energiaFachada = Object.FindFirstObjectByType<EnergiaDemoledorFachada>();
+            peligros = Object.FindAnyObjectByType<PeligrosFachada>();
+            energiaFachada = Object.FindAnyObjectByType<EnergiaDemoledorFachada>();
         }
 
         // Esta escena es el modo cenital: "volver a jugar" regresa al mismo piso, nunca al mapa lateral.
@@ -178,7 +239,7 @@ public class GestorJuego : MonoBehaviour
         CrearHud();
         Refrescar();
         if (modoPisos) MostrarAviso(NombrePisoActual(), 2.5f);
-        if (cenital != null && partidaNueva && cenital.Definicion != null && cenital.Definicion.mostrarFichaAlEmpezar)
+        if (cenital != null && partidaNueva && !RedJuego.EnPartida && cenital.Definicion != null && cenital.Definicion.mostrarFichaAlEmpezar)
             StartCoroutine(FichaInicial(cenital.Definicion));
 
         // ControlesTactiles se crea automáticamente solo en la primera escena que abre el juego.
@@ -202,17 +263,22 @@ public class GestorJuego : MonoBehaviour
         }
         if (muneco != null) muneco.Golpeado -= AlGolpearMuneco;
         if (jugadorC != null) jugadorC.Golpeado -= AlGolpearMuneco;
+        foreach (JugadorCenital j in otrosJugadores) if (j != null) j.Golpeado -= AlGolpearMuneco;
         if (pisos != null) pisos.PisoCompletado -= AlCompletarPiso;
     }
 
     private void Update()
     {
+        AnimarHud();
+        // Con una sola vida la música se acelera.
+        GestorAudio.Acelerar(!partidaTerminada && !Espejo && vidas == 1);
         // Poderes activos del jugador (tiempo restante).
         if (textoPoder != null && jugadorC != null)
         {
             string poderes = jugadorC.TextoPoderes();
             if (textoPoder.text != poderes) textoPoder.text = poderes;
         }
+        else if (textoPoder != null && Espejo && textoPoder.text != poderesEspejo) textoPoder.text = poderesEspejo;
 
         // Mientras se muestra la ficha del piso siguiente no hay pausa ni reinicio.
         if (enTransicion) return;
@@ -230,7 +296,7 @@ public class GestorJuego : MonoBehaviour
         }
 
         // Reinicio con R o con el botón táctil (no mientras el juego está en pausa).
-        if ((reiniciarTecla || reiniciarTactil) && !estaEnPausa)
+        if ((reiniciarTecla || reiniciarTactil) && !estaEnPausa && !Espejo)
         {
             ReiniciarPartida();
         }
@@ -266,8 +332,8 @@ public class GestorJuego : MonoBehaviour
         GestorAudio.Pausar(true);
         GestorAudio.Reproducir(Snd.Pausa);
 
-        // Congela la física y el movimiento del juego.
-        Time.timeScale = 0f;
+        // Congela la física y el movimiento del juego (el invitado no congela: el mundo lo mueve el anfitrión).
+        if (!Espejo) Time.timeScale = 0f;
 
         // El muñeco lee el teclado en Update: se desactiva para que no se mueva ni repare.
         if (muneco != null || jugadorC != null)
@@ -333,6 +399,7 @@ public class GestorJuego : MonoBehaviour
         if (partidaTerminada) return;
 
         vidas = Mathf.Max(0, vidas - 1);
+        Progreso.GolpeRecibido();
         if (vidas <= 0)
         {
             TerminarPartida(false);
@@ -493,15 +560,27 @@ public class GestorJuego : MonoBehaviour
     {
         enTransicion = true;
         partidaTerminada = true;
-        ActivarJugador(false);
-        if (demoledorC != null) demoledorC.Detener();
+        if (RedJuego.EnPartida) mensajeFinal = "¡PISO SUPERADO!";
+        foreach (DemoledorCenital dc in DemoledorCenital.Todos) if (dc != null) dc.Detener();
         Refrescar();
+
+        // Festejo: saltan, confeti, fuegos artificiales y la cámara se acerca (los jugadores no se pueden mover).
+        yield return CelebracionPiso.Reproducir(cenital);
+        ActivarJugador(false);
+        // Se los ve entrar al ascensor: caminan adentro, se dan vuelta, se cierran las puertas y "¡ding!".
+        if (cenital.Siguiente != null)
+        {
+            SecuenciaRed.EnviarPuertas();
+            yield return ViajeAscensor.EntrarAlAscensor(cenital);
+        }
 
         DefinicionPiso def = cenital.Definicion;
         int indicePiso = def != null ? Mathf.Max(0, def.numero) : 0;
         bool[] cumplidas = cenital.CondicionesEstrellas();
         int estrellas = cenital.Estrellas;
         bool record = GameSession.GuardarEstrellas(indicePiso, estrellas);
+        // Logros, récords del piso (puntaje y tiempo) y premios que se desbloquean con las estrellas.
+        if (Progreso.PisoCompletado(indicePiso, estrellas, puntos - GameSession.PuntosAcumulados)) record = true;
 
         float maximo = def != null ? def.destrozoMaximoEstrella : 0.3f;
         string[] textos =
@@ -518,6 +597,7 @@ public class GestorJuego : MonoBehaviour
         System.Action alCerrar = () => cerrada = true;
         pantalla.Cerrada += alCerrar;
         pantalla.Mostrar(puntos, cumplidas, textos, record, def != null ? def.NombreArea : "");
+        SecuenciaRed.EnviarEstrellas(puntos, cumplidas, textos, record, def != null ? def.NombreArea : "");
         while (!cerrada) yield return null;
         pantalla.Cerrada -= alCerrar;
         yield return new WaitForSecondsRealtime(0.25f);
@@ -540,6 +620,7 @@ public class GestorJuego : MonoBehaviour
             System.Action alCerrarFinal = () => fichaFinal = true;
             transicion.Cerrada += alCerrarFinal;
             transicion.Mostrar(ficha, "¡NIVEL FINAL!", "NIVEL FINAL");
+            SecuenciaRed.EnviarFicha(true);
             while (!fichaFinal) yield return null;
             transicion.Cerrada -= alCerrarFinal;
             yield return new WaitForSecondsRealtime(0.25f);
@@ -561,9 +642,13 @@ public class GestorJuego : MonoBehaviour
         System.Action alCerrarFicha = () => fichaCerrada = true;
         transicion.Cerrada += alCerrarFicha;
         transicion.Mostrar(siguiente);
+        SecuenciaRed.EnviarFicha(false);
         while (!fichaCerrada) yield return null;
         transicion.Cerrada -= alCerrarFicha;
         yield return new WaitForSecondsRealtime(0.25f);
+        // El viaje en ascensor (hace de pantalla de carga): el visor cuenta los pisos con su musiquita.
+        SecuenciaRed.EnviarViaje(indicePiso, Mathf.Max(0, siguiente.numero), siguiente.NombreArea);
+        yield return ViajeAscensor.Viaje(indicePiso, Mathf.Max(0, siguiente.numero), siguiente.NombreArea);
 
         int indiceSiguiente = Mathf.Max(0, siguiente.numero);
         GameSession.SeleccionarNivel(true, indiceSiguiente);
@@ -600,15 +685,24 @@ public class GestorJuego : MonoBehaviour
         if (peligros != null) peligros.enabled = false;
         Refrescar();
 
+        // ¡K.O.! (cámara lenta, destello, el demoledor mareado) y después los estudiantes lo lanzan del edificio.
+        yield return EscenasJefe.KO(demoledor);
         FinalFachada escena = new GameObject("FinalFachada").AddComponent<FinalFachada>();
-        yield return escena.Reproducir(demoledor, edificio, Object.FindFirstObjectByType<CamaraSeguimiento>());
+        yield return escena.Reproducir(demoledor, edificio, Object.FindAnyObjectByType<CamaraSeguimiento>());
+        Progreso.JefeVencido();
+
+        // Historia: "¡por fin lo vencimos!", aparecen todos y... ¿fue un sueño?
+        SecuenciaRed.EnviarHistoriaFinal();
+        yield return HistoriaJuego.ReproducirFinal();
 
         Time.timeScale = 0f;
-        PantallaFinal pantalla = PantallaFinal.Crear(transform, NombresDeLosPisos(), true);
+        string[] nombresPisos = NombresDeLosPisos();
+        PantallaFinal pantalla = PantallaFinal.Crear(transform, nombresPisos, true);
         bool cerrada = false;
         System.Action alCerrar = () => cerrada = true;
         pantalla.Cerrada += alCerrar;
         pantalla.Mostrar(puntos);
+        SecuenciaRed.EnviarPantallaFinal(puntos, nombresPisos);
         while (!cerrada) yield return null;
         pantalla.Cerrada -= alCerrar;
         yield return new WaitForSecondsRealtime(0.25f);
@@ -641,7 +735,7 @@ public class GestorJuego : MonoBehaviour
 
         // El demoledor sigue en la terraza (no se detiene); el muñeco ya no se controla.
         ActivarJugador(false);
-        if (demoledorC != null) demoledorC.Detener();
+        foreach (DemoledorCenital dc in DemoledorCenital.Todos) if (dc != null) dc.Detener();
 
         Time.timeScale = 1f;
         GameSession.RegistrarVictoria(puntos, reparaciones, SceneManager.GetActiveScene().name);
@@ -731,7 +825,8 @@ public class GestorJuego : MonoBehaviour
             if (imagen != null) imagen.color = Color.Lerp(new Color(0.95f, 0.75f, 0.2f), new Color(0.85f, 0.15f, 0.12f), lleno);
         }
 
-        if (!partidaTerminada && destrozo >= LimiteActual)
+        if (!partidaTerminada && !Espejo) AvisosDerrumbe(destrozo);
+        if (!partidaTerminada && destrozo >= LimiteActual && !Espejo)
         {
             TerminarPartida(true);
         }
@@ -744,6 +839,8 @@ public class GestorJuego : MonoBehaviour
 
     public bool PartidaTerminada { get { return partidaTerminada; } }
     public int Puntos { get { return puntos; } }
+    /// <summary>Vidas que le quedan al jugador.</summary>
+    public int Vidas { get { return vidas; } }
     public int Reparaciones { get { return reparaciones; } }
     public bool EstaEnPausa { get { return estaEnPausa; } }
 
@@ -755,7 +852,7 @@ public class GestorJuego : MonoBehaviour
         mensajeFinal = porDerrumbe ? "¡EL EDIFICIO SE CAYÓ!" : "¡TE QUEDASTE SIN VIDAS!";
 
         if (demoledor != null) demoledor.Detener();
-        if (demoledorC != null) demoledorC.Detener();
+        foreach (DemoledorCenital dc in DemoledorCenital.Todos) if (dc != null) dc.Detener();
         ActivarJugador(false);
 
         // Si estaba en pausa, restaurar escala de tiempo antes del cambio
@@ -769,7 +866,10 @@ public class GestorJuego : MonoBehaviour
             GameSession.RegistrarSinVidas(puntos, reparaciones, escena);
 
         Refrescar();
-        rutinaFin = StartCoroutine(CargarFinJuego(tiempoEsperaFin));
+        // En el nivel final, antes de la pantalla de fin, el demoledor festeja su victoria.
+        bool escenaDerrota = nivelFinal && demoledor != null;
+        if (escenaDerrota) StartCoroutine(EscenasJefe.Victoria(this, demoledor));
+        rutinaFin = StartCoroutine(CargarFinJuego(escenaDerrota ? Mathf.Max(tiempoEsperaFin, 3.6f) : tiempoEsperaFin));
     }
 
     private IEnumerator CargarFinJuego(float espera)
@@ -785,6 +885,7 @@ public class GestorJuego : MonoBehaviour
     /// </summary>
     public void ReiniciarPartida()
     {
+        if (Espejo) return;   // en multijugador reinicia solo el anfitrión
         if (rutinaFin != null)
         {
             StopCoroutine(rutinaFin);
@@ -818,7 +919,7 @@ public class GestorJuego : MonoBehaviour
         ReaparecerJugador();
         if (peligros != null) peligros.Reiniciar();
         if (demoledor != null) demoledor.Reiniciar();
-        if (demoledorC != null) demoledorC.Reiniciar();
+        foreach (DemoledorCenital dc in DemoledorCenital.Todos) if (dc != null) dc.Reiniciar();
 
         Refrescar();
     }
@@ -903,7 +1004,56 @@ public class GestorJuego : MonoBehaviour
              "Si algo sobresale, el HUD baja solo lo necesario.")]
     public float paddingFijoSuperior = 14f;
 
-    private Text textoPoder, textoEnergia;
+    private Text textoPoder, textoEnergia, textoCuantos;
+    private Image retratoDemoledor, imagenEnergia;
+    private Vector2 posRetrato;
+    private int vidasMostradas = -1;
+    private float finLatidoVida;
+
+    /// <summary>Animaciones del HUD: retrato del demoledor (tiembla en rabia), barra de energía que se pone roja y late
+    /// cuando le queda poco, y los corazones (el que se pierde salta; con una sola vida, el último late).</summary>
+    private void AnimarHud()
+    {
+        bool rabia = false;
+        foreach (DemoledorCenital d in DemoledorCenital.Todos) if (d != null && d.isActiveAndEnabled && d.EnRabia) rabia = true;
+        if (Espejo) rabia = MultijugadorNivel.RabiaRed;
+        float energia = cenital != null ? cenital.Energia : 1f;
+        float t = Time.unscaledTime;
+        if (imagenEnergia != null)
+        {
+            Color c = energia > 0.3f ? ColorEnergia : Color.Lerp(new Color(1f, 0.3f, 0.2f), ColorEnergia, energia / 0.3f);
+            if (rabia) c = Color.Lerp(c, Color.white, 0.3f * Mathf.Abs(Mathf.Sin(t * 8f)));
+            imagenEnergia.color = c;
+        }
+        if (retratoDemoledor != null)
+        {
+            // Solo se toca si cambia: cada cambio obliga a rehacer el lienzo del HUD (caro en celulares).
+            Vector2 pr = posRetrato + (rabia ? new Vector2(Mathf.Sin(t * 60f), Mathf.Cos(t * 47f)) * 2.5f : Vector2.zero);
+            if (retratoDemoledor.rectTransform.anchoredPosition != pr) retratoDemoledor.rectTransform.anchoredPosition = pr;
+            retratoDemoledor.color = rabia ? Color.Lerp(Color.white, new Color(1f, 0.45f, 0.4f), 0.5f + 0.5f * Mathf.Sin(t * 8f)) : Color.white;
+        }
+        if (textoCuantos != null)
+        {
+            int n = 0;
+            foreach (DemoledorCenital d in DemoledorCenital.Todos) if (d != null) n++;
+            string s = n > 1 || RedJuego.EnPartida ? "x2" : "";
+            if (textoCuantos.text != s) textoCuantos.text = s;
+        }
+        if (corazones != null)
+        {
+            if (vidasMostradas >= 0 && vidas < vidasMostradas) finLatidoVida = t + 0.45f;
+            vidasMostradas = vidas;
+            for (int i = 0; i < corazones.Length; i++)
+            {
+                if (corazones[i] == null) continue;
+                float e = 1f;
+                if (i == vidas && t < finLatidoVida) e = 1f + 0.5f * ((finLatidoVida - t) / 0.45f);   // el que se acaba de perder
+                else if (vidas == 1 && i == 0) e = 1f + 0.14f * Mathf.Abs(Mathf.Sin(t * 5f));          // última vida: late
+                Vector3 ec = new Vector3(e, e, 1f);
+                if (corazones[i].rectTransform.localScale != ec) corazones[i].rectTransform.localScale = ec;
+            }
+        }
+    }
     private RectTransform rellenoEnergia;
     private static readonly Color ColorEnergia = new Color(0.35f, 0.8f, 1f, 1f);
     private Canvas canvasHud;
@@ -970,7 +1120,26 @@ public class GestorJuego : MonoBehaviour
             new Vector2(230f, 34f), TextAnchor.UpperLeft, 24, new Color(1f, 0.85f, 0.3f, 1f), FontStyle.Bold);
 
         // Energía del demoledor (celeste), a la derecha de la barra de destrozo.
-        float xEnergia = x0 + 240f + AnchoBarra + 40f;
+        float xEnergia = x0 + 240f + AnchoBarra + 96f;
+
+        // Retrato del demoledor junto a su energía (con "x2" si hay dos).
+        Sprite cara = null;
+        if (cenital != null && cenital.Definicion != null && cenital.Definicion.demoledor != null &&
+            cenital.Definicion.demoledor.caminarAbajo != null && cenital.Definicion.demoledor.caminarAbajo.Length > 0)
+            cara = cenital.Definicion.demoledor.caminarAbajo[0];
+        if (cara != null)
+        {
+            Image marco = CrearImagen(raiz, "MarcoRetrato", new Color(0.02f, 0.03f, 0.08f, 0.85f), new Vector2(0f, 1f),
+                new Vector2(xEnergia - 30f, linea2 - 12f), new Vector2(54f, 54f));
+            retratoDemoledor = CrearImagen(raiz, "RetratoDemoledor", Color.white, new Vector2(0f, 1f),
+                new Vector2(xEnergia - 30f, linea2 - 12f), new Vector2(48f, 48f));
+            retratoDemoledor.sprite = cara;
+            retratoDemoledor.preserveAspect = true;
+            marco.raycastTarget = false;
+            textoCuantos = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(xEnergia - 20f, linea2 - 26f),
+                new Vector2(40f, 26f), TextAnchor.MiddleCenter, 20, new Color(1f, 0.8f, 0.25f, 1f), FontStyle.Bold);
+            posRetrato = retratoDemoledor.rectTransform.anchoredPosition;
+        }
         textoEnergia = CrearTexto(raiz, "", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(xEnergia, linea2),
             new Vector2(230f, 34f), TextAnchor.UpperLeft, 24, ColorEnergia, FontStyle.Bold);
         Image fondoEnergia = CrearImagen(raiz, "EnergiaFondo", new Color(0.02f, 0.02f, 0.03f, 0.8f),
@@ -979,6 +1148,7 @@ public class GestorJuego : MonoBehaviour
         Image rellenoE = CrearImagen(raiz, "EnergiaRelleno", ColorEnergia,
             new Vector2(0f, 1f), new Vector2(xEnergia + 244f, linea2 - 16f), new Vector2(AnchoBarra, 16f));
         rellenoEnergia = rellenoE.rectTransform;
+        imagenEnergia = rellenoE;
         rellenoEnergia.pivot = new Vector2(0f, 0.5f);
 
         // Poder activo y su tiempo restante, a la derecha de la barra de energía.
@@ -1017,9 +1187,9 @@ public class GestorJuego : MonoBehaviour
     /// <summary>La cámara (cenital o la de la fachada) deja libre la franja de arriba para el HUD.</summary>
     private static void ReservarCamara(Canvas canvas, float altura)
     {
-        CamaraPisoCenital cenitalCam = Object.FindFirstObjectByType<CamaraPisoCenital>();
+        CamaraPisoCenital cenitalCam = Object.FindAnyObjectByType<CamaraPisoCenital>();
         if (cenitalCam != null) cenitalCam.ReservarFranjaSuperior(canvas, altura);
-        CamaraSeguimiento lateralCam = Object.FindFirstObjectByType<CamaraSeguimiento>();
+        CamaraSeguimiento lateralCam = Object.FindAnyObjectByType<CamaraSeguimiento>();
         if (lateralCam != null) lateralCam.ReservarFranjaSuperior(canvas, altura);
     }
 
