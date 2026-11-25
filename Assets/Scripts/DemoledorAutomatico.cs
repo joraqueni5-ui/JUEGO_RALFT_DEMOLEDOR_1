@@ -220,10 +220,12 @@ public class DemoledorAutomatico : MonoBehaviour
             yield return null;
         }
 
-        seccion = Mathf.Min(edificio.SeccionActual, edificio.secciones - 1);
-        if (conservarPosicion) conservarPosicion = false;   // después de una pausa sigue donde estaba
+        // Después de una pausa (terremoto, ulti, transformación) sigue donde estaba y conserva la sección
+        // en la que está parado: si mientras tanto se completó la sección, el bucle lo ve y sube a la nueva.
+        if (conservarPosicion) conservarPosicion = false;
         else
         {
+            seccion = Mathf.Min(edificio.SeccionActual, edificio.secciones - 1);
             columnaActual = 0;
             transform.position = new Vector3(edificio.CentroColumna(columnaActual), edificio.AlturaCornisa(seccion), transform.position.z);
         }
@@ -248,6 +250,13 @@ public class DemoledorAutomatico : MonoBehaviour
                 }
 
                 yield return Subir(edificio.SeccionActual);
+                continue;
+            }
+
+            // Si algo lo dejó fuera de su cornisa (una pausa a mitad del salto, una escena), vuelve a ella.
+            if (Mathf.Abs(transform.position.y - edificio.AlturaCornisa(seccion)) > 0.25f)
+            {
+                yield return Subir(seccion);
                 continue;
             }
 
