@@ -21,7 +21,7 @@ public class AscensorCenital : MonoBehaviour
         dibujo = GetComponent<SpriteRenderer>();
         if (dibujo != null && spriteCerrado == null) spriteCerrado = dibujo.sprite;
         if (def != null) colorAbierto = def.colorAscensorAbierto;
-        jugador = FindFirstObjectByType<JugadorCenital>();
+        jugador = FindAnyObjectByType<JugadorCenital>();
 
         if (destello == null)
         {
@@ -74,10 +74,13 @@ public class AscensorCenital : MonoBehaviour
             destello.color = c;
         }
 
-        if (jugador == null) jugador = FindFirstObjectByType<JugadorCenital>();
         PisoCenital piso = PisoCenital.Actual;
-        if (jugador == null || piso == null || colision == null || piso.Terminado) return;
-        if (colision.bounds.Contains(new Vector3(jugador.Centro.x, jugador.Centro.y, colision.bounds.center.z)))
-            piso.JugadorLlegoAlAscensor();
+        if (piso == null || colision == null || piso.Terminado) return;
+        // Cualquiera de los jugadores que entre supera el piso.
+        foreach (JugadorCenital j in JugadorCenital.Todos)
+        {
+            if (j == null || !j.isActiveAndEnabled) continue;
+            if (colision.bounds.Contains(new Vector3(j.Centro.x, j.Centro.y, colision.bounds.center.z))) { piso.JugadorLlegoAlAscensor(); return; }
+        }
     }
 }

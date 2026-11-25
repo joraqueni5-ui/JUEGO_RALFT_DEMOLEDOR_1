@@ -23,6 +23,20 @@ public class PuntoInformacion : MonoBehaviour
     private Sprite spritePendiente, spriteLeido;
     private bool leido;
     private bool dentro;
+    private readonly bool[] dentroRed = new bool[4];
+
+    /// <summary>Invitado: el anfitrión avisa que su personaje pisó el "?" número 'indiceDato'.</summary>
+    public static void MostrarRemoto(int indiceDato, bool primeraVez)
+    {
+        foreach (PuntoInformacion p in FindObjectsByType<PuntoInformacion>(FindObjectsInactive.Exclude))
+        {
+            if (p.indice != indiceDato) continue;
+            if (primeraVez) p.leido = true;
+            p.Pintar();
+            PanelDatoUtil.Mostrar(p.transform, p.indice, p.ficha, p.dato, primeraVez);
+            return;
+        }
+    }
 
     private static readonly Color Amarillo = new Color(1f, 0.82f, 0.2f, 1f);
     private static readonly Color Verde = new Color(0.3f, 0.85f, 0.4f, 1f);
@@ -50,7 +64,7 @@ public class PuntoInformacion : MonoBehaviour
         if (string.IsNullOrEmpty(dato)) dato = "Todavía no hay un dato para este punto.";
         dato = dato.Replace("\n", " ").Trim();
 
-        jugador = FindFirstObjectByType<JugadorCenital>();
+        jugador = FindAnyObjectByType<JugadorCenital>();
         CrearIcono();
         if (piso != null) piso.Cambio += AlCambiarPiso;
     }
@@ -64,6 +78,7 @@ public class PuntoInformacion : MonoBehaviour
     private void AlCambiarPiso()
     {
         if (leido && piso != null && indice >= 0 && !piso.InfoLeida(indice)) Restablecer();
+        else if (!leido && piso != null && indice >= 0 && piso.InfoLeida(indice)) { leido = true; Pintar(); }   // lo leyó el compañero
     }
 
     private void Restablecer()
@@ -131,6 +146,7 @@ public class PuntoInformacion : MonoBehaviour
     private void Update()
     {
         if (icono != null) icono.localPosition = posIcono + new Vector3(0f, Mathf.Sin(Time.time * 3f) * 0.06f, 0f);
+        if (JugadorCenital.Todos.Count > 1) { UpdateVarios(); return; }
         if (jugador == null) return;
 
         bool encima = Vector2.Distance(jugador.Centro, transform.position) <= Radio;
@@ -144,5 +160,26 @@ public class PuntoInformacion : MonoBehaviour
             PanelDatoUtil.Mostrar(transform, indice, ficha, dato, primeraVez);
         }
         dentro = encima;
+    }
+
+    /// <summary>Multijugador: cualquiera lee el "?"; el dato se muestra en la pantalla de quien lo pisó.</summary>
+    private void UpdateVarios()
+    {
+        foreach (JugadorCenital j in JugadorCenital.Todos)
+        {
+            if (j == null || !j.isActiveAndEnabled) continue;
+            int k = Mathf.Clamp(j.indiceRed, 0, dentroRed.Length - 1);
+            bool encima = Vector2.Distance(j.Centro, transform.position) <= Radio;
+            if (encima && !dentroRed[k])
+            {
+                bool primeraVez = false;
+                if (!leido && piso != null && piso.RegistrarInfoLeida(indice)) { leido = true; primeraVez = true; }
+                else if (!leido && indice < 0) { leido = true; primeraVez = true; }
+                Pintar();
+                if (j.controlRemoto) RedJuego.EnviarDatoUtil(indice, primeraVez);
+                else PanelDatoUtil.Mostrar(transform, indice, ficha, dato, primeraVez);
+            }
+            dentroRed[k] = encima;
+        }
     }
 }

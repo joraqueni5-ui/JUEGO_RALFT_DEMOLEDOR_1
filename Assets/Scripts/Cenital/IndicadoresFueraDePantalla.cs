@@ -78,15 +78,25 @@ public class IndicadoresFueraDePantalla : MonoBehaviour
 
     private static float Lado(Vector2 p, Vector2 a, Vector2 b) { return (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y); }
 
+    private float proximaBusqueda;
+
     private void LateUpdate()
     {
+        // Buscar objetos en toda la escena es caro: como mucho una vez por segundo.
+        bool buscar = Time.unscaledTime >= proximaBusqueda;
         if (camara == null)
         {
-            CamaraPisoCenital cc = FindFirstObjectByType<CamaraPisoCenital>();
+            if (!buscar) return;
+            proximaBusqueda = Time.unscaledTime + 1f;
+            CamaraPisoCenital cc = FindAnyObjectByType<CamaraPisoCenital>();
             camara = cc != null ? cc.GetComponent<Camera>() : Camera.main;
             if (camara == null) return;
         }
-        if (demoledor == null) demoledor = FindFirstObjectByType<DemoledorCenital>();
+        if (demoledor == null && buscar)
+        {
+            proximaBusqueda = Time.unscaledTime + 1f;
+            demoledor = FindAnyObjectByType<DemoledorCenital>();
+        }
 
         int usadas = 0;
         PisoCenital piso = PisoCenital.Actual;

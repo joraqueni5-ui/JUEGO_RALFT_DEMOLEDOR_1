@@ -45,12 +45,112 @@ public class JugadorCenital : MonoBehaviour
     [Tooltip("Velocidad de la pulsación del aro.")]
     public float pulsoAro = 6f;
 
+    [Header("Potenciadores extra (duración y colores salen del poder)")]
+    [Tooltip("Zapatillas turbo: multiplica la velocidad al caminar.")]
+    public float multiplicadorTurbo = 1.6f;
+    [Tooltip("Martillo dorado: multiplica la rapidez del martillazo y el alcance.")]
+    public float multiplicadorMartilloRapido = 2f;
+    public float alcanceExtraMartilloRapido = 0.45f;
+    [Tooltip("Duración (s) del salto hacia atrás cuando el demoledor te empuja.")]
+    public float duracionEmpujeFuerte = 0.3f;
+
     [Header("Dibujo")]
     [Tooltip("Alto en baldosas al que se escala el sprite.")]
     public float alturaDibujo = 1.25f;
     public AnimacionesCenital animaciones = new AnimacionesCenital();
 
     public event Action Golpeado;
+
+    // ------------------------------------------------------------ varios jugadores (multijugador)
+    private static readonly System.Collections.Generic.List<JugadorCenital> todos = new System.Collections.Generic.List<JugadorCenital>();
+    /// <summary>Todos los jugadores del piso (1 en modo normal, 2 en multijugador).</summary>
+    public static System.Collections.Generic.List<JugadorCenital> Todos { get { return todos; } }
+
+    [NonSerialized] public int indiceRed;            // 0 = anfitrión, 1 = invitado
+    [NonSerialized] public bool controlRemoto;       // lo maneja el otro equipo por la red
+    [NonSerialized] public Personajes.Ficha personaje;
+    [NonSerialized] public IraEstudiante ira;
+
+    // Entrada que llega por la red para el jugador remoto.
+    private Vector2 entradaRemota;
+    private int martillazosRemotos;
+
+    /// <summary>El jugador que se controla en ESTE equipo (el que sigue la cámara).</summary>
+    public static JugadorCenital Local
+    {
+        get
+        {
+            for (int i = 0; i < todos.Count; i++)
+                if (todos[i] != null && !todos[i].controlRemoto && todos[i].gameObject.activeInHierarchy) return todos[i];
+            return null;
+        }
+    }
+
+    /// <summary>El jugador activo más cercano a 'punto' (o null).</summary>
+    public static JugadorCenital MasCercano(Vector2 punto)
+    {
+        JugadorCenital mejor = null;
+        float dm = float.MaxValue;
+        for (int i = 0; i < todos.Count; i++)
+        {
+            JugadorCenital j = todos[i];
+            if (j == null || !j.isActiveAndEnabled) continue;
+            float d = (j.Centro - punto).sqrMagnitude;
+            if (d < dm) { dm = d; mejor = j; }
+        }
+        if (mejor == null)
+            for (int i = 0; i < todos.Count; i++) if (todos[i] != null && todos[i].gameObject.activeInHierarchy) return todos[i];
+        return mejor;
+    }
+
+    /// <summary>Jugador por su número de red (0 anfitrión, 1 invitado).</summary>
+    public static JugadorCenital PorIndice(int indice)
+    {
+        for (int i = 0; i < todos.Count; i++) if (todos[i] != null && todos[i].indiceRed == indice) return todos[i];
+        return null;
+    }
+
+    /// <summary>Entrada del jugador remoto (llega por la red).</summary>
+    public void FijarEntradaRemota(Vector2 mover, int martillazos)
+    {
+        entradaRemota = Vector2.ClampMagnitude(mover, 1f);
+        martillazosRemotos += Mathf.Max(0, martillazos);
+    }
+
+    /// <summary>Personaje de este jugador (el elegido en el selector o, en multijugador, el que tocó a cada uno).</summary>
+    public Personajes.Ficha Ficha { get { return personaje != null ? personaje : Personajes.Actual; } }
+
+    // ------------------------------------------------------------ peligros del piso (PeligrosPiso)
+    /// <summary>Empuje del ambiente (el viento de la terraza), en baldosas por segundo.</summary>
+    [NonSerialized] public Vector2 empujeAmbiente;
+    private float finResbalon;
+    private Vector2 velocidadActual;
+    /// <summary>Patinando en un charco: el control responde con inercia.</summary>
+    public bool Resbalando { get { return Time.time < finResbalon; } }
+    /// <summary>Velocidad con la que se mueve ahora.</summary>
+    public Vector2 VelocidadActual { get { return cuerpo != null ? cuerpo.linearVelocity : Vector2.zero; } }
+
+    /// <summary>Pisa un charco: sale patinando con lo que traía (y un poco más) y tarda en frenar o girar.</summary>
+    public void Resbalar(float segundos)
+    {
+        if (!enabled || Invencible) return;
+        if (!Resbalando && cuerpo != null) velocidadActual = cuerpo.linearVelocity * 1.35f;
+        finResbalon = Mathf.Max(finResbalon, Time.time + segundos);
+    }
+
+    /// <summary>Chispazo de un cable: lo sacude y lo aturde un momento (no quita vida).</summary>
+    public void Electrocutar(Vector2 desde)
+    {
+        if (!enabled || Invencible) return;
+        RecibirEmpujon(desde, 1.1f, 0.9f, false);
+        finSacudida = Time.time + 0.5f;
+        if (!controlRemoto) DemoledorUnifranz.UI.Menus.PreferenciasMenus.Vibrar(120);
+    }
+
+    private bool IraActiva { get { return ira != null && ira.EstaActiva; } }
+
+    private void OnEnable() { if (!todos.Contains(this)) todos.Add(this); }
+    private void OnDestroy() { todos.Remove(this); }
 
     private Rigidbody2D cuerpo;
     private SpriteRenderer dibujo;
@@ -69,6 +169,12 @@ public class JugadorCenital : MonoBehaviour
     private bool estrellasConArte;
 
     private DemoledorCenital demoledorRef;
+    private float duracionEmpujeActual = 0.15f;
+    private float ritmoBase = 1f, duracionPoderes = 1f, factorAturdimiento = 1f;
+    private float finTurbo, finMartilloRapido, proximaEstela;
+    private bool cascoPuesto;
+    private PoderPiso poderTurbo, poderMartillo;
+    private SpriteRenderer aroTurbo, aroMartillo, dibujoCasco;
     private float finInvencible, finReparacionTotal;
     private PoderPiso poderInvencible, poderReparacion;
     private SpriteRenderer aroInvencible, aroReparacion;
@@ -78,10 +184,43 @@ public class JugadorCenital : MonoBehaviour
     /// <summary>Aturdido por un choque: no se mueve ni repara y no puede recibir daño.</summary>
     public bool Aturdido { get { return Time.time < finAturdido; } }
     /// <summary>Con el poder de invulnerabilidad: no recibe daño ni choques.</summary>
-    public bool Invencible { get { return Time.time < finInvencible; } }
+    public bool Invencible { get { return Time.time < finInvencible || IraActiva; } }
     /// <summary>Con el poder de reparación total: cada martillazo deja el objeto intacto.</summary>
-    public bool ReparacionTotal { get { return Time.time < finReparacionTotal; } }
+    public bool ReparacionTotal { get { return Time.time < finReparacionTotal || IraActiva; } }
     public bool PuedeRecibirGolpe { get { return enabled && Time.time >= finInvulnerable && !Aturdido && !Invencible; } }
+    /// <summary>Zapatillas turbo activas: camina más rápido.</summary>
+    public bool Turbo { get { return Time.time < finTurbo; } }
+    /// <summary>Martillo dorado activo: martilla el doble de rápido y llega más lejos.</summary>
+    public bool MartilloRapido { get { return Time.time < finMartilloRapido; } }
+    /// <summary>Lleva el casco de obra: el próximo golpe no le quita vida.</summary>
+    public bool TieneCasco { get { return cascoPuesto; } }
+    private float RadioActual { get { return radioReparacion + (MartilloRapido ? alcanceExtraMartilloRapido : 0f) + (IraActiva ? 0.6f : 0f); } }
+    private float RitmoMartillo { get { return ritmoBase * (MartilloRapido ? multiplicadorMartilloRapido : 1f) * (IraActiva ? 1.7f : 1f); } }
+
+    /// <summary>Personaje elegido en el selector: su ropa y peinado (mismos movimientos) y su ventaja.</summary>
+    private void AplicarPersonaje()
+    {
+        Personajes.Ficha f = Ficha;
+        if (f == null) return;
+        if (f.id != "sistemas" || Personajes.Serie8(f, "abajo") != null)   // Diego: el original, ahora con 8 cuadros
+        {
+            AnimacionesCenital propias = Personajes.Animaciones(f, animaciones != null ? animaciones.especial : null);
+            if (propias != null)
+            {
+                animaciones = propias;
+                alturaDibujo *= f.escalaAltura;
+            }
+        }
+        switch (f.id)
+        {
+            case "sistemas": ritmoBase = 1.15f; break;
+            case "medicina": cascoPuesto = true; break;
+            case "administracion": duracionPoderes = 1.3f; break;
+            case "derecho": factorAturdimiento = 0.6f; break;
+            case "arquitectura": radioReparacion += 0.25f; break;
+            case "odontologia": velocidad *= 1.12f; break;
+        }
+    }
 
     private DefinicionPiso Definicion
     {
@@ -99,7 +238,10 @@ public class JugadorCenital : MonoBehaviour
         dibujo = GetComponentInChildren<SpriteRenderer>();
         if (dibujo == null) dibujo = Provisional.Crear(transform, "Dibujo", null, Color.white, 0);
         animador = new AnimadorSprites(dibujo);
+        // Tras perder una vida hay un margen real para escapar (antes podían quitarte dos vidas en 2 segundos).
+        tiempoInvulnerable = Mathf.Max(tiempoInvulnerable, 1.6f);
         CrearEstrellas();
+        fase = UnityEngine.Random.Range(0f, 10f);
     }
 
     private void Start()
@@ -107,6 +249,7 @@ public class JugadorCenital : MonoBehaviour
         // El arte de la definición (si lo hay) reemplaza al de la escena.
         PisoCenital piso = PisoCenital.Actual;
         if (piso != null && piso.Definicion != null) animaciones = AnimacionesCenital.Combinar(animaciones, piso.Definicion.jugador);
+        AplicarPersonaje();
         animaciones.QuitarInvalidos();
         if (animaciones.caminarArriba == null) animaciones.caminarArriba = animaciones.caminarAbajo;
         MostrarQuieto();
@@ -114,12 +257,30 @@ public class JugadorCenital : MonoBehaviour
 
     private void OnDisable()
     {
+        if (lanzado || agarrado)
+        {
+            // Lo desactivaron en pleno vuelo (fin del piso): cae directo donde iba.
+            if (lanzado) transform.position = vueloHasta;
+            agarrado = false; lanzado = false; elevacionVuelo = giroVuelo = 0f;
+            if (cuerpo != null) { cuerpo.simulated = true; cuerpo.position = transform.position; }
+        }
         if (cuerpo != null) cuerpo.linearVelocity = Vector2.zero;
         if (dibujo != null) dibujo.enabled = true;
     }
 
     private void Update()
     {
+        if (EnElAire)
+        {
+            ActualizarVuelo();
+            entrada = Vector2.zero;
+            martillando = false;
+            ControlesTactiles.RepararPulsado();
+            Animar();
+            AjustarDibujo();
+            ActualizarEstrellas(false);
+            return;
+        }
         LeerEntrada();
 
         bool aturdido = Aturdido;
@@ -132,40 +293,54 @@ public class JugadorCenital : MonoBehaviour
 
         if (martillando)
         {
-            if (!reparoHecho && Time.time >= inicioMartillo + momentoDeReparacion) Reparar();
+            if (!reparoHecho && Time.time >= inicioMartillo + momentoDeReparacion / RitmoMartillo) Reparar();
             if (Time.time >= finMartillo) martillando = false;
         }
         else if (!aturdido)
         {
-            Keyboard k = Keyboard.current;
-            bool enter = k != null && (k[Key.Enter].wasPressedThisFrame || k[Key.NumpadEnter].wasPressedThisFrame);
-            bool tactil = ControlesTactiles.RepararPulsado();   // se lee siempre para consumir el toque
-            if ((enter || tactil) && Time.time >= proximoMartillo) Martillar();
+            bool pide;
+            if (controlRemoto)
+            {
+                pide = martillazosRemotos > 0;
+                if (pide) martillazosRemotos--;
+            }
+            else
+            {
+                Keyboard k = Keyboard.current;
+                bool enter = k != null && (k[Key.Enter].wasPressedThisFrame || k[Key.NumpadEnter].wasPressedThisFrame);
+                bool tactil = ControlesTactiles.RepararPulsado();   // se lee siempre para consumir el toque
+                pide = enter || tactil;
+            }
+            if (pide && Time.time >= proximoMartillo && !EntradaBloqueada) Martillar();
         }
+        if (martillazosRemotos > 2) martillazosRemotos = 2;   // no se acumulan martillazos viejos
 
         Animar();
         Parpadear();
         AjustarDibujo();
         ActualizarEstrellas(aturdido);
         ActualizarAros();
+        ActualizarExtras();
         SonidosDeMovimiento(aturdido);
     }
 
     private float proximoPaso;
     private bool pasoAlterno;
+    private float finSacudida;
+    private float fase;
 
     /// <summary>Pasos alternados cada 0,28 s al caminar, sonido de aturdido y sonido suave mientras dura un poder.</summary>
     private void SonidosDeMovimiento(bool aturdido)
     {
         GestorAudio.Bucle("aturdido_jugador", Snd.AturdidoBucle, aturdido);
-        GestorAudio.Bucle("poder_jugador", Snd.PoderActivoBucle, Invencible || ReparacionTotal);
+        GestorAudio.Bucle("poder_jugador", Snd.PoderActivoBucle, Invencible || ReparacionTotal || Turbo || MartilloRapido);
 
         bool camina = !aturdido && !martillando && cuerpo != null && cuerpo.linearVelocity.sqrMagnitude > 0.2f;
         if (camina && Time.time >= proximoPaso)
         {
             GestorAudio.Reproducir(pasoAlterno ? Snd.Paso2 : Snd.Paso1);
             pasoAlterno = !pasoAlterno;
-            proximoPaso = Time.time + 0.28f;
+            proximoPaso = Time.time + (Turbo ? 0.18f : 0.28f);
         }
     }
 
@@ -185,9 +360,23 @@ public class JugadorCenital : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (EnElAire) return;
         AcotarAlMapa();
-        if (Time.time < finEmpuje) cuerpo.linearVelocity = velocidadEmpuje;
-        else cuerpo.linearVelocity = (martillando || Aturdido) ? Vector2.zero : entrada * velocidad;
+        if (Time.time < finEmpuje)
+        {
+            // El empujón frena solo (más rápido al principio); los muros lo detienen, así nunca sale del piso.
+            float resto = Mathf.Clamp01((finEmpuje - Time.time) / Mathf.Max(0.02f, duracionEmpujeActual));
+            cuerpo.linearVelocity = velocidadEmpuje * (2f * resto);
+        }
+        else
+        {
+            Vector2 objetivo = (martillando || Aturdido) ? Vector2.zero : entrada * velocidad * (Turbo ? multiplicadorTurbo : 1f) * (IraActiva ? 1.4f : 1f);
+            // En un charco el personaje patina: la velocidad cambia de a poco.
+            velocidadActual = Resbalando ? Vector2.MoveTowards(velocidadActual, objetivo, 4.5f * Time.fixedDeltaTime) : objetivo;
+            cuerpo.linearVelocity = velocidadActual + empujeAmbiente;
+            return;
+        }
+        velocidadActual = cuerpo.linearVelocity;
     }
 
     // ------------------------------------------------------------ choque con el demoledor
@@ -195,14 +384,16 @@ public class JugadorCenital : MonoBehaviour
     private void OnCollisionStay2D(Collision2D c) { Chocar(c); }
 
     /// <summary>
-    /// Tocar al demoledor no quita vida: empuja al jugador en dirección contraria y lo aturde.
-    /// Después de un choque hay una espera antes de que otro vuelva a aturdirlo.
+    /// Tocar al demoledor: si puede, te aleja de un manotazo y te quita una vida (DemoledorCenital.EmpujarAhora).
+    /// Si está ocupado (atacando otra cosa o congelado) solo te aparta un poco y te aturde.
+    /// Después de un choque hay una espera antes de que otro vuelva a afectarte.
     /// </summary>
     private void Chocar(Collision2D c)
     {
         if (!enabled || Aturdido || Invencible || Time.time < proximoChoque) return;
         DemoledorCenital demoledor = c.collider.GetComponentInParent<DemoledorCenital>();
         if (demoledor == null) return;
+        if (demoledor.EmpujarAhora()) return;
 
         DefinicionPiso def = Definicion;
         float empuje = def != null ? def.empujeChoque : 1f;
@@ -213,12 +404,38 @@ public class JugadorCenital : MonoBehaviour
         if (dir.sqrMagnitude < 0.0001f) dir = -direccion;
         dir.Normalize();
 
-        finAturdido = Time.time + aturdimiento;
+        finAturdido = Time.time + aturdimiento * factorAturdimiento;
         proximoChoque = Time.time + Mathf.Max(espera, aturdimiento);
-        finEmpuje = Time.time + Mathf.Max(0.02f, duracionEmpuje);
-        velocidadEmpuje = dir * (empuje / Mathf.Max(0.02f, duracionEmpuje));
+        duracionEmpujeActual = Mathf.Max(0.02f, duracionEmpuje);
+        finEmpuje = Time.time + duracionEmpujeActual;
+        velocidadEmpuje = dir * (empuje / duracionEmpujeActual);
         martillando = false;
         entrada = Vector2.zero;
+    }
+
+    /// <summary>
+    /// Empujón fuerte (del demoledor o de un mini villano): sale despedido 'distancia' baldosas lejos de 'desde', queda aturdido
+    /// 'aturdimiento' s y, si 'danar', pierde una vida (respeta la invulnerabilidad breve y el casco). Los muros lo frenan y
+    /// AcotarAlMapa lo mantiene dentro del piso. Devuelve true si perdió una vida.
+    /// </summary>
+    public bool RecibirEmpujon(Vector2 desde, float distancia, float aturdimiento, bool danar)
+    {
+        if (!enabled || Invencible || EnElAire) return false;
+        Vector2 dir = Centro - desde;
+        if (dir.sqrMagnitude < 0.0001f) dir = -direccion;
+        dir.Normalize();
+
+        bool perdioVida = danar && RecibirGolpe();
+
+        duracionEmpujeActual = Mathf.Max(0.05f, duracionEmpujeFuerte);
+        finEmpuje = Time.time + duracionEmpujeActual;
+        velocidadEmpuje = dir * (Mathf.Max(0f, distancia) / duracionEmpujeActual);
+        if (aturdimiento > 0f) finAturdido = Mathf.Max(finAturdido, Time.time + aturdimiento * factorAturdimiento);
+        proximoChoque = Time.time + Mathf.Max(1.2f, aturdimiento);
+        martillando = false;
+        entrada = Vector2.zero;
+        EfectoSprite.Reproducir(ArteNiveles.De(a => a.polvoImpacto), (Vector2)transform.position, Provisional.OrdenY(transform.position.y) - 1, 0.8f, 12f);
+        return perdioVida;
     }
 
     // ------------------------------------------------------------ poderes
@@ -229,42 +446,105 @@ public class JugadorCenital : MonoBehaviour
     public string AplicarPoder(PoderPiso poder)
     {
         if (poder == null) return null;
+        ComentariosJugador.Evento(ComentariosJugador.Tipo.Poder, this);
         switch (poder.tipo)
         {
             case TipoPoder.Invulnerabilidad:
                 poderInvencible = poder;
-                finInvencible = Time.time + poder.duracion;
+                finInvencible = Time.time + poder.duracion * duracionPoderes;
                 if (aroInvencible == null) aroInvencible = CrearAro("AroInvencible");
                 break;
 
             case TipoPoder.ReparacionTotal:
                 poderReparacion = poder;
-                finReparacionTotal = Time.time + poder.duracion;
+                finReparacionTotal = Time.time + poder.duracion * duracionPoderes;
                 if (aroReparacion == null) aroReparacion = CrearAro("AroReparacion");
                 break;
 
             case TipoPoder.VidaExtra:
-                GestorJuego gestor = FindFirstObjectByType<GestorJuego>();
+                GestorJuego gestor = FindAnyObjectByType<GestorJuego>();
                 PisoCenital piso = PisoCenital.Actual;
                 int maximo = piso != null && piso.Definicion != null ? piso.Definicion.vidasMaximas : 3;
                 if (gestor == null || !gestor.GanarVida(poder.valor, maximo)) return "VIDAS AL MÁXIMO";
+                break;
+
+            case TipoPoder.Velocidad:
+                poderTurbo = poder;
+                finTurbo = Time.time + poder.duracion * duracionPoderes;
+                if (aroTurbo == null) aroTurbo = CrearAro("AroTurbo");
+                GestorAudio.Reproducir(SndExtra.PoderTurbo);
+                break;
+
+            case TipoPoder.ReparacionRapida:
+                poderMartillo = poder;
+                finMartilloRapido = Time.time + poder.duracion * duracionPoderes;
+                if (aroMartillo == null) aroMartillo = CrearAro("AroMartillo");
+                GestorAudio.Reproducir(SndExtra.PoderMartillo);
+                break;
+
+            case TipoPoder.CongelarEnemigos:
+                GestorAudio.Reproducir(SndExtra.PoderCongelar);
+                int congelados = GestorMiniVillanos.CongelarTodos(poder.duracion);
+                bool demoledorCongelado = false;
+                foreach (DemoledorCenital dc in DemoledorCenital.Todos)
+                {
+                    if (dc == null || !dc.EnPiso) continue;
+                    dc.Congelar(poder.duracion * 0.6f);
+                    demoledorCongelado |= dc.Congelado;
+                }
+                if (congelados == 0 && !demoledorCongelado) return "¡NADA QUE CONGELAR!";
+                break;
+
+            case TipoPoder.Casco:
+                if (cascoPuesto) return "YA TIENES CASCO";
+                cascoPuesto = true;
+                GestorAudio.Reproducir(SndExtra.PoderCasco);
                 break;
         }
         return null;
     }
 
+    /// <summary>Estela del turbo y casco sobre la cabeza.</summary>
+    private void ActualizarExtras()
+    {
+        if (Turbo && dibujo != null && dibujo.sprite != null && cuerpo != null && cuerpo.linearVelocity.sqrMagnitude > 1f && Time.time >= proximaEstela)
+        {
+            proximaEstela = Time.time + 0.05f;
+            EstelaFantasma.Crear(dibujo, new Color(0.45f, 0.85f, 1f, 0.55f), 0.22f);
+        }
+
+        if (cascoPuesto && dibujoCasco == null)
+        {
+            dibujoCasco = Provisional.Crear(transform, "Casco", ArteExtra.Uno("Poderes/poder_casco"), Color.white, 0);
+            if (dibujoCasco.sprite == null) { dibujoCasco.sprite = Provisional.Circulo; dibujoCasco.color = new Color(1f, 0.8f, 0.1f); }
+        }
+        if (dibujoCasco != null)
+        {
+            if (dibujoCasco.gameObject.activeSelf != cascoPuesto) dibujoCasco.gameObject.SetActive(cascoPuesto);
+            if (cascoPuesto)
+            {
+                dibujoCasco.transform.localPosition = new Vector3(0f, alturaDibujo + 0.05f + Mathf.Sin(Time.time * 3f) * 0.03f, 0f);
+                dibujoCasco.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
+                dibujoCasco.sortingOrder = Provisional.OrdenY(transform.position.y) + 6;
+            }
+        }
+    }
+
     /// <summary>Poderes activos con su tiempo restante, para el HUD ("INVENCIBLE 3,2 s").</summary>
     public string TextoPoderes()
     {
-        bool inv = Invencible, rep = ReparacionTotal;
-        if (!inv && !rep) return "";
-
+        bool inv = Time.time < finInvencible, rep = Time.time < finReparacionTotal;
         string t = "";
-        if (inv) t += (poderInvencible != null ? poderInvencible.etiquetaHud : "INVENCIBLE") + "  " + (finInvencible - Time.time).ToString("0.0") + " s";
-        if (inv && rep) t += "     ";
-        if (rep) t += (poderReparacion != null ? poderReparacion.etiquetaHud : "REPARACIÓN TOTAL") + "  " + (finReparacionTotal - Time.time).ToString("0.0") + " s";
+        if (IraActiva) t = Sumar(t, "¡FURIA!");
+        if (inv) t = Sumar(t, (poderInvencible != null ? poderInvencible.etiquetaHud : "INVENCIBLE") + "  " + (finInvencible - Time.time).ToString("0.0") + " s");
+        if (rep) t = Sumar(t, (poderReparacion != null ? poderReparacion.etiquetaHud : "REPARACIÓN TOTAL") + "  " + (finReparacionTotal - Time.time).ToString("0.0") + " s");
+        if (Turbo) t = Sumar(t, (poderTurbo != null ? poderTurbo.etiquetaHud : "TURBO") + "  " + (finTurbo - Time.time).ToString("0.0") + " s");
+        if (MartilloRapido) t = Sumar(t, (poderMartillo != null ? poderMartillo.etiquetaHud : "MARTILLO DORADO") + "  " + (finMartilloRapido - Time.time).ToString("0.0") + " s");
+        if (cascoPuesto) t = Sumar(t, "CASCO");
         return t;
     }
+
+    private static string Sumar(string a, string b) { return string.IsNullOrEmpty(a) ? b : a + "     " + b; }
 
     private SpriteRenderer CrearAro(string nombre)
     {
@@ -278,6 +558,8 @@ public class JugadorCenital : MonoBehaviour
     {
         ActualizarAro(aroInvencible, Invencible, poderInvencible, 0f, ArteNiveles.De(a => a.aroPoderDorado));
         ActualizarAro(aroReparacion, ReparacionTotal, poderReparacion, 0.12f, ArteNiveles.De(a => a.aroPoderVerde));
+        ActualizarAro(aroTurbo, Turbo, poderTurbo, 0.24f, null);
+        ActualizarAro(aroMartillo, MartilloRapido, poderMartillo, 0.36f, null);
     }
 
     private void ActualizarAro(SpriteRenderer aro, bool activo, PoderPiso poder, float extra, Sprite[] arte)
@@ -361,8 +643,21 @@ public class JugadorCenital : MonoBehaviour
         }
     }
 
+    /// <summary>Durante una escena (la llegada del demoledor) el jugador no se mueve ni martilla.</summary>
+    public static bool EntradaBloqueada;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ReiniciarEstatico() { EntradaBloqueada = false; }
+
     private void LeerEntrada()
     {
+        if (EntradaBloqueada) { entrada = Vector2.zero; return; }
+        if (controlRemoto)
+        {
+            entrada = entradaRemota;
+            if (entrada.sqrMagnitude > 0.01f && !martillando) direccion = entrada;
+            return;
+        }
         float x = 0f, y = 0f;
         Keyboard k = Keyboard.current;
         if (k != null)
@@ -389,10 +684,11 @@ public class JugadorCenital : MonoBehaviour
         reparoHecho = false;
         inicioMartillo = Time.time;
         Sprite[] serie = SerieGolpe();
-        float duracion = serie != null && serie.Length > 0 ? serie.Length / Mathf.Max(1f, cuadrosPorSegundoMartillo) : 0.35f;
-        finMartillo = inicioMartillo + Mathf.Max(0.3f, duracion);
-        proximoMartillo = finMartillo + enfriamiento;
-        if (serie != null) animador.Reproducir(serie, cuadrosPorSegundoMartillo, false, true);
+        float cps = cuadrosPorSegundoMartillo * RitmoMartillo * Personajes.FactorCuadros(serie);
+        float duracion = serie != null && serie.Length > 0 ? serie.Length / Mathf.Max(1f, cps) : 0.35f / RitmoMartillo;
+        finMartillo = inicioMartillo + Mathf.Max(0.3f / RitmoMartillo, duracion);
+        proximoMartillo = finMartillo + enfriamiento / RitmoMartillo;
+        if (serie != null) animador.Reproducir(serie, cps, false, true);
     }
 
     private void Reparar()
@@ -402,13 +698,27 @@ public class JugadorCenital : MonoBehaviour
         PisoCenital piso = PisoCenital.Actual;
         if (piso == null || piso.Mapa == null) return;
 
-        // Si el demoledor va a golpear un objeto que está al alcance, ese tiene prioridad: así se puede bloquear.
-        if (demoledorRef == null) demoledorRef = FindFirstObjectByType<DemoledorCenital>();
-        ObjetoReparable amenazado = demoledorRef != null ? demoledorRef.ObjetivoAmenazado : null;
+        // Si un demoledor va a golpear un objeto que está al alcance, ese tiene prioridad: así se puede bloquear.
+        demoledorRef = null;
+        ObjetoReparable amenazado = null;
+        foreach (DemoledorCenital dc in DemoledorCenital.Todos)
+        {
+            if (dc == null || dc.ObjetivoAmenazado == null) continue;
+            if (Vector2.Distance(Centro, dc.ObjetivoAmenazado.PuntoMasCercano(Centro)) > RadioActual) continue;
+            demoledorRef = dc;
+            amenazado = dc.ObjetivoAmenazado;
+            break;
+        }
+        if (demoledorRef == null) demoledorRef = DemoledorCenital.MasCercano(Centro);
+
+        // El martillo también ahuyenta a los mini villanos que estén al alcance.
+        GestorMiniVillanos.GolpearEnRadio(Centro, RadioActual + 0.35f);
+        if (ira != null) ira.MartillazoEn(Centro);
+        if (!controlRemoto) EfectoMartillo.Golpe(Centro + direccion.normalized * 0.55f, Provisional.OrdenY(transform.position.y) + 12);
 
         ObjetoReparable mejor = null;
-        float mejorDistancia = radioReparacion;
-        if (amenazado != null && Vector2.Distance(Centro, amenazado.PuntoMasCercano(Centro)) <= radioReparacion)
+        float mejorDistancia = RadioActual;
+        if (amenazado != null && Vector2.Distance(Centro, amenazado.PuntoMasCercano(Centro)) <= RadioActual)
         {
             // Un objeto intacto también se defiende: martillarlo mientras lo amenazan basta para bloquear.
             if (amenazado.Estado == EstadoObjeto.Intacto)
@@ -442,10 +752,17 @@ public class JugadorCenital : MonoBehaviour
             reparo = true;
         }
 
-        if (reparo && mejor.Estado == EstadoObjeto.Intacto) GestorAudio.Reproducir(Snd.ObjetoReparado);
+        if (reparo && ira != null) ira.SumarReparo(1);
+        if (reparo && mejor.Estado == EstadoObjeto.Intacto)
+        {
+            GestorAudio.Reproducir(Snd.ObjetoReparado);
+            ComentariosJugador.Evento(ComentariosJugador.Tipo.Reparar, this);
+        }
 
-        // Bloqueo: reparó el objeto justo cuando el demoledor iba a golpearlo.
-        if (reparo && demoledorRef != null && demoledorRef.IntentarBloqueo(mejor)) ConfirmarBloqueo(piso);
+        // Bloqueo: reparó el objeto justo cuando un demoledor iba a golpearlo.
+        if (reparo)
+            foreach (DemoledorCenital dc in DemoledorCenital.Todos)
+                if (dc != null && dc.IntentarBloqueo(mejor)) { ConfirmarBloqueo(piso); break; }
     }
 
     private void ConfirmarBloqueo(PisoCenital piso)
@@ -453,18 +770,34 @@ public class JugadorCenital : MonoBehaviour
         piso.RegistrarBloqueo();
         GestorAudio.Reproducir(Snd.BloqueoSalvado);
         int puntos = piso.Definicion != null ? piso.Definicion.puntosBloqueo : 50;
-        GestorJuego gestor = FindFirstObjectByType<GestorJuego>();
+        GestorJuego gestor = FindAnyObjectByType<GestorJuego>();
         if (gestor != null) gestor.RegistrarBloqueo(puntos);
         TextoFlotante.Mostrar(Centro + Vector2.up * 1.3f, "¡SALVADO!", new Color(0.4f, 1f, 0.5f));
+        ComentariosJugador.Evento(ComentariosJugador.Tipo.Bloqueo, this);
+        if (ira != null) ira.SumarBloqueo();
     }
 
     // ------------------------------------------------------------ daño
     /// <summary>Quita una vida (la cuenta GestorJuego). Devuelve false si está invulnerable.</summary>
     public bool RecibirGolpe()
     {
-        if (!PuedeRecibirGolpe) return false;
+        if (!PuedeRecibirGolpe || EnElAire) return false;
+        if (cascoPuesto)
+        {
+            // El casco aguanta este golpe y se rompe.
+            cascoPuesto = false;
+            finInvulnerable = Time.time + tiempoInvulnerable;
+            GestorAudio.Reproducir(SndExtra.CascoRoto);
+            TextoFlotante.Mostrar(Centro + Vector2.up * 1.4f, "¡EL CASCO TE SALVÓ!", new Color(1f, 0.85f, 0.25f));
+            EfectoSprite.Reproducir(ArteNiveles.De(a => a.golpeEstallido), Centro + Vector2.up * 0.9f, Provisional.OrdenY(transform.position.y) + 7, 1f, 14f);
+            return false;
+        }
         finInvulnerable = Time.time + tiempoInvulnerable;
+        finSacudida = Time.time + 0.28f;
+        ImpactoPausa.Breve(0.07f);
+        if (!controlRemoto) DemoledorUnifranz.UI.Menus.PreferenciasMenus.Vibrar(90);
         GestorAudio.Reproducir(Snd.RecibirDano);
+        ComentariosJugador.Evento(ComentariosJugador.Tipo.Golpeado, this);
         if (Golpeado != null) Golpeado();
         return true;
     }
@@ -477,12 +810,19 @@ public class JugadorCenital : MonoBehaviour
             cuerpo.position = posicion;
             cuerpo.linearVelocity = Vector2.zero;
         }
+        agarrado = lanzado = false;
+        agarrador = null;
+        elevacionVuelo = giroVuelo = 0f;
+        if (cuerpo != null) cuerpo.simulated = true;
         finInvulnerable = 0f;
         finAturdido = 0f;
         finEmpuje = 0f;
         proximoChoque = 0f;
         finInvencible = 0f;
         finReparacionTotal = 0f;
+        finTurbo = 0f;
+        finMartilloRapido = 0f;
+        cascoPuesto = Ficha != null && Ficha.id == "medicina";
         martillando = false;
         direccion = Vector2.down;
         if (dibujo != null) dibujo.enabled = true;
@@ -529,7 +869,7 @@ public class JugadorCenital : MonoBehaviour
             Sprite[] serie = SerieCaminar();
             if (serie != null && serie.Length > 0)
             {
-                if (entrada.sqrMagnitude > 0.01f) animador.Reproducir(serie, cuadrosCaminar, true, false);
+                if (entrada.sqrMagnitude > 0.01f) animador.Reproducir(serie, cuadrosCaminar * Personajes.FactorCuadros(serie), true, false);
                 else animador.MostrarCuadroFijo(serie, 0);
             }
         }
@@ -561,9 +901,116 @@ public class JugadorCenital : MonoBehaviour
 
         Vector3 tam = fueraDeCuadros && s == Provisional.Cuadrado
             ? new Vector3(0.6f, alturaDibujo * 0.8f, 1f) : new Vector3(escala, escala, 1f);
+        // Animación por código encima de los cuadros: respira quieto, rebota al caminar, se aplasta al recibir un golpe,
+        // crece con la furia y salta de alegría al superar el piso.
+        float t = Time.time + fase;
+        float sube = 0f, giro = 0f;
+        bool camina = entrada.sqrMagnitude > 0.01f && !martillando;
+        if (!camina && !martillando) { tam.y *= 1f + 0.03f * Mathf.Sin(t * 3f); tam.x *= 1f - 0.012f * Mathf.Sin(t * 3f); }
+        if (camina) sube = Mathf.Abs(Mathf.Sin(t * 11f)) * 0.06f;
+        if (Time.time < finSacudida)
+        {
+            float k = (finSacudida - Time.time) / 0.28f;
+            tam.x *= 1f + 0.22f * k; tam.y *= 1f - 0.2f * k;
+            giro = Mathf.Sin(Time.time * 50f) * 8f * k;
+        }
+        if (IraActiva) { float e = 1.12f + 0.03f * Mathf.Sin(t * 8f); tam.x *= e; tam.y *= e; }
+        if (Resbalando) giro += Mathf.Sin(Time.time * 18f) * 12f;
+        if (ira != null && ira.Transformando) { float e = 1f + 0.15f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 18f)); tam.x *= e; tam.y *= e; giro = Mathf.Sin(Time.unscaledTime * 40f) * 4f; }
+        PisoCenital piso = PisoCenital.Actual;
+        if (piso != null && piso.Terminado) { sube = Mathf.Abs(Mathf.Sin(t * 7f)) * 0.3f; }
+        if (EnElAire) { sube += elevacionVuelo; giro += giroVuelo; }
+
         dibujo.transform.localScale = tam;
         float signo = dibujo.flipX ? -1f : 1f;
-        dibujo.transform.localPosition = new Vector3(-b.center.x * tam.x * signo, -b.min.y * tam.y, 0f);
-        dibujo.sortingOrder = Provisional.OrdenY(transform.position.y);
+        dibujo.transform.localPosition = new Vector3(-b.center.x * tam.x * signo, -b.min.y * tam.y + sube, 0f);
+        dibujo.transform.localRotation = Quaternion.Euler(0f, 0f, giro);
+        dibujo.sortingOrder = Provisional.OrdenY(transform.position.y) + (EnElAire ? 60 : 0);
     }
+
+    // ------------------------------------------------------------ agarrado y lanzado por el demoledor
+    // Si el demoledor te tiene cerca te agarra, te levanta y te lanza lejos, a otra sala: así nunca quedas encerrado
+    // recibiendo golpe tras golpe. Al caer tienes unos segundos de invulnerabilidad para reponerte.
+    private bool agarrado, lanzado;
+    private Transform agarrador;
+    private float alturaAgarre, inicioVuelo, duracionVuelo, alturaVuelo, elevacionVuelo, giroVuelo;
+    private Vector2 vueloDesde, vueloHasta;
+
+    /// <summary>Está en las manos del demoledor o volando.</summary>
+    public bool EnElAire { get { return agarrado || lanzado; } }
+
+    /// <summary>El demoledor lo agarra: queda en el aire sobre su cabeza hasta que lo lance o lo suelte.</summary>
+    public void SerAgarrado(Transform quien, float altura)
+    {
+        agarrado = true;
+        lanzado = false;
+        agarrador = quien;
+        alturaAgarre = altura;
+        martillando = false;
+        entrada = Vector2.zero;
+        finEmpuje = 0f;
+        if (cuerpo != null) { cuerpo.linearVelocity = Vector2.zero; cuerpo.simulated = false; }
+        finSacudida = Time.time + 0.28f;
+    }
+
+    /// <summary>Sale volando en arco hasta 'destino' (pasa por encima de paredes y muebles).</summary>
+    public void SerLanzado(Vector2 destino, float duracion, float altura)
+    {
+        agarrado = false;
+        lanzado = true;
+        agarrador = null;
+        vueloDesde = transform.position;
+        vueloHasta = destino;
+        inicioVuelo = Time.time;
+        duracionVuelo = Mathf.Max(0.2f, duracion);
+        alturaVuelo = altura;
+        if (cuerpo != null) { cuerpo.linearVelocity = Vector2.zero; cuerpo.simulated = false; }
+    }
+
+    /// <summary>El demoledor lo suelta sin lanzarlo (lo congelaron o lo aturdieron mientras lo tenía): cae ahí mismo.</summary>
+    public void SoltarAgarre()
+    {
+        if (!agarrado) return;
+        SerLanzado((Vector2)transform.position + Vector2.down * 0.6f, 0.3f, 0.6f);
+    }
+
+    private void ActualizarVuelo()
+    {
+        if (agarrado)
+        {
+            if (agarrador == null) { SoltarAgarre(); return; }
+            Vector2 p = agarrador.position;
+            transform.position = p;
+            if (cuerpo != null) cuerpo.position = p;
+            elevacionVuelo = alturaAgarre + Mathf.Abs(Mathf.Sin(Time.time * 14f)) * 0.08f;
+            giroVuelo = Mathf.Sin(Time.time * 22f) * 18f;   // patalea
+            return;
+        }
+        float k = Mathf.Clamp01((Time.time - inicioVuelo) / duracionVuelo);
+        Vector2 pos = Vector2.Lerp(vueloDesde, vueloHasta, k);
+        transform.position = pos;
+        if (cuerpo != null) cuerpo.position = pos;
+        elevacionVuelo = Mathf.Sin(k * Mathf.PI) * alturaVuelo + (1f - k) * 0.4f * (alturaVuelo > 1f ? 1f : 0f);
+        giroVuelo = -k * 720f * Mathf.Sign(vueloHasta.x - vueloDesde.x + 0.001f);
+        if (k < 1f) return;
+        Aterrizar();
+    }
+
+    private void Aterrizar()
+    {
+        lanzado = false;
+        elevacionVuelo = 0f;
+        giroVuelo = 0f;
+        if (cuerpo != null) { cuerpo.simulated = true; cuerpo.position = vueloHasta; cuerpo.linearVelocity = Vector2.zero; }
+        velocidadActual = Vector2.zero;
+        // Margen para reponerse: un instante mareado y varios segundos sin que nada le quite vidas.
+        finAturdido = Mathf.Max(finAturdido, Time.time + 0.35f);
+        finInvulnerable = Mathf.Max(finInvulnerable, Time.time + 2.5f);
+        proximoChoque = Time.time + 2.5f;
+        finSacudida = Time.time + 0.28f;
+        EfectoSprite.Reproducir(ArteNiveles.De(a => a.polvoImpacto), (Vector2)transform.position, Provisional.OrdenY(transform.position.y) - 1, 1.1f, 12f);
+        GestorAudio.Reproducir(Snd.RecibirDano, 0.6f, 0.8f);
+        if (!controlRemoto) CamaraPisoCenital.Temblar(0.08f, 0.2f);
+    }
+
 }

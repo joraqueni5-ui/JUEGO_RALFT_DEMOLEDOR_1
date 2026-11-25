@@ -33,9 +33,9 @@ public class TutorialPiso : MonoBehaviour
         def = piso != null ? piso.Definicion : null;
         if (def == null || def.pasosTutorial == null || def.pasosTutorial.Length == 0) { enabled = false; return; }
 
-        jugador = FindFirstObjectByType<JugadorCenital>();
-        demoledor = FindFirstObjectByType<DemoledorCenital>();
-        gestor = FindFirstObjectByType<GestorJuego>();
+        jugador = FindAnyObjectByType<JugadorCenital>();
+        demoledor = FindAnyObjectByType<DemoledorCenital>();
+        gestor = FindAnyObjectByType<GestorJuego>();
         cumplido = new bool[def.pasosTutorial.Length];
         visto = new bool[def.pasosTutorial.Length];
         CrearInterfaz();

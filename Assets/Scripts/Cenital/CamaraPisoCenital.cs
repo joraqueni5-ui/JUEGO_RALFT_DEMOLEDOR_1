@@ -58,6 +58,40 @@ public class CamaraPisoCenital : MonoBehaviour
     /// </summary>
     public static void DesplazarSeguimiento(float unidades) { desplazamientoObjetivo = Mathf.Max(0f, unidades); }
 
+    private static bool enfoqueForzado;
+    private static Vector2 puntoEnfoque;
+    private static float acercamiento = 1f;
+
+    /// <summary>Escena cinemática: la cámara mira 'punto' (en vez del jugador) y se acerca un poco ('zoom' &lt; 1 acerca).</summary>
+    public static void Enfocar(Vector2 punto, float zoom = 0.8f)
+    {
+        enfoqueForzado = true;
+        puntoEnfoque = punto;
+        acercamiento = Mathf.Clamp(zoom, 0.4f, 1.5f);
+    }
+
+    /// <summary>Vuelve a seguir al jugador con el zoom normal.</summary>
+    public static void SoltarEnfoque()
+    {
+        enfoqueForzado = false;
+        acercamiento = 1f;
+    }
+
+    public static bool Enfocando { get { return enfoqueForzado; } }
+
+    /// <summary>Invitado en multijugador: la cámara sigue este punto (su personaje, que dibuja el anfitrión).</summary>
+    public static Transform ObjetivoExterno;
+
+    /// <summary>Posición del personaje de ESTE equipo (jugador local o, en el invitado, su marcador).</summary>
+    public static bool PosicionPropia(out Vector2 pos)
+    {
+        JugadorCenital j = JugadorCenital.Local;
+        if (j != null) { pos = j.Centro; return true; }
+        if (ObjetivoExterno != null) { pos = (Vector2)ObjetivoExterno.position + new Vector2(0f, 0.3f); return true; }
+        pos = Vector2.zero;
+        return false;
+    }
+
     /// <summary>Unidades de mundo que mide un píxel de pantalla en la vista actual.</summary>
     public static float UnidadesPorPixel { get { return unidadesPorPixel; } }
 
@@ -71,6 +105,8 @@ public class CamaraPisoCenital : MonoBehaviour
         camara.clearFlags = CameraClearFlags.SolidColor;
         camara.backgroundColor = colorFondo;
         fuerzaTemblor = 0f;
+        enfoqueForzado = false;
+        acercamiento = 1f;
         anchoBandaActual = 0f;
         desplazamientoObjetivo = 0f;
     }
@@ -93,8 +129,13 @@ public class CamaraPisoCenital : MonoBehaviour
         alturaFranja = alturaEnLienzo;
     }
 
+    /// <summary>El anfitrión lo reenvía al invitado.</summary>
+    public static System.Action<float, float> AlTemblar;
+
     public static void Temblar(float fuerza, float duracion)
     {
+        if (GestorAudio.SilencioLocal) return;
+        if (AlTemblar != null) AlTemblar(fuerza, duracion);
         fuerzaTemblor = fuerza;
         duracionTemblor = Mathf.Max(0.05f, duracion);
         finTemblor = Time.unscaledTime + duracionTemblor;
@@ -143,9 +184,11 @@ public class CamaraPisoCenital : MonoBehaviour
     private Vector2 CentroDeseado(float medioAlto)
     {
         Vector2 objetivo = zona.center;
-        if (jugador == null) jugador = FindFirstObjectByType<JugadorCenital>();
+        if (jugador == null || jugador.controlRemoto) jugador = JugadorCenital.Local;
         if (jugador != null) objetivo = jugador.Centro;
-        objetivo.y -= desplazamiento;
+        else if (ObjetivoExterno != null) objetivo = (Vector2)ObjetivoExterno.position + new Vector2(0f, 0.3f);
+        if (enfoqueForzado) objetivo = puntoEnfoque;
+        else objetivo.y -= desplazamiento;
 
         float medioAncho = medioAlto * AspectoZona;
         return new Vector2(Acotar(objetivo.x, zona.xMin - margen, zona.xMax + margen, medioAncho, zona.center.x),
@@ -173,7 +216,7 @@ public class CamaraPisoCenital : MonoBehaviour
         if (!tieneZona) return;
 
         float normal = TamanoNormal();
-        float objetivo = VerMapaPulsado() ? Mathf.Max(TamanoCompleto(), normal) : normal;
+        float objetivo = VerMapaPulsado() && !enfoqueForzado ? Mathf.Max(TamanoCompleto(), normal) : normal * acercamiento;
         float dt = Time.unscaledDeltaTime;
 
         if (!inicializado)
@@ -192,7 +235,7 @@ public class CamaraPisoCenital : MonoBehaviour
         if (camara.pixelHeight > 0) unidadesPorPixel = 2f * tamano / camara.pixelHeight;
         desplazamiento = Mathf.SmoothDamp(desplazamiento, desplazamientoObjetivo, ref velDesplazamiento, 0.1f, Mathf.Infinity, dt);
 
-        centro = Vector2.SmoothDamp(centro, CentroDeseado(tamano), ref velCentro, suavizadoSeguimiento, Mathf.Infinity, dt);
+        centro = Vector2.SmoothDamp(centro, CentroDeseado(tamano), ref velCentro, enfoqueForzado ? 0.35f : suavizadoSeguimiento, Mathf.Infinity, dt);
         Vector2 pos = centro;
 
         // Pixel perfect: sin zoom en curso, la cámara se queda en la rejilla de píxeles de pantalla.

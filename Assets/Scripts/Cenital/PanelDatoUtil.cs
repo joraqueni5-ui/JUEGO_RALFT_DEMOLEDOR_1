@@ -183,8 +183,8 @@ public class PanelDatoUtil : MonoBehaviour
     {
         piso = PisoCenital.Actual;
         def = piso != null ? piso.Definicion : null;
-        if (jugador == null) jugador = FindFirstObjectByType<JugadorCenital>();
-        if (gestor == null) gestor = FindFirstObjectByType<GestorJuego>();
+        if (jugador == null) jugador = JugadorCenital.Local;
+        if (gestor == null) gestor = FindAnyObjectByType<GestorJuego>();
 
         if (HayAvisoGrande()) return;
 
@@ -317,6 +317,15 @@ public class PanelDatoUtil : MonoBehaviour
         ArteNiveles arte = ArteNiveles.Actual;
         Sprite sLeido = arte != null ? arte.libroLeido : null, sPendiente = arte != null ? arte.libroPendiente : null;
 
+        // El destello cuelga del librito anterior: se saca antes de borrar los libritos (si no, se destruye con ellos).
+        if (destello != null) { destello.transform.SetParent(contador, false); destello.gameObject.SetActive(false); }
+        else
+        {
+            destello = Crear("Destello", contador, null, false);
+            destello.color = new Color(1f, 1f, 1f, 0f);
+            destello.rectTransform.sizeDelta = new Vector2(24f, 24f);
+            destello.gameObject.SetActive(false);
+        }
         for (int i = 0; i < libros.Length; i++) if (libros[i] != null) Destroy(libros[i].gameObject);
         libros = new Image[total];
         const float lado = 24f, hueco = 6f;
@@ -391,7 +400,7 @@ public class PanelDatoUtil : MonoBehaviour
         icono.localScale = Vector3.one * esc;
 
         // Destello del librito nuevo.
-        if (libroDestello >= 0 && tDestello < 0.5f)
+        if (libroDestello >= 0 && tDestello < 0.5f && destello != null && libroDestello < libros.Length && libros[libroDestello] != null)
         {
             tDestello += dt;
             float k = Mathf.Clamp01(tDestello / 0.5f);
@@ -406,7 +415,8 @@ public class PanelDatoUtil : MonoBehaviour
         float mantener = def != null ? def.distanciaMantenerPanelDato : 1.5f;
         float cerrar = def != null ? def.distanciaCerrarPanelDato : 2f;
         float espera = def != null ? def.esperaCerrarPanelDato : 1.5f;
-        float d = jugador != null && origen != null ? Vector2.Distance(jugador.Centro, origen.position) : 0f;
+        Vector2 propia;
+        float d = origen != null && CamaraPisoCenital.PosicionPropia(out propia) ? Vector2.Distance(propia, origen.position) : 0f;
         if (d <= mantener) { esperaAlejado = 0f; return; }
 
         restante -= dt;
@@ -428,7 +438,7 @@ public class PanelDatoUtil : MonoBehaviour
             float margenPx = 0.5f / u;                                                                    // medio mundo de radio del personaje
             pantalla.xMin -= margenPx; pantalla.xMax += margenPx; pantalla.yMin -= margenPx; pantalla.yMax += margenPx;
 
-            if (demoledor == null) demoledor = FindFirstObjectByType<DemoledorCenital>();
+            if (demoledor == null) demoledor = FindAnyObjectByType<DemoledorCenital>();
             if ((jugador != null && Detras(cam, jugador.Centro, pantalla)) ||
                 (demoledor != null && Detras(cam, demoledor.transform.position, pantalla)))
                 objetivo = def != null ? def.opacidadPanelTapando : 0.45f;

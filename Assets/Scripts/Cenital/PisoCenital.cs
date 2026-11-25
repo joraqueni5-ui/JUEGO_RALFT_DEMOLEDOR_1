@@ -37,7 +37,7 @@ public class PisoCenital : EdificioAlto
     public override bool Terminado { get { return finalizado; } }
     public override int VentanasPorSeccion { get { return mapa != null ? mapa.objetos.Count : 0; } }
     public float LimiteDerrumbe { get { return definicion != null ? definicion.limiteDerrumbe : 0.7f; } }
-    public float RitmoDemoledor { get { return definicion != null ? definicion.ritmoDemoledor : 1f; } }
+    public float RitmoDemoledor { get { return (definicion != null ? definicion.ritmoDemoledor : 1f) * Dificultad.Ritmo * ModoSupervivencia.FactorRitmo; } }
 
     protected override void Awake()
     {
@@ -67,8 +67,28 @@ public class PisoCenital : EdificioAlto
     /// <summary>Con una lista de pisos, escoge el de GameSession.PisoActual y cambia el mapa de la escena por el suyo.</summary>
     private void ElegirPiso()
     {
+        // SUPERVIVENCIA: el escenario nuevo (EL GRAN HALL) reemplaza al mapa de la escena.
+        if (GameSession.Supervivencia)
+        {
+            DefinicionPiso sv = Resources.Load<DefinicionPiso>(ModoSupervivencia.RutaDefinicion);
+            if (sv != null && sv.prefabMapa != null)
+            {
+                NivelEscena nivelSv = FindAnyObjectByType<NivelEscena>();
+                MapaCenital viejo = nivelSv != null && nivelSv.mapa != null ? nivelSv.mapa : GetComponentInChildren<MapaCenital>();
+                if (viejo == null && nivelSv != null) viejo = nivelSv.GetComponentInChildren<MapaCenital>();
+                if (viejo != null) { viejo.gameObject.SetActive(false); Destroy(viejo.gameObject); }
+                definicion = sv;
+                GameObject mapaSv = Instantiate(sv.prefabMapa, transform);
+                mapaSv.name = sv.prefabMapa.name;
+                mapa = mapaSv.GetComponent<MapaCenital>();
+                if (nivelSv != null) { nivelSv.definicion = sv; nivelSv.mapa = mapa; }
+                return;
+            }
+            Debug.LogWarning("[Supervivencia] Falta el escenario (Resources/" + ModoSupervivencia.RutaDefinicion + "): se juega el mapa de la escena.");
+        }
+
         // Escena de un nivel: su NivelEscena indica la definición y trae el mapa ya armado.
-        NivelEscena nivel = FindFirstObjectByType<NivelEscena>();
+        NivelEscena nivel = FindAnyObjectByType<NivelEscena>();
         if (nivel != null && nivel.definicion != null)
         {
             definicion = nivel.definicion;
@@ -135,17 +155,68 @@ public class PisoCenital : EdificioAlto
         energiaPct = definicion != null ? definicion.energiaInicial : 100f;
         mapa.Preparar(definicion);
         CrearPuntosInformacion();
-        if (FindFirstObjectByType<IndicadoresFueraDePantalla>() == null) new GameObject("Indicadores").AddComponent<IndicadoresFueraDePantalla>();
+        foreach (ObjetoReparable o in mapa.objetos) o.CambioEstado += AlCambiarObjeto;
+        if (camara == null) camara = FindAnyObjectByType<CamaraPisoCenital>();
+        if (camara != null) camara.Encuadrar(mapa.Limites);
+        if (RedJuego.EsInvitadoEnPartida)
+        {
+            // Invitado en multijugador: el piso solo dibuja; las reglas (poderes, tutorial, energía) son del anfitrión.
+            AvisarCambio();
+            return;
+        }
+        if (FindAnyObjectByType<IndicadoresFueraDePantalla>() == null) new GameObject("Indicadores").AddComponent<IndicadoresFueraDePantalla>();
         if (definicion != null && definicion.poderes != null && definicion.poderes.Length > 0 && GetComponent<GestorPoderes>() == null)
             gameObject.AddComponent<GestorPoderes>();
         if (definicion != null && definicion.pasosTutorial != null && definicion.pasosTutorial.Length > 0 && GetComponent<TutorialPiso>() == null)
             gameObject.AddComponent<TutorialPiso>();
-        foreach (ObjetoReparable o in mapa.objetos) o.CambioEstado += AlCambiarObjeto;
-
-        if (camara == null) camara = FindFirstObjectByType<CamaraPisoCenital>();
-        if (camara != null) camara.Encuadrar(mapa.Limites);
         AvisarCambio();
     }
+
+    // ------------------------------------------------------------ multijugador (invitado)
+    /// <summary>El anfitrión manda cómo va el piso: energía, rendición, ascensor, fin y los "?" leídos.</summary>
+    public void FijarEstadoRed(float nuevaEnergiaPct, bool rendido, bool salio, bool terminado, bool ventanalRoto, List<int> leidas)
+    {
+        bool cambio = Mathf.Abs(nuevaEnergiaPct - energiaPct) > 0.01f || rendido != Rendido || terminado != finalizado;
+        energiaPct = nuevaEnergiaPct;
+        Rendido = rendido;
+        finalizado = terminado;
+        GestorAudio.SilencioLocal = true;   // estos cambios ya sonaron en el anfitrión
+        try
+        {
+            if (salio && !DemoledorSalio)
+            {
+                DemoledorSalio = true;
+                if (mapa != null && mapa.ascensor != null) mapa.ascensor.Abrir(definicion);
+                if (mapa != null && mapa.ascensor != null) GuiaSalida.Mostrar(mapa.ascensor.transform.position);
+                else if (mapa != null && mapa.puntoSalto != null) GuiaSalida.Mostrar(mapa.puntoSalto.position);
+                cambio = true;
+            }
+            else if (!salio && DemoledorSalio)
+            {
+                DemoledorSalio = false;
+                if (mapa != null && mapa.ascensor != null) mapa.ascensor.Cerrar(definicion);
+                cambio = true;
+            }
+            if (mapa != null && mapa.ventanal != null && mapa.ventanal.Roto != ventanalRoto)
+            {
+                if (ventanalRoto) mapa.ventanal.Romper(); else mapa.ventanal.Restaurar();
+            }
+        }
+        finally { GestorAudio.SilencioLocal = false; }
+        if (leidas != null && leidas.Count != infoLeidas.Count)
+        {
+            infoLeidas.Clear();
+            foreach (int i in leidas) infoLeidas.Add(i);
+            cambio = true;
+        }
+        if (cambio) AvisarCambio();
+    }
+
+    /// <summary>Los "?" leídos (para el multijugador).</summary>
+    public IEnumerable<int> InfoLeidas { get { return infoLeidas; } }
+
+    /// <summary>Energía en porcentaje (0 a 100), para el multijugador.</summary>
+    public float EnergiaPorcentaje { get { return energiaPct; } }
 
     // Con un mínimo imposible, la comprobación de victoria por golpes de EdificioAlto nunca se cumple:
     // el piso se supera por la energía del demoledor.
@@ -164,8 +235,20 @@ public class PisoCenital : EdificioAlto
     private void BajarEnergia(float porcentaje)
     {
         if (EnergiaAgotada || porcentaje <= 0f || finalizado) return;
-        energiaPct = Mathf.Max(0f, energiaPct - porcentaje);
-        if (EnergiaAgotada) IniciarRendicion();
+        energiaPct = Mathf.Max(0f, energiaPct - porcentaje * Dificultad.Cansancio * ModoSupervivencia.FactorCansancio);
+        if (EnergiaAgotada)
+        {
+            // En supervivencia no se rinden: la oleada queda vencida y llega la siguiente.
+            if (ModoSupervivencia.Activo) ModoSupervivencia.OleadaVencida();
+            else IniciarRendicion();
+        }
+        AvisarCambio();
+    }
+
+    /// <summary>Supervivencia: la energía de los villanos vuelve a 100 % con cada oleada nueva.</summary>
+    public void RecargarEnergia()
+    {
+        energiaPct = 100f;
         AvisarCambio();
     }
 
@@ -197,7 +280,8 @@ public class PisoCenital : EdificioAlto
             if (mapa.puntoSalto != null)
             {
                 MarcaSigueloCenital.Crear(mapa.puntoSalto.position, this);
-                GestorJuego gestorSalto = FindFirstObjectByType<GestorJuego>();
+                GuiaSalida.Mostrar(mapa.puntoSalto.position);
+                GestorJuego gestorSalto = FindAnyObjectByType<GestorJuego>();
                 if (gestorSalto != null) gestorSalto.Aviso("¡SÍGUELO!", 3.5f);
                 AvisarCambio();
                 return;
@@ -207,8 +291,9 @@ public class PisoCenital : EdificioAlto
             return;
         }
         if (mapa != null && mapa.ascensor != null) mapa.ascensor.Abrir(definicion);
+        if (mapa != null && mapa.ascensor != null) GuiaSalida.Mostrar(mapa.ascensor.transform.position);
         string mensaje = definicion != null ? definicion.mensajeAscensor : "¡El ascensor está abierto!";
-        GestorJuego gestor = FindFirstObjectByType<GestorJuego>();
+        GestorJuego gestor = FindAnyObjectByType<GestorJuego>();
         if (gestor != null) gestor.Aviso(mensaje, 3.5f);
         AvisarCambio();
     }
@@ -236,10 +321,11 @@ public class PisoCenital : EdificioAlto
         if (infoLeidas.Add(indice))
         {
             GestorAudio.Reproducir(Snd.MenuConfirmar, 0.6f);   // sonido suave de interfaz
+            Progreso.Sumar("info");
             int puntos = definicion != null ? definicion.puntosPorInfo : 20;
-            GestorJuego gestor = FindFirstObjectByType<GestorJuego>();
+            GestorJuego gestor = FindAnyObjectByType<GestorJuego>();
             if (gestor != null) gestor.SumarPuntos(puntos, "+" + puntos);
-            JugadorCenital jugador = FindFirstObjectByType<JugadorCenital>();
+            JugadorCenital jugador = FindAnyObjectByType<JugadorCenital>();
             if (jugador != null) TextoFlotante.Mostrar(jugador.Centro + Vector2.up * 1.3f, "+" + puntos, new Color(1f, 0.85f, 0.3f));
             AvisarCambio();
         }
@@ -309,6 +395,7 @@ public class PisoCenital : EdificioAlto
     public void RegistrarBloqueo()
     {
         BloqueosTotales++;
+        Progreso.Sumar("bloqueos");
         BajarEnergia(definicion != null ? definicion.energiaPorBloqueo : 12f);
     }
 
@@ -360,6 +447,7 @@ public class PisoCenital : EdificioAlto
     public void RegistrarReparacion()
     {
         ReparacionesTotales++;
+        Progreso.Sumar("reparaciones");
         AvisarReparacion();
         BajarEnergia(definicion != null ? definicion.energiaPorReparacion : 4f);
     }

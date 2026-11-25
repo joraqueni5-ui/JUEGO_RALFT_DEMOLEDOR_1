@@ -32,6 +32,20 @@ public class ObjetoReparable : MonoBehaviour
     public Vector2 Centro { get { return colision.bounds.center; } }
     public Vector2 PuntoMasCercano(Vector2 p) { return colision.ClosestPoint(p); }
 
+    /// <summary>Nombre del objeto en la definición del piso ("Horno 1", "Fila de computadoras"...).</summary>
+    public string Nombre
+    {
+        get
+        {
+            if (definicion != null && definicion.objetosCenital != null && indice >= 0 && indice < definicion.objetosCenital.Length &&
+                definicion.objetosCenital[indice] != null) return definicion.objetosCenital[indice].nombre ?? name;
+            return name;
+        }
+    }
+
+    /// <summary>El dibujo del objeto (para animarlo al repararlo).</summary>
+    public SpriteRenderer Dibujo { get { return dibujo; } }
+
     /// <summary>Se llama una vez al empezar el piso: crea el dibujo y lo deja intacto.</summary>
     public void Preparar(DefinicionPiso d)
     {
@@ -101,6 +115,8 @@ public class ObjetoReparable : MonoBehaviour
         Estado = Estado == EstadoObjeto.Intacto ? EstadoObjeto.Danado : EstadoObjeto.Roto;
         if (Estado == EstadoObjeto.Roto) GestorAudio.Reproducir(Snd.ObjetoRotoAlerta);
         Aplicar();
+        // Trozos que saltan al romperse (más si queda roto del todo).
+        if (colision != null) TrozoVolador.Lanzar(Centro, Estado == EstadoObjeto.Roto ? 7 : 4, Provisional.OrdenY(colision.bounds.min.y) + 6);
         if (CambioEstado != null) CambioEstado(this);
         return true;
     }
@@ -121,6 +137,20 @@ public class ObjetoReparable : MonoBehaviour
         if (CambioEstado != null) CambioEstado(this);
         return true;
     }
+
+    /// <summary>Invitado en multijugador: copia el estado que manda el anfitrión (sin sonidos; avisa el cambio al HUD).</summary>
+    public void FijarEstadoRed(EstadoObjeto e, bool marcado)
+    {
+        if (marcado != amenazaRed) { amenazaRed = marcado; MarcarAmenaza(marcado); }
+        if (e == Estado) return;
+        Estado = e;
+        Aplicar();
+        if (CambioEstado != null) CambioEstado(this);
+    }
+    private bool amenazaRed;
+
+    /// <summary>Hay una marca roja de amenaza encima (algún enemigo va a golpearlo).</summary>
+    public bool Amenazado { get { return amenazado; } }
 
     /// <summary>Intacto, sin avisar (el piso avisa una sola vez al reiniciar).</summary>
     public void Reiniciar()

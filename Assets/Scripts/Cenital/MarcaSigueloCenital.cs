@@ -48,7 +48,7 @@ public class MarcaSigueloCenital : MonoBehaviour
         disco.color = new Color(0.25f, 0.95f, 0.4f, 0.35f + 0.3f * pulso);
 
         if (alcanzada || piso == null || piso.Terminado) return;
-        if (jugador == null) jugador = FindFirstObjectByType<JugadorCenital>();
+        jugador = JugadorCenital.MasCercano(transform.position);
         if (jugador == null) return;
         if (Vector2.Distance(jugador.Centro, (Vector2)transform.position) <= radio)
         {

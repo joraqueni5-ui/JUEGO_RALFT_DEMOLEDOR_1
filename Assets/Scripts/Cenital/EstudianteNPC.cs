@@ -48,7 +48,7 @@ public class EstudianteNPC : MonoBehaviour
         PisoCenital piso = PisoCenital.Actual;
         if (piso == null || piso.Mapa == null) { enabled = false; return; }
         mapa = piso.Mapa;
-        demoledor = FindFirstObjectByType<DemoledorCenital>();
+        demoledor = FindAnyObjectByType<DemoledorCenital>();
         if (esChef) Chef = this;
 
         DefinicionPiso def = piso.Definicion;

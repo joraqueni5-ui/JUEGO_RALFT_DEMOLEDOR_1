@@ -14,7 +14,7 @@ public static class GeneradorEscenasNiveles
     {
         if (Application.isPlaying) { Debug.LogError("[Niveles] Sal del modo Play antes de regenerar el mapa."); return; }
 
-        NivelEscena nivel = Object.FindFirstObjectByType<NivelEscena>();
+        NivelEscena nivel = Object.FindAnyObjectByType<NivelEscena>();
         if (nivel == null || nivel.definicion == null)
         {
             EditorUtility.DisplayDialog("Regenerar mapa", "La escena abierta no tiene un objeto con el componente NivelEscena y una DefinicionPiso. Abre una escena de Assets/Scenes/Niveles.", "OK");
@@ -28,7 +28,7 @@ public static class GeneradorEscenasNiveles
         // Se borra solo el contenedor del mapa.
         List<GameObject> viejos = new List<GameObject>();
         if (nivel.mapa != null) viejos.Add(nivel.mapa.gameObject);
-        foreach (MapaCenital m in Object.FindObjectsByType<MapaCenital>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (MapaCenital m in Object.FindObjectsByType<MapaCenital>(FindObjectsInactive.Include))
             if (m != null && !viejos.Contains(m.gameObject)) viejos.Add(m.gameObject);
         foreach (GameObject g in viejos) Object.DestroyImmediate(g);
 
