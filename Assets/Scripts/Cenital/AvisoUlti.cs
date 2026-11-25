@@ -22,9 +22,14 @@ public class AvisoUlti : MonoBehaviour
     private float inicio;
 
     /// <summary>Muestra el aviso 'segundos'. Reemplaza al que hubiera.</summary>
+    /// <summary>El anfitrión lo reenvía al invitado.</summary>
+    public static System.Action<string, float, bool, Color> AlMostrar;
+    public static System.Action AlOcultar;
+
     public static AvisoUlti Mostrar(string mensaje, float segundos, bool bordesRojos, Color colorTexto)
     {
         Ocultar();
+        if (AlMostrar != null) AlMostrar(mensaje, segundos, bordesRojos, colorTexto);
 
         GameObject g = new GameObject("AvisoUlti", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         AvisoUlti a = g.AddComponent<AvisoUlti>();
@@ -103,6 +108,7 @@ public class AvisoUlti : MonoBehaviour
 
     public static void Ocultar()
     {
+        if (actual != null && AlOcultar != null) AlOcultar();
         if (actual != null) Destroy(actual.gameObject);
         actual = null;
     }
