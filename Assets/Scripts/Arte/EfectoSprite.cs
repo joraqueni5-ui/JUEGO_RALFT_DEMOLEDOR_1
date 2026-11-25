@@ -12,6 +12,8 @@ public class AnimadorSprite : MonoBehaviour
     public bool destruirAlTerminar = true;
     [Tooltip("Sigue animándose con el juego en pausa (tiempo sin escala).")]
     public bool ignorarPausa;
+    /// <summary>Al terminar vuelve a la reserva de EfectoSprite en vez de destruirse (lo pone EfectoSprite.Reproducir).</summary>
+    [System.NonSerialized] public bool reciclar;
 
     private SpriteRenderer dibujo;
     private float tiempo;
@@ -41,7 +43,11 @@ public class AnimadorSprite : MonoBehaviour
         int n = Mathf.FloorToInt(tiempo * cuadrosPorSegundo);
         if (!bucle && n >= cuadros.Length)
         {
-            if (destruirAlTerminar) Destroy(gameObject);
+            if (destruirAlTerminar)
+            {
+                if (reciclar && EfectoSprite.Devolver(this)) return;
+                Destroy(gameObject);
+            }
             else dibujo.sprite = cuadros[cuadros.Length - 1];
             return;
         }
@@ -52,24 +58,57 @@ public class AnimadorSprite : MonoBehaviour
 /// <summary>Atajos para crear efectos animados con los sprites de ArteNiveles.</summary>
 public static class EfectoSprite
 {
+    // Reserva de efectos terminados para reutilizarlos (crear y destruir objetos a cada golpe traba en celulares lentos).
+    private static readonly System.Collections.Generic.Stack<AnimadorSprite> libres = new System.Collections.Generic.Stack<AnimadorSprite>();
+
+    internal static bool Devolver(AnimadorSprite a)
+    {
+        if (a == null || libres.Count >= 64) return false;
+        a.gameObject.SetActive(false);
+        libres.Push(a);
+        return true;
+    }
+
     /// <summary>Un efecto de una sola vez en 'posicion'. Devuelve null si no hay cuadros (el llamador usa su figura provisional).</summary>
     public static SpriteRenderer Reproducir(Sprite[] cuadros, Vector3 posicion, int orden, float escala = 1f, float cuadrosPorSegundo = 12f, Transform padre = null)
     {
         cuadros = ArteNiveles.Serie(cuadros);
         if (cuadros == null) return null;
 
-        GameObject g = new GameObject("Efecto");
-        if (padre != null) g.transform.SetParent(padre, false);
+        AnimadorSprite a = null;
+        while (a == null && libres.Count > 0) a = libres.Pop();
+        GameObject g;
+        SpriteRenderer sr;
+        if (a != null)
+        {
+            g = a.gameObject;
+            sr = a.GetComponent<SpriteRenderer>();
+            g.transform.SetParent(padre, false);
+            g.transform.rotation = Quaternion.identity;
+            sr.color = Color.white;
+            sr.flipX = false;
+            sr.flipY = false;
+            sr.enabled = true;
+            EspejoAnfitrion.Redecidir(sr);
+        }
+        else
+        {
+            g = new GameObject("Efecto");
+            if (padre != null) g.transform.SetParent(padre, false);
+            sr = g.AddComponent<SpriteRenderer>();
+            a = g.AddComponent<AnimadorSprite>();
+        }
         g.transform.position = posicion;
         g.transform.localScale = new Vector3(escala, escala, 1f);
-        SpriteRenderer sr = g.AddComponent<SpriteRenderer>();
         sr.sprite = cuadros[0];
         sr.sortingOrder = orden;
-        AnimadorSprite a = g.AddComponent<AnimadorSprite>();
         a.cuadros = cuadros;
         a.cuadrosPorSegundo = cuadrosPorSegundo;
         a.bucle = false;
         a.destruirAlTerminar = true;
+        a.ignorarPausa = false;
+        a.reciclar = true;
+        if (!g.activeSelf) g.SetActive(true);   // OnEnable reinicia el tiempo
         return sr;
     }
 

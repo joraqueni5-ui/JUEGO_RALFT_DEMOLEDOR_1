@@ -1,0 +1,89 @@
+{
+ "schema": "codeart2d.pixelspec.v1",
+ "name": "poder_martillo",
+ "canvas": [
+  32,
+  32
+ ],
+ "palette": {
+  "k": "#16121c",
+  "h": "#fff3a8",
+  "g": "#f2c230",
+  "G": "#b07a12",
+  "w": "#c8884a",
+  "W": "#8a5428",
+  "r": "#d8402e",
+  "R": "#8a2418",
+  "s": "#ffffff"
+ },
+ "outline": {
+  "mode": "solid",
+  "color": "k"
+ },
+ "layers": [
+  {
+   "name": "mango",
+   "z": 0,
+   "origin": [
+    14,
+    12
+   ],
+   "rows": [
+    "gggg",
+    "GGGG",
+    "wwWW",
+    "wwWW",
+    "wwWW",
+    "wwWW",
+    "wwWW",
+    "rrRR",
+    "rrRR",
+    "rrRR",
+    "rRRR",
+    "RRRR"
+   ]
+  },
+  {
+   "name": "cabeza",
+   "z": 1,
+   "origin": [
+    6,
+    6
+   ],
+   "rows": [
+    ".hhhhhhhhhhhhhhhhhh.",
+    "hhgggggggggggggggggG",
+    "hgggggggggggggggggGG",
+    "ggggggggggggggggggGG",
+    "GgggggggggggggggggGG",
+    ".GGGGGGGGGGGGGGGGGG."
+   ]
+  },
+  {
+   "name": "brillo1",
+   "z": 2,
+   "origin": [
+    3,
+    2
+   ],
+   "rows": [
+    ".s.",
+    "sss",
+    ".s."
+   ]
+  },
+  {
+   "name": "brillo2",
+   "z": 2,
+   "origin": [
+    26,
+    13
+   ],
+   "rows": [
+    ".s.",
+    "sss",
+    ".s."
+   ]
+  }
+ ]
+}

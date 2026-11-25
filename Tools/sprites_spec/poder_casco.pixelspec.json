@@ -1,0 +1,62 @@
+{
+ "schema": "codeart2d.pixelspec.v1",
+ "name": "poder_casco",
+ "canvas": [
+  32,
+  32
+ ],
+ "palette": {
+  "k": "#16121c",
+  "y": "#f6c21e",
+  "h": "#fff0a0",
+  "Y": "#b07a0c",
+  "b": "#2f6fd0",
+  "B": "#1c4690",
+  "s": "#ffffff"
+ },
+ "outline": {
+  "mode": "solid",
+  "color": "k"
+ },
+ "layers": [
+  {
+   "name": "casco",
+   "z": 0,
+   "origin": [
+    3,
+    8
+   ],
+   "rows": [
+    ".........yyyyyyyy.........",
+    ".......yyhhyyyyyyyy.......",
+    "......yyhyyyyYYyyyyyy.....",
+    ".....yyhyyyyyYYyyyyyyy....",
+    "....yyhyyyyyyYYyyyyyyyy...",
+    "....yhyyyyyyyYYyyyyyyyy...",
+    "....yyyyyyyyyYYyyyyyyyy...",
+    "....yyyyyyyyyYYyyyyyyyy...",
+    "....yyyyyyyyyyyyyyyyyyy...",
+    ".hhyyyyyyyyyyyyyyyyyyyyyy.",
+    "yyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "YYYYYYYYYYYYYYYYYYYYYYYYYY",
+    ".YYYYYYYYYYYYYYYYYYYYYYYY."
+   ]
+  },
+  {
+   "name": "escudo",
+   "z": 1,
+   "origin": [
+    8,
+    10
+   ],
+   "rows": [
+    "bbbbb",
+    "bbsbb",
+    "bsssb",
+    "bbsbb",
+    ".bBb.",
+    "..B.."
+   ]
+  }
+ ]
+}

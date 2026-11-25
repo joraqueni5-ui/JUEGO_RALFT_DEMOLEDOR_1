@@ -1,0 +1,159 @@
+{
+ "schema": "codeart2d.pixelspec.v1",
+ "name": "mini_termita",
+ "canvas": [
+  22,
+  22
+ ],
+ "anchor_px": [
+  11,
+  21
+ ],
+ "palette": {
+  "k": "#16121c",
+  "a": "#5a5f70",
+  "J": "#d8dee8",
+  "m": "#8d96aa",
+  "M": "#566074",
+  "E": "#ff3a2a",
+  "c": "#40404e",
+  "g": "#b8682e",
+  "h": "#eaa45c",
+  "G": "#74401e",
+  "l": "#747a8e"
+ },
+ "variants": {
+  "cobre": {},
+  "toxica": {
+   "g": "#5aa83a",
+   "h": "#a8e070",
+   "G": "#2e6a22",
+   "E": "#ffe23a"
+  }
+ },
+ "outline": {
+  "mode": "solid",
+  "color": "k"
+ },
+ "poses": {
+  "cuerpo": [
+   "..a........a..",
+   "...a......a...",
+   "....JJ..JJ....",
+   "....JmmmmJ....",
+   "...mmEmmEmm...",
+   "...mmmmmmmm...",
+   "....MMMMMM....",
+   "...mmmmmmmm...",
+   "...mJmmmmmm...",
+   "...MMMMMMMM...",
+   "....cccccc....",
+   "...gggggggg...",
+   "..gghggggggg..",
+   "..ghgggggggg..",
+   "..GgggggggGG..",
+   "...GgggggGG...",
+   "....GGGGGG...."
+  ],
+  "cuerpo_muerde": [
+   "..a........a..",
+   "...a......a...",
+   "...J......J...",
+   "...JJmmmmJJ...",
+   "...mmEmmEmm...",
+   "...mmmmmmmm...",
+   "....MMMMMM....",
+   "...mmmmmmmm...",
+   "...mJmmmmmm...",
+   "...MMMMMMMM...",
+   "....cccccc....",
+   "...gggggggg...",
+   "..gghggggggg..",
+   "..ghgggggggg..",
+   "..GgggggggGG..",
+   "...GgggggGG...",
+   "....GGGGGG...."
+  ],
+  "patas_izq": [
+   "l........",
+   ".lll.....",
+   "....l....",
+   ".........",
+   "lllll....",
+   ".........",
+   "....l....",
+   ".lll.....",
+   "l........"
+  ]
+ },
+ "layers": [
+  {
+   "name": "patas_i",
+   "z": 0,
+   "origin": [
+    2,
+    8
+   ],
+   "rows": "patas_izq"
+  },
+  {
+   "name": "patas_d",
+   "z": 0,
+   "origin": [
+    11,
+    8
+   ],
+   "rows": "patas_izq",
+   "mirror": true
+  },
+  {
+   "name": "cuerpo",
+   "z": 1,
+   "origin": [
+    4,
+    2
+   ],
+   "rows": "cuerpo"
+  }
+ ],
+ "frames": [
+  {
+   "name": "camina_0",
+   "layers": {
+    "patas_i": {
+     "dy": -1
+    },
+    "patas_d": {
+     "dy": 1
+    }
+   }
+  },
+  {
+   "name": "camina_1",
+   "layers": {
+    "patas_i": {
+     "dy": 1
+    },
+    "patas_d": {
+     "dy": -1
+    }
+   }
+  },
+  {
+   "name": "muerde_0",
+   "layers": {
+    "cuerpo": {
+     "rows": "cuerpo_muerde"
+    }
+   }
+  },
+  {
+   "name": "muerde_1",
+   "layers": {
+    "cuerpo": {
+     "dy": 1
+    }
+   }
+  }
+ ]
+}

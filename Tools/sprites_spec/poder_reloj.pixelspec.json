@@ -1,0 +1,77 @@
+{
+ "schema": "codeart2d.pixelspec.v1",
+ "name": "poder_reloj",
+ "canvas": [
+  32,
+  32
+ ],
+ "palette": {
+  "k": "#16121c",
+  "W": "#6a3c1c",
+  "w": "#b06a30",
+  "c": "#e6f8ff",
+  "q": "#a8dcf4",
+  "I": "#3aa0e8",
+  "f": "#ffffff"
+ },
+ "outline": {
+  "mode": "solid",
+  "color": "k"
+ },
+ "layers": [
+  {
+   "name": "reloj",
+   "z": 0,
+   "origin": [
+    8,
+    6
+   ],
+   "rows": [
+    "WWWWWWWWWWWWWWWW",
+    "wwwwwwwwwwwwwwww",
+    ".W.cqqqqqqqqc.W.",
+    ".W.cIIIIIIIIc.W.",
+    ".W..cIIIIIIc..W.",
+    ".W...cIIIIc...W.",
+    ".W....cIIc....W.",
+    ".W.....cc.....W.",
+    ".W.....Ic.....W.",
+    ".W....cIqc....W.",
+    ".W...cqIqqc...W.",
+    ".W..cqqIqqqc..W.",
+    ".W.cqqIIIqqqc.W.",
+    ".W.cIIIIIIIIc.W.",
+    "wwwwwwwwwwwwwwww",
+    "WWWWWWWWWWWWWWWW"
+   ]
+  },
+  {
+   "name": "copo1",
+   "z": 1,
+   "origin": [
+    22,
+    3
+   ],
+   "rows": [
+    "f.f.f",
+    ".fff.",
+    "fffff",
+    ".fff.",
+    "f.f.f"
+   ]
+  },
+  {
+   "name": "copo2",
+   "z": 1,
+   "origin": [
+    3,
+    20
+   ],
+   "rows": [
+    ".f.",
+    "fff",
+    ".f."
+   ]
+  }
+ ]
+}

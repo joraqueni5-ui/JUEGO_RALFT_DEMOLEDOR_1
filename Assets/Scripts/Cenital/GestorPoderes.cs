@@ -18,8 +18,8 @@ public class GestorPoderes : MonoBehaviour
     {
         piso = GetComponent<PisoCenital>();
         def = piso != null ? piso.Definicion : null;
-        jugador = FindFirstObjectByType<JugadorCenital>();
-        gestor = FindFirstObjectByType<GestorJuego>();
+        jugador = FindAnyObjectByType<JugadorCenital>();
+        gestor = FindAnyObjectByType<GestorJuego>();
         Reiniciar();
     }
 
@@ -32,12 +32,17 @@ public class GestorPoderes : MonoBehaviour
     private float SiguienteIntervalo()
     {
         if (def == null) return 8f;
-        float v = def.variacionIntervaloPoderes;
-        return Mathf.Max(1f, def.intervaloPoderes * Random.Range(1f - v, 1f + v));
+        // Ritmo impredecible: además de la variación del piso, a veces sale mucho antes o bastante después.
+        float v = Mathf.Max(def.variacionIntervaloPoderes, 0.45f);
+        float t = def.intervaloPoderes * Random.Range(1f - v, 1f + v) * Personajes.FactorIntervaloPotenciadores;
+        // Con el demoledor débil (menos de 30 % de energía) aparecen más seguido.
+        if (piso != null && piso.Energia < 0.3f) t *= 0.6f;
+        return Mathf.Max(1f, t);
     }
 
     private void Update()
     {
+        if (JugadorCenital.Todos.Count > 1) jugador = JugadorCenital.Todos[Random.Range(0, JugadorCenital.Todos.Count)];
         if (def == null || piso == null || piso.Mapa == null || def.poderes == null || def.poderes.Length == 0) return;
         if (piso.Terminado || piso.Rendido || (gestor != null && (gestor.PartidaTerminada || gestor.EstaEnPausa))) return;
         if (Time.time < proximo) return;
@@ -85,6 +90,9 @@ public class GestorPoderes : MonoBehaviour
         MapaCenital mapa = piso.Mapa;
         Vector2 deseada;
 
+        // La mayoría de las veces aparece en un lugar al azar del piso (no siempre en el mismo punto).
+        if (Random.value < 0.65f && PosicionAlAzar(mapa, out posicion)) return true;
+
         switch (p.origen)
         {
             case OrigenPoder.JuntoAlChef:
@@ -130,6 +138,25 @@ public class GestorPoderes : MonoBehaviour
             if (d < mejor) { mejor = d; posicion = celda; hallada = true; }
         }
         return hallada;
+    }
+
+    /// <summary>Celda libre al azar, a más de 2,5 baldosas del jugador y lejos del demoledor y de otros poderes.</summary>
+    private bool PosicionAlAzar(MapaCenital mapa, out Vector2 posicion)
+    {
+        posicion = Vector2.zero;
+        List<Vector2> celdas = mapa.CentrosTransitables;
+        if (celdas == null || celdas.Count == 0) return false;
+        DemoledorCenital dem = DemoledorCenital.MasCercano(jugador != null ? jugador.Centro : Vector2.zero);
+        for (int intento = 0; intento < 25; intento++)
+        {
+            Vector2 c = celdas[Random.Range(0, celdas.Count)];
+            if (jugador != null && Vector2.Distance(c, jugador.Centro) < 2.5f) continue;
+            if (dem != null && Vector2.Distance(c, dem.transform.position) < 2f) continue;
+            if (OcupadaPorPoder(c)) continue;
+            posicion = c;
+            return true;
+        }
+        return false;
     }
 
     private static bool OcupadaPorPoder(Vector2 celda)

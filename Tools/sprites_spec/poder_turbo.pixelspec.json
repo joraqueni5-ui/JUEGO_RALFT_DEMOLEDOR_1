@@ -1,0 +1,78 @@
+{
+ "schema": "codeart2d.pixelspec.v1",
+ "name": "poder_turbo",
+ "canvas": [
+  32,
+  32
+ ],
+ "palette": {
+  "k": "#16121c",
+  "r": "#e0402e",
+  "R": "#9a2418",
+  "w": "#f6f2ea",
+  "W": "#bdb6aa",
+  "g": "#3a3a46",
+  "z": "#ffd22a",
+  "v": "#8fd8ff"
+ },
+ "outline": {
+  "mode": "solid",
+  "color": "k"
+ },
+ "layers": [
+  {
+   "name": "lineas",
+   "z": 0,
+   "origin": [
+    2,
+    11
+   ],
+   "rows": [
+    "vvvv",
+    "....",
+    "....",
+    "vvvvv",
+    "....",
+    "....",
+    "vvv."
+   ]
+  },
+  {
+   "name": "zapatilla",
+   "z": 1,
+   "origin": [
+    7,
+    9
+   ],
+   "rows": [
+    "...rrrr.................",
+    "..rrrrrr................",
+    "..rRRrrrrw..............",
+    "..rRrrrrwrw.............",
+    "..rrrrrwrwrrr...........",
+    "..rrrrrrwrrrrrr.........",
+    "..rrrrrrrrrrrrrrrr......",
+    "..rrrrrrrrrrrrrrrrrrr...",
+    "..rrRRRRRRRRRRRRRRRRRrr.",
+    ".wwwwwwwwwwwwwwwwwwwwwww",
+    ".WWWWWWWWWWWWWWWWWWWWWWW",
+    "..gggggggggggggggggggg.."
+   ]
+  },
+  {
+   "name": "rayo",
+   "z": 2,
+   "origin": [
+    18,
+    14
+   ],
+   "rows": [
+    "...zz",
+    "..zz.",
+    ".zzzz",
+    "..zz.",
+    ".zz.."
+   ]
+  }
+ ]
+}

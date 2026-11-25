@@ -1,0 +1,94 @@
+{
+  "schema": "codeart2d.pixelspec.v1",
+  "name": "mini_topadora",
+  "canvas": [30, 23],
+  "anchor_px": [12, 22],
+  "palette": {
+    "k": "#16121c",
+    "p": "#3a3a46",
+    "y": "#f2b21e",
+    "h": "#ffe07a",
+    "Y": "#b06c0c",
+    "w": "#8fd0f0",
+    "E": "#ff3a2a",
+    "A": "#6a6f80",
+    "B": "#4a5062",
+    "b": "#a8b0c2",
+    "t": "#2a2a34",
+    "T": "#44444f",
+    "o": "#8a90a2",
+    "s": "#d8d8e0",
+    "S": "#9a9aaa"
+  },
+  "variants": {
+    "amarilla": {},
+    "blindada": {"y": "#8a8f9e", "h": "#c8ccd6", "Y": "#50545f", "E": "#ffb020"}
+  },
+  "outline": {"mode": "solid", "color": "k"},
+  "poses": {
+    "cabina": [
+      "..p......",
+      "..p......",
+      "yyyyyyyyy",
+      "ywwwwwwwy",
+      "ykwwwwwky",
+      "ywkEwEkwy"
+    ],
+    "cuerpo": [
+      "..yyyyyyyyyyyyyyy.....",
+      ".yhhhhhhhhhhhhhhhy....",
+      ".yyyyyyyyyyyyyyyyyAAA.",
+      ".YyyyyyyyyyyyyyyyY..A.",
+      ".YYYYYYYYYYYYYYYYY..A."
+    ],
+    "pala": [
+      "..BB",
+      ".BbB",
+      ".BbB",
+      "BbbB",
+      "BbbB",
+      "BbbB",
+      "BbbB",
+      ".BbB",
+      "BBB."
+    ],
+    "orugas_a": [
+      ".ttttttttttttttttttt.",
+      "tTTTTTTTTTTTTTTTTTTTt",
+      "tToTToTToTToTToTToTTt",
+      "tTTTTTTTTTTTTTTTTTTTt",
+      ".ttttttttttttttttttt."
+    ],
+    "orugas_b": [
+      ".ttttttttttttttttttt.",
+      "tTTTTTTTTTTTTTTTTTTTt",
+      "tTToTToTToTToTToTToTt",
+      "tTTTTTTTTTTTTTTTTTTTt",
+      ".ttttttttttttttttttt."
+    ],
+    "humo_a": [
+      ".s.",
+      "sSs",
+      ".s."
+    ],
+    "humo_b": [
+      ".ss.",
+      "sSSs",
+      "sSSs",
+      ".ss."
+    ]
+  },
+  "layers": [
+    {"name": "orugas", "z": 0, "origin": [1, 16], "rows": "orugas_a"},
+    {"name": "cuerpo", "z": 1, "origin": [2, 11], "rows": "cuerpo"},
+    {"name": "cabina", "z": 2, "origin": [5, 5], "rows": "cabina"},
+    {"name": "pala", "z": 3, "origin": [22, 11], "rows": "pala"},
+    {"name": "humo", "z": 4, "origin": [6, 2], "rows": "humo_a"}
+  ],
+  "frames": [
+    {"name": "avanza_0"},
+    {"name": "avanza_1", "layers": {"orugas": {"rows": "orugas_b"}, "cabina": {"dy": 1}, "humo": {"rows": "humo_b", "dx": -1, "dy": -1}}},
+    {"name": "empuja_0", "layers": {"cuerpo": {"dx": 1}, "cabina": {"dx": 1}, "pala": {"dx": 2}, "humo": {"rows": "humo_b", "dx": -1, "dy": -1}}},
+    {"name": "empuja_1", "layers": {"orugas": {"rows": "orugas_b"}, "cuerpo": {"dx": 1, "dy": 1}, "cabina": {"dx": 1, "dy": 1}, "pala": {"dx": 3}, "humo": {"hidden": true}}}
+  ]
+}
