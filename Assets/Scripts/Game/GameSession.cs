@@ -134,6 +134,9 @@ namespace DemoledorUnifranz.Game
         /// <summary>Vidas con las que empezó el piso en curso (0 = todavía no se guardó ninguna).</summary>
         public static int VidasAlEmpezarPiso;
 
+        /// <summary>Modo SUPERVIVENCIA: el escenario nuevo con oleadas de villanos (no hay ascensor: se trata de aguantar).</summary>
+        public static bool Supervivencia;
+
         /// <summary>Modo elegido en el menú NIVELES (SegunEscena = el que marca SelectorModoJuego en la escena).</summary>
         public enum ModoElegido { SegunEscena, Original, Pisos }
         public static ModoElegido ModoSeleccionado = ModoElegido.SegunEscena;
@@ -145,6 +148,7 @@ namespace DemoledorUnifranz.Game
         public static void SeleccionarNivel(bool modoPisos, int piso)
         {
             NuevaPartida();
+            Supervivencia = false;
             ModoSeleccionado = modoPisos ? ModoElegido.Pisos : ModoElegido.Original;
             if (!modoPisos) return;
             PisoActual = Mathf.Max(0, piso);

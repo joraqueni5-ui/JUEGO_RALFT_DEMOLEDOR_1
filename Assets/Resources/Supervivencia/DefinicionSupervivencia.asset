@@ -1,0 +1,1941 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aacc5410819f9104bbfb7b87ef7bcf65, type: 3}
+  m_Name: DefinicionSupervivencia
+  m_EditorClassIdentifier: Assembly-CSharp::DefinicionPiso
+  nombreArea: 'SUPERVIVENCIA: EL GRAN HALL'
+  nombreEscena: 
+  escenaSiguiente: 
+  numero: 9
+  disponible: 1
+  nombre: El Gran Hall
+  carrera: 
+  prefabMapa: {fileID: 5834711555166295031, guid: 98ea3810733c46c419baa28733322807, type: 3}
+  tamanoMapa: {x: 32, y: 17}
+  mapa: '################################
+
+    #H;y;y;y;GEE#vLLLvZZZv#b999bb6b#
+
+    #;;y;y;y;;EE#vvvvvvvvv#bbbbbb6b#
+
+    #;;;;;;;;;;;#vLLLvLLLv#b77bb77b#
+
+    #;y;y;y;y;K;#vvvvvvvvv#bubbbbub#
+
+    #;;;;;;;;;;;#vvvIvvvvv#bbbbbbbb#
+
+    #####//#########//########//####
+
+    V::k:::::::::::T:::::::::::k::pA
+
+    V::::::::::::::::J:::::::::::::A
+
+    #p::::k::::::::::::::::::k:::::#
+
+    ####//######//##############//##
+
+    #CC...FF.p#3ggggggg4g#XX,YY,,,,#
+
+    #.s.MM.s..#3ggggggg4g#,,,,,,,,,#
+
+    #.........#gg22gg22gg#,e,e,e,,,#
+
+    #.s.MM.s..#gg22gg22gg#,,,RRR,,,#
+
+    #P........#gg55gggggq#,,N,,,,Q,#
+
+    ################################'
+  leyenda:
+  - caracter: '#'
+    tipo: 0
+    nombre: Pared
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: /
+    tipo: 2
+    nombre: Puerta
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: ;
+    tipo: 3
+    nombre: suelo0_auditorio
+    sprites:
+    - {fileID: 21300000, guid: faca3483954434449944a01b674d0deb, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.46, g: 0.12, b: 0.2, a: 1}
+    colorSecundario: {r: 0.41, g: 0.1, b: 0.18, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: .
+    tipo: 3
+    nombre: suelo0_cafeteria
+    sprites:
+    - {fileID: 21300000, guid: 4e0946a721ae1f140959f465979e8820, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.78, g: 0.6, b: 0.4, a: 1}
+    colorSecundario: {r: 0.72, g: 0.54, b: 0.35, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: _
+    tipo: 3
+    nombre: suelo0_administracion
+    sprites:
+    - {fileID: 21300000, guid: ea5d51e22cc9dc44589e245b7761538c, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.8, g: 0.81, b: 0.83, a: 1}
+    colorSecundario: {r: 0.75, g: 0.76, b: 0.78, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: ':'
+    tipo: 3
+    nombre: suelo0_lobby
+    sprites:
+    - {fileID: 21300000, guid: 0bfbca6549c0570439ccd64db7896e8a, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.92, g: 0.92, b: 0.9, a: 1}
+    colorSecundario: {r: 0.86, g: 0.86, b: 0.84, a: 1}
+    estilo: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: ','
+    tipo: 3
+    nombre: suelo0_servicios
+    sprites:
+    - {fileID: 21300000, guid: c792313725b48904ca18703c5b0880ee, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.86, g: 0.89, b: 0.93, a: 1}
+    colorSecundario: {r: 0.81, g: 0.85, b: 0.9, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: V
+    tipo: 4
+    nombre: Puerta principal
+    sprites:
+    - {fileID: 21300000, guid: 4c7252cfcd034d445b38a9d7a0196845, type: 3}
+    - {fileID: 21300000, guid: 184637587f0600e4abc8189a5126e964, type: 3}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 1
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: A
+    tipo: 5
+    nombre: Ascensor
+    sprites:
+    - {fileID: 21300000, guid: 3fb38fd8a6119ed4095d3106fc8ae63d, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: J
+    tipo: 6
+    nombre: Inicio del jugador
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: '?'
+    tipo: 7
+    nombre: "Punto de informaci\xF3n"
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: N
+    tipo: 8
+    nombre: Persona de la universidad
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: P
+    tipo: 9
+    nombre: "Poderes 1 (cafeter\xEDa)"
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: Q
+    tipo: 10
+    nombre: "Poderes 2 (recepci\xF3n)"
+    sprites: []
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: H
+    tipo: 11
+    nombre: Parlante
+    sprites:
+    - {fileID: 21300000, guid: e8292446923ced2489b56a2e3110d5e4, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: e8292446923ced2489b56a2e3110d5e4, type: 3}
+  - caracter: K
+    tipo: 11
+    nombre: Proyector
+    sprites:
+    - {fileID: 21300000, guid: e10a33d87cecd2746b164c74851e8387, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: e10a33d87cecd2746b164c74851e8387, type: 3}
+  - caracter: G
+    tipo: 11
+    nombre: Atril
+    sprites:
+    - {fileID: 21300000, guid: 5e19c8cb3fb3a5f41be8341c4e1f26a0, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 5e19c8cb3fb3a5f41be8341c4e1f26a0, type: 3}
+  - caracter: E
+    tipo: 11
+    nombre: Pantalla del auditorio
+    sprites:
+    - {fileID: 21300000, guid: 80da4380296ad504db028a0216813972, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 80da4380296ad504db028a0216813972, type: 3}
+  - caracter: C
+    tipo: 11
+    nombre: "M\xE1quina de caf\xE9"
+    sprites:
+    - {fileID: 21300000, guid: 9f895b9ec220147439ffb44e095053b8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 9f895b9ec220147439ffb44e095053b8, type: 3}
+  - caracter: F
+    tipo: 11
+    nombre: Vitrina de comida
+    sprites:
+    - {fileID: 21300000, guid: bf90b2960009cb8438f2bb71c166f0ac, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: bf90b2960009cb8438f2bb71c166f0ac, type: 3}
+  - caracter: M
+    tipo: 11
+    nombre: "Mesa de cafeter\xEDa"
+    sprites:
+    - {fileID: 21300000, guid: 497cf73e787f73340aa34942ea84fd4c, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 497cf73e787f73340aa34942ea84fd4c, type: 3}
+  - caracter: D
+    tipo: 11
+    nombre: "Escritorio de administraci\xF3n"
+    sprites:
+    - {fileID: 21300000, guid: e1dc7b91328d0fe4e89e569ea3d24ad2, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: e1dc7b91328d0fe4e89e569ea3d24ad2, type: 3}
+  - caracter: T
+    tipo: 11
+    nombre: Pantalla informativa
+    sprites:
+    - {fileID: 21300000, guid: b9516380850a7084e8edd032be4f2c8e, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: b9516380850a7084e8edd032be4f2c8e, type: 3}
+  - caracter: X
+    tipo: 11
+    nombre: "Ventanilla de atenci\xF3n 1"
+    sprites:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+  - caracter: Y
+    tipo: 11
+    nombre: "Ventanilla de atenci\xF3n 2"
+    sprites:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+  - caracter: R
+    tipo: 11
+    nombre: "Mostrador de recepci\xF3n"
+    sprites:
+    - {fileID: 21300000, guid: 40a859d12d6d5e142bbe233efecd3e45, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 40a859d12d6d5e142bbe233efecd3e45, type: 3}
+  - caracter: y
+    tipo: 12
+    nombre: Asiento de auditorio
+    sprites:
+    - {fileID: 21300000, guid: 719a8eb6531499c41a8d2cd1c776f0f6, type: 3}
+    unirContiguas: 0
+    colision: 1
+    colorProvisional: {r: 0.62, g: 0.16, b: 0.22, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: s
+    tipo: 12
+    nombre: "Silla de cafeter\xEDa"
+    sprites:
+    - {fileID: 21300000, guid: 43af4f54f25e042468b3e9f55033c44f, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.7, g: 0.5, b: 0.3, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: e
+    tipo: 12
+    nombre: Silla de espera
+    sprites:
+    - {fileID: 21300000, guid: b713c0b0cbc5b0f42a46f3a735f51074, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.4, g: 0.52, b: 0.68, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: o
+    tipo: 12
+    nombre: Archivero
+    sprites:
+    - {fileID: 21300000, guid: f1c8218920ba0c74fb63cb2f227e6403, type: 3}
+    unirContiguas: 0
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.52, b: 0.56, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: p
+    tipo: 12
+    nombre: Planta
+    sprites:
+    - {fileID: 21300000, guid: 8c2d1287825bdac4d9eff5419636d734, type: 3}
+    unirContiguas: 0
+    colision: 1
+    colorProvisional: {r: 0.2, g: 0.55, b: 0.25, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 1
+    escalaProvisional: 0.85
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: k
+    tipo: 12
+    nombre: Banca
+    sprites:
+    - {fileID: 21300000, guid: b547af0ca9e22c94f8a1f4f19afff9b5, type: 3}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.6, g: 0.42, b: 0.25, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 3a05e95a21d4f7548b86d72221cb9526, type: 3}
+  - caracter: 8
+    tipo: 12
+    nombre: Cartel
+    sprites:
+    - {fileID: 21300000, guid: e20fa903b3107f44991510baad2ee4c2, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.1, g: 0.28, b: 0.32, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 0
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 21300000, guid: 9f991604880bb3a438ccfb112a60027e, type: 3}
+    spriteCentro: {fileID: 21300000, guid: e20fa903b3107f44991510baad2ee4c2, type: 3}
+    spriteDerecha: {fileID: 21300000, guid: 20ce2926a84f3cd46841e594518e34e4, type: 3}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 7f6618bac921a0546a3c9cdeb85aad53, type: 3}
+  - caracter: v
+    tipo: 3
+    nombre: suelo2_vinilico
+    sprites:
+    - {fileID: 21300000, guid: d3bb4f77ed4920447b225be509a9caca, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.72, g: 0.72, b: 0.74, a: 1}
+    colorSecundario: {r: 0.67, g: 0.67, b: 0.7, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: L
+    tipo: 11
+    nombre: Fila de computadoras
+    sprites:
+    - {fileID: 21300000, guid: ce4e3f919c04c344393f9d6517158b34, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: ce4e3f919c04c344393f9d6517158b34, type: 3}
+  - caracter: Z
+    tipo: 11
+    nombre: Fila de iMacs
+    sprites:
+    - {fileID: 21300000, guid: cc0c37639fc80e0459dc0101a3f8d5f8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 1
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: cc0c37639fc80e0459dc0101a3f8d5f8, type: 3}
+  - caracter: I
+    tipo: 11
+    nombre: Impresora
+    sprites:
+    - {fileID: 21300000, guid: cec13e91262476445b69bca0fc5a2a33, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: cec13e91262476445b69bca0fc5a2a33, type: 3}
+  - caracter: c
+    tipo: 12
+    nombre: Silla de computadora
+    sprites:
+    - {fileID: 21300000, guid: 5893ca153defdc5448715c13ff5a67f8, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.25, g: 0.28, b: 0.35, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: g
+    tipo: 3
+    nombre: suelo_gastronomia
+    sprites:
+    - {fileID: 21300000, guid: e0316556f99c08f42bfeeed8340316b0, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.96, g: 0.86, b: 0.7, a: 1}
+    colorSecundario: {r: 0.9, g: 0.78, b: 0.6, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: 2
+    tipo: 11
+    nombre: "Estaci\xF3n de trabajo"
+    sprites:
+    - {fileID: 6913563989258672897, guid: 80d2ea9c6a7db8b40a97f6e614019a57, type: 3}
+    - {fileID: 1747932452134749655, guid: 081e7375ea60d1a439608e9cac25beb3, type: 3}
+    - {fileID: 1462153555334328214, guid: 174fcb9165ec8c348a677df1a4af8fad, type: 3}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: 3
+    tipo: 11
+    nombre: Horno 1
+    sprites:
+    - {fileID: 21300000, guid: 845072252b407c541a0f946d41e5d4a8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 845072252b407c541a0f946d41e5d4a8, type: 3}
+  - caracter: 4
+    tipo: 11
+    nombre: Refrigerador
+    sprites:
+    - {fileID: 21300000, guid: 369138235bc91084784d6db6a76a694b, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 369138235bc91084784d6db6a76a694b, type: 3}
+  - caracter: 5
+    tipo: 11
+    nombre: Lavaplatos doble
+    sprites:
+    - {fileID: -3733226981793462091, guid: 15f7f16b3a85c7d40ac3d4d02a2c112f, type: 3}
+    - {fileID: -469804235746892233, guid: 77c4aecf32cb1014689628f0d6a93b39, type: 3}
+    - {fileID: 3310244715945225498, guid: e850f0af73f24e64ca9244e6b28a8020, type: 3}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: q
+    tipo: 12
+    nombre: Banquito
+    sprites:
+    - {fileID: -7998570991139323892, guid: 07634aa996ea8154bbe193cd876f2a2e, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.75, g: 0.55, b: 0.35, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: b
+    tipo: 3
+    nombre: suelo6_biblioteca
+    sprites:
+    - {fileID: 21300000, guid: 662ae1ec7305920418ddb3cbd8f2193f, type: 3}
+    unirContiguas: 0
+    colision: 0
+    colorProvisional: {r: 0.435, g: 0.525, b: 0.678, a: 1}
+    colorSecundario: {r: 0.4, g: 0.49, b: 0.64, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - caracter: 6
+    tipo: 11
+    nombre: Estante de libros
+    sprites:
+    - {fileID: 21300000, guid: 2e2b8580a3f30da47bfa8fa8c17e36df, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.5, g: 0.35, b: 0.2, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 2e2b8580a3f30da47bfa8fa8c17e36df, type: 3}
+  - caracter: 7
+    tipo: 11
+    nombre: Mesa de trabajo en grupo
+    sprites:
+    - {fileID: 21300000, guid: 57f1cd6d3281ede49b99658ee50b1337, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.78, g: 0.68, b: 0.52, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 57f1cd6d3281ede49b99658ee50b1337, type: 3}
+  - caracter: 9
+    tipo: 11
+    nombre: "Recepci\xF3n de libros"
+    sprites:
+    - {fileID: 21300000, guid: 2852abc0eaf050241acfac6fce9c4dbc, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    unirContiguas: 1
+    colision: 1
+    colorProvisional: {r: 0.6, g: 0.45, b: 0.3, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 2852abc0eaf050241acfac6fce9c4dbc, type: 3}
+  - caracter: u
+    tipo: 12
+    nombre: Pupitre de estudio
+    sprites:
+    - {fileID: 21300000, guid: 8b9c2c36fb63c0842a4e8249f167480f, type: 3}
+    unirContiguas: 0
+    colision: 1
+    colorProvisional: {r: 0.65, g: 0.5, b: 0.32, a: 1}
+    colorSecundario: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    estilo: 0
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    desplazamiento: {x: 0, y: 0}
+    zona: 0
+    esChef: 0
+    ajustarAFranja: 0
+    barandaExterior: 0
+    rompible: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  piezasExtra:
+  - caracter: 8
+    posicion: {x: 9, y: 14}
+    tamano: {x: 4, y: 1}
+    texto: AUDITORIO
+    enPared: 1
+    encima: 0
+  - caracter: 8
+    posicion: {x: 1, y: 10}
+    tamano: {x: 4, y: 1}
+    texto: "CAFETER\xCDA"
+    enPared: 1
+    encima: 0
+  - caracter: 8
+    posicion: {x: 1, y: 3}
+    tamano: {x: 5, y: 1}
+    texto: "ADMINISTRACI\xD3N"
+    enPared: 1
+    encima: 0
+  - caracter: 8
+    posicion: {x: 15, y: 6}
+    tamano: {x: 6, y: 1}
+    texto: SERVICIOS ESTUDIANTILES
+    enPared: 1
+    encima: 0
+  - caracter: 8
+    posicion: {x: 15, y: 0}
+    tamano: {x: 4, y: 1}
+    texto: "RECEPCI\xD3N"
+    enPared: 1
+    encima: 0
+  texturaPared: {fileID: 21300000, guid: 99b55d2e1831e1446b735183ee0f86ee, type: 3}
+  spriteMarcoPuerta: {fileID: 21300000, guid: 28366c980b48dd749a3e77aed8903488, type: 3}
+  colorPared: {r: 0.96, g: 0.96, b: 0.97, a: 1}
+  colorMarcoPuerta: {r: 0.55, g: 0.5, b: 0.45, a: 1}
+  colorExterior: {r: 0.07, g: 0.07, b: 0.1, a: 1}
+  grosorPared: 10
+  laboratorios:
+  - nombre: Zona A
+    color: {r: 0.62, g: 0.45, b: 0.3, a: 1}
+  - nombre: Zona B
+    color: {r: 0.45, g: 0.55, b: 0.7, a: 1}
+  objetosCenital:
+  - nombre: Parlante
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: e8292446923ced2489b56a2e3110d5e4, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Atril
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 5e19c8cb3fb3a5f41be8341c4e1f26a0, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Pantalla del auditorio
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 21300000, guid: 80da4380296ad504db028a0216813972, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Fila de computadoras
+    laboratorio: 0
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: ce4e3f919c04c344393f9d6517158b34, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Fila de iMacs
+    laboratorio: 1
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: cc0c37639fc80e0459dc0101a3f8d5f8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Recepci\xF3n de libros"
+    laboratorio: 0
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 2852abc0eaf050241acfac6fce9c4dbc, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0.6, g: 0.45, b: 0.3, a: 1}
+  - nombre: Estante de libros
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 2}
+    sprites:
+    - {fileID: 21300000, guid: 2e2b8580a3f30da47bfa8fa8c17e36df, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0.5, g: 0.35, b: 0.2, a: 1}
+  - nombre: Fila de computadoras
+    laboratorio: 0
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: ce4e3f919c04c344393f9d6517158b34, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Fila de computadoras
+    laboratorio: 0
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: ce4e3f919c04c344393f9d6517158b34, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Mesa de trabajo en grupo
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 57f1cd6d3281ede49b99658ee50b1337, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0.78, g: 0.68, b: 0.52, a: 1}
+  - nombre: Mesa de trabajo en grupo
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 57f1cd6d3281ede49b99658ee50b1337, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0.78, g: 0.68, b: 0.52, a: 1}
+  - nombre: Proyector
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: e10a33d87cecd2746b164c74851e8387, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Impresora
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: cec13e91262476445b69bca0fc5a2a33, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Pantalla informativa
+    laboratorio: 1
+    tamanoBaldosas: {x: 1, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: b9516380850a7084e8edd032be4f2c8e, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "M\xE1quina de caf\xE9"
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 9f895b9ec220147439ffb44e095053b8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Vitrina de comida
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: bf90b2960009cb8438f2bb71c166f0ac, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Horno 1
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 2}
+    sprites:
+    - {fileID: 21300000, guid: 845072252b407c541a0f946d41e5d4a8, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Refrigerador
+    laboratorio: 0
+    tamanoBaldosas: {x: 1, y: 2}
+    sprites:
+    - {fileID: 21300000, guid: 369138235bc91084784d6db6a76a694b, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Ventanilla de atenci\xF3n 1"
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Ventanilla de atenci\xF3n 2"
+    laboratorio: 1
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: d05ef2f52af41634f98a7dc5523b2c35, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Mesa de cafeter\xEDa"
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 497cf73e787f73340aa34942ea84fd4c, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Estaci\xF3n de trabajo"
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 6913563989258672897, guid: 80d2ea9c6a7db8b40a97f6e614019a57, type: 3}
+    - {fileID: 1747932452134749655, guid: 081e7375ea60d1a439608e9cac25beb3, type: 3}
+    - {fileID: 1462153555334328214, guid: 174fcb9165ec8c348a677df1a4af8fad, type: 3}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Estaci\xF3n de trabajo"
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 2}
+    sprites:
+    - {fileID: 6913563989258672897, guid: 80d2ea9c6a7db8b40a97f6e614019a57, type: 3}
+    - {fileID: 1747932452134749655, guid: 081e7375ea60d1a439608e9cac25beb3, type: 3}
+    - {fileID: 1462153555334328214, guid: 174fcb9165ec8c348a677df1a4af8fad, type: 3}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Mesa de cafeter\xEDa"
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 497cf73e787f73340aa34942ea84fd4c, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: "Mostrador de recepci\xF3n"
+    laboratorio: 1
+    tamanoBaldosas: {x: 3, y: 1}
+    sprites:
+    - {fileID: 21300000, guid: 40a859d12d6d5e142bbe233efecd3e45, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  - nombre: Lavaplatos doble
+    laboratorio: 0
+    tamanoBaldosas: {x: 2, y: 1}
+    sprites:
+    - {fileID: -3733226981793462091, guid: 15f7f16b3a85c7d40ac3d4d02a2c112f, type: 3}
+    - {fileID: -469804235746892233, guid: 77c4aecf32cb1014689628f0d6a93b39, type: 3}
+    - {fileID: 3310244715945225498, guid: e850f0af73f24e64ca9244e6b28a8020, type: 3}
+    colorProvisional: {r: 0, g: 0, b: 0, a: 0}
+  decoracion:
+  - nombre: Asiento de auditorio
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: 719a8eb6531499c41a8d2cd1c776f0f6, type: 3}
+    colorProvisional: {r: 0.62, g: 0.16, b: 0.22, a: 1}
+    colision: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: "Silla de cafeter\xEDa"
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: 43af4f54f25e042468b3e9f55033c44f, type: 3}
+    colorProvisional: {r: 0.7, g: 0.5, b: 0.3, a: 1}
+    colision: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Silla de espera
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: b713c0b0cbc5b0f42a46f3a735f51074, type: 3}
+    colorProvisional: {r: 0.4, g: 0.52, b: 0.68, a: 1}
+    colision: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Archivero
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: f1c8218920ba0c74fb63cb2f227e6403, type: 3}
+    colorProvisional: {r: 0.5, g: 0.52, b: 0.56, a: 1}
+    colision: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Planta
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: 8c2d1287825bdac4d9eff5419636d734, type: 3}
+    colorProvisional: {r: 0.2, g: 0.55, b: 0.25, a: 1}
+    colision: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 1
+    escalaProvisional: 0.85
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Banca
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: b547af0ca9e22c94f8a1f4f19afff9b5, type: 3}
+    colorProvisional: {r: 0.6, g: 0.42, b: 0.25, a: 1}
+    colision: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 3a05e95a21d4f7548b86d72221cb9526, type: 3}
+  - nombre: Cartel
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: e20fa903b3107f44991510baad2ee4c2, type: 3}
+    colorProvisional: {r: 0.1, g: 0.28, b: 0.32, a: 1}
+    colision: 0
+    sombra: 0
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 21300000, guid: 9f991604880bb3a438ccfb112a60027e, type: 3}
+    spriteCentro: {fileID: 21300000, guid: e20fa903b3107f44991510baad2ee4c2, type: 3}
+    spriteDerecha: {fileID: 21300000, guid: 20ce2926a84f3cd46841e594518e34e4, type: 3}
+    spritesPorTamano:
+    - {fileID: 21300000, guid: 7f6618bac921a0546a3c9cdeb85aad53, type: 3}
+  - nombre: Silla de computadora
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: 5893ca153defdc5448715c13ff5a67f8, type: 3}
+    colorProvisional: {r: 0.25, g: 0.28, b: 0.35, a: 1}
+    colision: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Banquito
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: -7998570991139323892, guid: 07634aa996ea8154bbe193cd876f2a2e, type: 3}
+    colorProvisional: {r: 0.75, g: 0.55, b: 0.35, a: 1}
+    colision: 0
+    sombra: 1
+    ordenarPorAltura: 1
+    provisionalCircular: 1
+    escalaProvisional: 0.7
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  - nombre: Pupitre de estudio
+    tamanoBaldosas: {x: 1, y: 1}
+    sprite: {fileID: 21300000, guid: 8b9c2c36fb63c0842a4e8249f167480f, type: 3}
+    colorProvisional: {r: 0.65, g: 0.5, b: 0.32, a: 1}
+    colision: 1
+    sombra: 1
+    ordenarPorAltura: 0
+    provisionalCircular: 0
+    escalaProvisional: 1
+    ajustarAFranja: 0
+    spriteIzquierda: {fileID: 0}
+    spriteCentro: {fileID: 0}
+    spriteDerecha: {fileID: 0}
+    spritesPorTamano: []
+  estudianteGastronomia: []
+  estudianteMedicina: []
+  chef: []
+  sueloLaboratorioA: {fileID: 0}
+  sueloLaboratorioB: {fileID: 0}
+  sueloPasillo: {fileID: 0}
+  pared: {fileID: 0}
+  puerta: {fileID: 0}
+  ventanalEntero: {fileID: 0}
+  ventanalRoto: {fileID: 0}
+  ascensorCerrado: {fileID: 0}
+  ascensorAbierto: {fileID: 21300000, guid: 890c0867e4b75484b96e89a242f899d2, type: 3}
+  jugador:
+    caminarAbajo:
+    - {fileID: 377848174176133437, guid: 027745a92ab1c6f41a19d56cb8397d0a, type: 3}
+    - {fileID: 4908879501784557235, guid: 027745a92ab1c6f41a19d56cb8397d0a, type: 3}
+    - {fileID: -4793942472443753853, guid: 027745a92ab1c6f41a19d56cb8397d0a, type: 3}
+    - {fileID: -6991520983263609684, guid: 027745a92ab1c6f41a19d56cb8397d0a, type: 3}
+    caminarArriba:
+    - {fileID: 190113572979950671, guid: 2963d8b0ac46d4e48a1eefa4688ae8fb, type: 3}
+    - {fileID: 4568747771182302259, guid: 2963d8b0ac46d4e48a1eefa4688ae8fb, type: 3}
+    - {fileID: -8647698313152219083, guid: 2963d8b0ac46d4e48a1eefa4688ae8fb, type: 3}
+    - {fileID: -8778012649341030237, guid: 2963d8b0ac46d4e48a1eefa4688ae8fb, type: 3}
+    caminarDerecha:
+    - {fileID: 4766336608767510293, guid: d1c3ce0816a81564a850dfca2c13b1ee, type: 3}
+    - {fileID: -7276606759616222723, guid: d1c3ce0816a81564a850dfca2c13b1ee, type: 3}
+    - {fileID: 1895977636989325037, guid: d1c3ce0816a81564a850dfca2c13b1ee, type: 3}
+    - {fileID: 4129964143117344238, guid: d1c3ce0816a81564a850dfca2c13b1ee, type: 3}
+    golpeAbajo:
+    - {fileID: -8469355664126480430, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: 8814456058860954849, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -4820084372585680372, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -7609719311741016490, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    golpeArriba:
+    - {fileID: -8469355664126480430, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: 8814456058860954849, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -4820084372585680372, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -7609719311741016490, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    golpeDerecha:
+    - {fileID: -8469355664126480430, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: 8814456058860954849, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -4820084372585680372, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    - {fileID: -7609719311741016490, guid: b7e765e386e9eb94ea1d396985274bba, type: 3}
+    especial: []
+  demoledor:
+    caminarAbajo:
+    - {fileID: -6557425043858416005, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 773881479881454512, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -9135791425449295357, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -2702774538903621627, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 8390807737775387710, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 7904798337998613030, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    caminarArriba:
+    - {fileID: -6557425043858416005, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 773881479881454512, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -9135791425449295357, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -2702774538903621627, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 8390807737775387710, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 7904798337998613030, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    caminarDerecha:
+    - {fileID: -6557425043858416005, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 773881479881454512, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -9135791425449295357, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: -2702774538903621627, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 8390807737775387710, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    - {fileID: 7904798337998613030, guid: e77fa1ab64c63634aa1ef71fb709f59c, type: 3}
+    golpeAbajo:
+    - {fileID: -6628118815657891873, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 6651748612062689192, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -666166413884083584, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 1962292756508728022, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -8250471364873646417, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -1119821211674588732, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    golpeArriba:
+    - {fileID: -6628118815657891873, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 6651748612062689192, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -666166413884083584, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 1962292756508728022, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -8250471364873646417, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -1119821211674588732, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    golpeDerecha:
+    - {fileID: -6628118815657891873, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 6651748612062689192, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -666166413884083584, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: 1962292756508728022, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -8250471364873646417, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    - {fileID: -1119821211674588732, guid: d6c33a6fbe5918a41abb45cac43e8b26, type: 3}
+    especial:
+    - {fileID: 1828069293362065092, guid: 4319fc585318bb945bec9efde4cf53bc, type: 3}
+    - {fileID: -6016040598996645663, guid: 4319fc585318bb945bec9efde4cf53bc, type: 3}
+    - {fileID: 6881073478626619558, guid: 4319fc585318bb945bec9efde4cf53bc, type: 3}
+    - {fileID: -845922406231884050, guid: 4319fc585318bb945bec9efde4cf53bc, type: 3}
+  escombro: {fileID: 0}
+  sombraImpacto: {fileID: 0}
+  preparacionPunetazo: 0.9
+  radioPunetazo: 1
+  preparacionLanzamiento: 0.8
+  vueloLanzamiento: 0.9
+  radioImpacto: 1
+  intervaloLanzamiento: 9
+  distanciaJugadorLejos: 7
+  proporcionLanzamiento: 0.3
+  lanzarAlJugador: 0.5
+  preparacionBloque: 0.5
+  alturaArcoBloque: 2.5
+  escalaMaximaBloque: 1.3
+  segundosBordeRojo: 0.3
+  fuerzaTemblorImpacto: 0.06
+  duracionTemblorImpacto: 0.15
+  ultiActiva: 1
+  umbralUlti: 0.2
+  cantidadRocasUlti: 0
+  duracionAvisoUlti: 2
+  golpesAvisoUlti: 4
+  intervaloGolpeUlti: 0.5
+  duracionLluvia: 4
+  aplastamientoGolpeUlti: 0.2
+  duracionAgotado: 3
+  avisoCaidaRoca: 1
+  radioImpactoRoca: 0.8
+  distanciaRocaJugador: {x: 1.5, y: 3}
+  maxSombrasCercaJugador: 3
+  radioCercaJugador: 2
+  aturdimientoBloqueo: 2
+  puntosBloqueo: 50
+  umbralFuria: 0.5
+  velocidadFuria: 1.4
+  intervaloLanzamientoFuria: 3.5
+  mostrarNPC: 0
+  poderes:
+  - nombre: "Caf\xE9"
+    tipo: 1
+    etiquetaHud: "REPARACI\xD3N TOTAL"
+    duracion: 6
+    valor: 1
+    peso: 1
+    origen: 3
+    indiceObjeto: 0
+    objetoReferencia: 
+    desplazamiento: {x: 0.9, y: 0}
+    mensajeAparece: "\xA1La cafeter\xEDa sac\xF3 caf\xE9 reci\xE9n hecho!"
+    mensajeRecogido: "\xA1REPARACI\xD3N TOTAL!"
+    simbolo: C
+    color: {r: 0.45, g: 0.28, b: 0.15, a: 1}
+    colorAro: {r: 0.3, g: 0.9, b: 0.4, a: 1}
+    sprite: {fileID: 21300000, guid: 5739139c28429c14883d888a0b8e72ee, type: 3}
+    spriteAro: {fileID: 0}
+  - nombre: Api con pastel
+    tipo: 2
+    etiquetaHud: API CON PASTEL
+    duracion: 0
+    valor: 1
+    peso: 1
+    origen: 3
+    indiceObjeto: 0
+    objetoReferencia: 
+    desplazamiento: {x: 0.9, y: 0}
+    mensajeAparece: "\xA1Api con pastel en la cafeter\xEDa!"
+    mensajeRecogido: +1 VIDA
+    simbolo: A
+    color: {r: 0.55, g: 0.15, b: 0.45, a: 1}
+    colorAro: {r: 1, g: 0.45, b: 0.5, a: 1}
+    sprite: {fileID: 21300000, guid: c102889df338a0c43b2d4f3df42b53d8, type: 3}
+    spriteAro: {fileID: 0}
+  - nombre: Credencial universitaria
+    tipo: 0
+    etiquetaHud: INVENCIBLE
+    duracion: 5
+    valor: 1
+    peso: 1
+    origen: 4
+    indiceObjeto: 0
+    objetoReferencia: 
+    desplazamiento: {x: 0.9, y: 0}
+    mensajeAparece: "\xA1Alguien dej\xF3 su credencial en recepci\xF3n!"
+    mensajeRecogido: "\xA1INVENCIBLE!"
+    simbolo: ID
+    color: {r: 0.2, g: 0.4, b: 0.8, a: 1}
+    colorAro: {r: 1, g: 0.85, b: 0.2, a: 1}
+    sprite: {fileID: 21300000, guid: 79b552cbada054942b18388a2e0a8c1c, type: 3}
+    spriteAro: {fileID: 0}
+  maxPoderesEnPiso: 2
+  intervaloPoderes: 8
+  variacionIntervaloPoderes: 0.25
+  duracionPoderEnSuelo: 8
+  parpadeoFinalPoder: 2
+  radioRecogidaPoder: 0.6
+  vidasMaximas: 3
+  empujeChoque: 1
+  aturdimientoChoque: 1.5
+  esperaChoque: 3
+  objetos:
+  - nombre: Objeto
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  - nombre: Objeto
+    sprites:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+  plataformas:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  fondo: {fileID: 0}
+  tinte: {r: 1, g: 1, b: 1, a: 1}
+  colorFondo: {r: 0, g: 0, b: 0, a: 0}
+  ritmoDemoledor: 0.78571427
+  golpesMinimos: 8
+  energiaInicial: 100
+  energiaPorReparacion: 6
+  energiaPorBloqueo: 15
+  pausaRendicion: 1.5
+  velocidadSalida: 1.3
+  tiempoMaximoSalida: 12
+  colorAscensorAbierto: {r: 0.3, g: 1, b: 0.45, a: 1}
+  mensajeAscensor: "\xA1El ascensor est\xE1 abierto!"
+  siguientePiso: {fileID: 0}
+  pasosTutorial: []
+  mostrarFichaAlEmpezar: 1
+  tituloVentanaFicha: "\xA1BIENVENIDO!"
+  puntosInfo: []
+  puntosPorInfo: 20
+  duracionTextoInfo: 3.5
+  radioInfo: 0.8
+  segundosBaseDato: 4
+  segundosPorCaracterDato: 0.06
+  minimoSegundosDato: 8
+  maximoSegundosDato: 14
+  distanciaMantenerPanelDato: 1.5
+  distanciaCerrarPanelDato: 2
+  esperaCerrarPanelDato: 1.5
+  opacidadPanelTapando: 0.45
+  datosReserva: []
+  colorPestanaDato: {r: 0, g: 0, b: 0, a: 0}
+  destrozoMaximoEstrella: 0.3
+  limiteDerrumbe: 0.75
+  escombrosPorGolpe: 1
+  fichaTitulo: SUPERVIVENCIA
+  fichaDescripcion: Aguanta oleada tras oleada de villanos.
+  fichaDatoUtil: "Si te pierdes, pregunta en recepci\xF3n."
+  fichaIlustracion: {fileID: 0}
